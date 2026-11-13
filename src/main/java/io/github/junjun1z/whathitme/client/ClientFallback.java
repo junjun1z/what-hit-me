@@ -286,8 +286,13 @@ final class ClientFallback {
                 type = proj instanceof EntityArrow ? "arrow" : "thrown";
                 flags |= DamageRecord.PROJECTILE;
             } else if (boom != null && actual + absorbed >= 4f) {
-                type = "explosion";
                 attacker = boom instanceof EntityCreeper ? boom : null;
+                type = attacker != null ? "explosion.player" : "explosion";
+                flags |= DamageRecord.EXPLOSION;
+            } else if (mob instanceof EntityCreeper) {
+                // creepers never melee
+                type = "explosion.player";
+                attacker = mob;
                 flags |= DamageRecord.EXPLOSION;
             } else if (mob != null) {
                 attacker = mob;
