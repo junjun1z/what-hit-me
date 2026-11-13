@@ -1,0 +1,212 @@
+whathitme.hearts=%s ❤
+whathitme.unknown=Unknown
+whathitme.command.usage=/whm [history|last|effects|togglechat|ignore|rename|sethint|config|search|inspect|dump|reload|snapshot|help]
+
+whathitme.summary.header=========== [ What Hit Me? ] ==========
+whathitme.summary.footer======================================
+whathitme.summary.killing=☠ Killing Blow: %s
+whathitme.summary.properties=⚠ Properties: %s
+whathitme.summary.total=Σ Last %ss Total: %s taken (%s hits)
+whathitme.summary.tip=✎ Tip: %s
+whathitme.summary.recap=➜ %s (%s)
+whathitme.summary.recap.link=[Click here for full death recap]
+whathitme.summary.toggle=✖ To disable this message, run %s
+
+whathitme.prop.bypasses_armor=Bypasses Armor
+whathitme.prop.absolute=Bypasses Magic
+whathitme.prop.magic=Magic
+whathitme.prop.fire=Fire
+whathitme.prop.explosion=Explosion
+whathitme.prop.projectile=Projectile
+whathitme.prop.shield=Through Shield
+whathitme.prop.iframes=Ignores I-Frames
+whathitme.prop.creative=Bypasses Creative
+whathitme.prop.none=None
+
+whathitme.badge.invisible=[Invisible]
+whathitme.badge.totem=[Totem]
+whathitme.badge.heavy=[Heavy Hit]
+whathitme.badge.estimated=[Client Est.]
+
+whathitme.line.via=via %s
+whathitme.line.raw=raw %s
+whathitme.line.mitigated=-%s%%
+whathitme.line.absorbed=absorbed %s
+whathitme.line.hits=x%s hits
+whathitme.line.owner=Owner: %s
+
+whathitme.hover.id=ID: %s
+whathitme.hover.damage=Damage: %s (%s HP)
+whathitme.hover.raw=Before armor: %s
+whathitme.hover.mitigated=Mitigated: %s%%
+whathitme.hover.absorbed=Absorption used: %s
+whathitme.hover.health=Health after: %s / %s ❤
+whathitme.hover.hits=Merged hits: %s
+whathitme.hover.attacker=Attacker: %s
+whathitme.hover.direct=Projectile / direct source: %s
+whathitme.hover.weapon=Weapon: %s
+whathitme.hover.distance=Distance: %sm
+whathitme.hover.owner=Owner: %s
+whathitme.hover.properties=Properties: %s
+whathitme.hover.mod=Mod: %s
+whathitme.hover.tip=Tip: %s
+whathitme.hover.estimated=Estimated by your client (the server does not have What Hit Me?)
+
+whathitme.button.copyid=[Copy ID]
+whathitme.button.copyid.hover=Copy %s to the clipboard
+whathitme.button.copyid.suggest=Put %s into the chat box
+whathitme.button.mute=[Mute]
+whathitme.button.mute.hover=Hide %s from now on (click again to show)
+whathitme.button.copyrecap=[Copy Recap]
+whathitme.button.copyrecap.hover=Copy the whole recap as plain text
+whathitme.button.view=[View]
+whathitme.button.details=[Details]
+whathitme.button.run=Runs %s
+
+whathitme.history.header=Damage History (%s)
+whathitme.history.empty=No damage recorded yet.
+whathitme.history.snapshots=%s saved snapshot(s) (totem / heavy hit).
+whathitme.history.estimated=[Client Est.] The server does not have What Hit Me?, so these entries are estimated by your client.
+
+whathitme.last.header=Death Recap (%s ago)
+whathitme.last.none=No death recorded yet in this session.
+
+whathitme.snapshot.header=%s (%s ago)
+whathitme.snapshot.none=No snapshot saved yet.
+whathitme.snapshot.position=Snapshot %s of %s. Use /whm snapshot <number> to see the others.
+whathitme.snapshot.trigger=⚠ Trigger: %s
+whathitme.snapshot.kind.death=Death
+whathitme.snapshot.kind.totem=Totem of Undying
+whathitme.snapshot.kind.heavy=Heavy Hit
+whathitme.snapshot.kind.prevented=Death Prevented
+
+whathitme.alert.totem=⚠ [What Hit Me?] A Totem of Undying saved you! Last hit: %s %s
+whathitme.alert.heavy=⚠ [What Hit Me?] Heavy hit: %s took %s at once.
+whathitme.alert.prevented=⚠ [What Hit Me?] Lethal damage was prevented! Last hit: %s %s
+
+whathitme.effects.header=Active Effects (%s)
+whathitme.effects.none=No active effects.
+whathitme.effects.milk.yes=[Milk ✔]
+whathitme.effects.milk.no=[Milk ✖]
+whathitme.effects.bad=Harmful
+whathitme.effects.good=Beneficial
+whathitme.effects.curative=Cured by: %s
+whathitme.effects.curative.none=nothing (milk does not work)
+whathitme.effects.estimated=[Client Est.] Read on your client: curative items may differ from the server.
+
+whathitme.search.header=Search: %s (%s results)
+whathitme.search.none=Nothing found. Try #fire, #magic, #bypasses_armor, #explosion, #projectile, #absolute or @modid.
+whathitme.search.more=...and %s more. Narrow the search to see them.
+whathitme.search.type.damage=Damage
+whathitme.search.type.mob=Mob
+whathitme.search.type.effect=Effect
+whathitme.search.seen=seen %s×
+whathitme.search.muted=(muted)
+
+whathitme.togglechat.on=Respawn chat summary: ON
+whathitme.togglechat.off=Respawn chat summary: OFF (run /whm togglechat again to turn it back on)
+whathitme.ignore.added=Now hiding %s.
+whathitme.ignore.removed=Showing %s again.
+whathitme.rename.set=%s is now shown as "%s".
+whathitme.rename.cleared=Custom name of %s removed.
+whathitme.sethint.set=Tip for %s: %s
+whathitme.sethint.cleared=Custom tip of %s removed.
+whathitme.config.keys=Settings: %s
+whathitme.config.value=%s = %s
+whathitme.config.set=Saved: %s = %s
+whathitme.config.unknown=Unknown setting: %s
+whathitme.config.invalid=Invalid value for %s: %s
+whathitme.reload.done=What Hit Me? configuration reloaded.
+whathitme.reload.server=Server configuration of What Hit Me? reloaded.
+whathitme.dump.done=Wrote %s entries to %s
+whathitme.dump.failed=Could not write the dump: %s
+whathitme.copy.done=Copied to the clipboard: %s
+whathitme.copyrecap.done=Death recap copied to the clipboard.
+
+whathitme.inspect.death=Death Recap of %s (%s ago)
+whathitme.inspect.history=Damage History of %s (%s)
+whathitme.inspect.notfound=Player not found (must be online): %s
+whathitme.inspect.nodeath=%s has not died since logging in.
+
+whathitme.error.unknown=Unknown subcommand: %s
+whathitme.error.usage=Usage: %s
+whathitme.error.noperm=You need operator permission (level 2) for this.
+whathitme.error.player=Only players can use this.
+whathitme.error.needserver=This needs What Hit Me? on the server.
+
+whathitme.help.header=What Hit Me? commands (Tab completes everything)
+whathitme.help.history=Recent damage taken (also /whm)
+whathitme.help.last=Full recap of your last death
+whathitme.help.effects=Active effects, their mod and whether milk cures them
+whathitme.help.togglechat=Turn the respawn chat summary on/off
+whathitme.help.ignore=<id> Hide / show a damage id
+whathitme.help.rename=<id> <name...> Custom display name (empty = remove)
+whathitme.help.sethint=<id> <tip...> Custom tip (empty = remove)
+whathitme.help.config=<key> [value] Show or change a setting
+whathitme.help.search=<text|#tag|@modid> Search damage types, mobs and effects
+whathitme.help.inspect=<player> Last death and history of a player (operators)
+whathitme.help.dump=Write everything known to whathitme_dump.csv
+whathitme.help.reload=Reload the configuration files
+whathitme.help.snapshot=[number] Saved totem / heavy-hit snapshots
+whathitme.help.server=<subcommand> Run a subcommand on the server (server-wide settings)
+
+whathitme.panel.title=What Hit Me?
+whathitme.panel.copy=Copy
+whathitme.panel.waiting=Waiting for the server...
+whathitme.panel.nodata=No damage recorded.
+whathitme.panel.estimated=estimated by your client
+
+whathitme.damage.inFire=Fire
+whathitme.damage.lightningBolt=Lightning
+whathitme.damage.onFire=Burning
+whathitme.damage.lava=Lava
+whathitme.damage.hotFloor=Magma Block
+whathitme.damage.inWall=Suffocation
+whathitme.damage.cramming=Entity Cramming
+whathitme.damage.drown=Drowning
+whathitme.damage.starve=Starvation
+whathitme.damage.cactus=Cactus
+whathitme.damage.fall=Fall
+whathitme.damage.flyIntoWall=Kinetic Energy (Elytra)
+whathitme.damage.outOfWorld=Void
+whathitme.damage.generic=Generic Damage
+whathitme.damage.magic=Magic / Poison
+whathitme.damage.wither=Wither
+whathitme.damage.anvil=Falling Anvil
+whathitme.damage.fallingBlock=Falling Block
+whathitme.damage.dragonBreath=Dragon's Breath
+whathitme.damage.fireworks=Fireworks
+whathitme.damage.mob=Mob Attack
+whathitme.damage.player=Player Attack
+whathitme.damage.arrow=Arrow
+whathitme.damage.thrown=Thrown Projectile
+whathitme.damage.indirectMagic=Magic
+whathitme.damage.thorns=Thorns
+whathitme.damage.explosion=Explosion
+whathitme.damage.explosion.player=Explosion
+whathitme.damage.fireball=Fireball
+whathitme.damage.sweeping=Sweeping Attack
+whathitme.damage.unknown=Unknown
+
+whathitme.hint.fall=Feather Falling boots, a water bucket or slow falling stop most fall damage.
+whathitme.hint.elytra=Fly in straight lines and slow down before walls: elytra crashes ignore armor.
+whathitme.hint.drown=Respiration, Water Breathing potions or a door / air pocket keep you breathing.
+whathitme.hint.fire=Fire Resistance potions make you immune; Fire Protection reduces it. Jump into water to stop burning.
+whathitme.hint.void=Nothing protects from the void. Build railings and keep an Ender Pearl ready.
+whathitme.hint.starve=Keep food in your hotbar: starvation ignores armor.
+whathitme.hint.suffocation=Do not stand where blocks or gravel can fall on your head.
+whathitme.hint.cactus=Keep a block of space around cacti.
+whathitme.hint.wither=Wither ignores armor. Drink milk to remove it, or raise your max health.
+whathitme.hint.magic=Magic ignores armor. Drink milk against poison; Protection and Resistance still help.
+whathitme.hint.lightning=Stay away from tall open spots during thunderstorms; use lightning rods from mods if you have them.
+whathitme.hint.falling_block=Look up before mining: a helmet reduces falling block damage.
+whathitme.hint.dragon_breath=Move out of the purple cloud and drink a Regeneration potion.
+whathitme.hint.thorns=Thorns enchantments hurt back when you hit the wearer.
+whathitme.hint.absolute=This damage ignores armor AND resistance. Only more max health or avoiding it helps.
+whathitme.hint.explosion=Blast Protection reduces explosions a lot. Keep your distance from creepers and TNT.
+whathitme.hint.bypasses_armor=Armor does not help against this. Raise your max health or look for a resistance against this damage type.
+whathitme.hint.projectile=Block with a shield or use Projectile Protection; take cover from archers.
+whathitme.hint.invisible=The attacker was invisible. Look for particles, or use Night Vision and light the area.
+whathitme.hint.player=Another player did this. Better armor, a shield and a Golden Apple help in PvP.
+whathitme.hint.melee=Better armor and the Protection enchantment reduce melee damage. A shield blocks it entirely.
+whathitme.hint.generic=Better armor and the Protection enchantment reduce most damage.
