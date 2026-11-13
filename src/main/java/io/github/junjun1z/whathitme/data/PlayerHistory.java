@@ -69,6 +69,27 @@ public final class PlayerHistory {
             ring[(head - 1 + ring.length) % ring.length] = m;
             return m;
         }
+        // interleaved damage (poison ticks between mob hits): merge with one of the last few lines and move it to the end
+        if (mergeWindowMs > 0 && size > 1) {
+            int look = Math.min(size, 6);
+            for (int i = 2; i <= look; i++) {
+                int idx = (head - i + ring.length * 2) % ring.length;
+                DamageRecord old = ring[idx];
+                if (old == null) break;
+                if (r.time - old.time > mergeWindowMs) break;
+                if (old.sameSource(r) && !old.has(DamageRecord.KILLING | DamageRecord.TOTEM | DamageRecord.HEAVY)) {
+                    // shift the newer records back by one and put the merged record last
+                    for (int j = i; j > 1; j--) {
+                        int to = (head - j + ring.length * 2) % ring.length;
+                        int from = (head - j + 1 + ring.length * 2) % ring.length;
+                        ring[to] = ring[from];
+                    }
+                    DamageRecord m = old.merge(r);
+                    ring[(head - 1 + ring.length) % ring.length] = m;
+                    return m;
+                }
+            }
+        }
         push(r);
         return r;
     }
