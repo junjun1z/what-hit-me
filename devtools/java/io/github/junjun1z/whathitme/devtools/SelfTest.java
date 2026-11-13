@@ -102,6 +102,13 @@ public final class SelfTest {
         steps.addLast(s);
     }
 
+    /** Stops the plan (the steps after the current one are dropped) */
+    void abort(String why) {
+        ok("aborted: " + why, false, null);
+        steps.clear();
+        steps.addLast(() -> true);
+    }
+
     void act(Runnable r) {
         then(() -> {
             r.run();
@@ -227,6 +234,13 @@ public final class SelfTest {
         return sb.toString();
     }
 
+    /** Full chat lines (not wrapped) containing the text */
+    static int countLines(String s) {
+        int n = 0;
+        for (ChatLine l : chatLines()) if (l.getChatComponent().getUnformattedText().contains(s)) n++;
+        return n;
+    }
+
     static boolean chatHas(String s) {
         return chatText().contains(s);
     }
@@ -287,8 +301,16 @@ public final class SelfTest {
     // ------------------------------------------------------------------ plans
 
     private void plan() {
+        if (mode.equals("mp-two")) {
+            new MultiplayerPlan(this).planTwo();
+            return;
+        }
         if (mode.startsWith("mp")) {
             new MultiplayerPlan(this).plan(mode.equals("mp-mod"));
+            return;
+        }
+        if (mode.equals("explore") || mode.equals("explore2")) {
+            new ExplorePlan(this).plan(mode.equals("explore2"));
             return;
         }
         if (mode.equals("pack")) {
@@ -473,6 +495,24 @@ public final class SelfTest {
             return true;
         });
         waitFor("/whm inspect <self> => Death Recap of", () -> chatHas("Death Recap of"), 60);
+        sleep(5);
+        check("inspect output has no [Copy ID] / [Mute]", () -> chatHas("Damage History of") && !chatHas("[Copy ID]") && !chatHas("[Mute]"), (java.util.function.Supplier<?>) SelfTest::chatText);
+        clearChat();
+        then(() -> {
+            command("/whm server inspect " + mc().player.getName());
+            return true;
+        });
+        waitFor("/whm server inspect <self>", () -> chatHas("Damage History of"), 60);
+        sleep(5);
+        check("server inspect output has no [Copy ID] / [Mute]", () -> !chatHas("[Copy ID]") && !chatHas("[Mute]"), (java.util.function.Supplier<?>) SelfTest::chatText);
+        cmd("/whm config chatHistoryLines 3", "Saved: chatHistoryLines = 3", 40);
+        cmd("/whm server history", "Damage History", 60);
+        sleep(5);
+        check("server /whm history respects chatHistoryLines (single player)", () -> countLines("[Copy ID]") == 3, (java.util.function.Supplier<?>) () -> "lines=" + countLines("[Copy ID]"));
+        cmd("/whm history", "Damage History", 60);
+        sleep(5);
+        check("client /whm history respects chatHistoryLines", () -> countLines("[Copy ID]") == 3, (java.util.function.Supplier<?>) () -> "lines=" + countLines("[Copy ID]"));
+        cmd("/whm config chatHistoryLines 15", "Saved: chatHistoryLines = 15", 40);
         cmd("/whm dump", "hintMap / renameMap template", 80);
         check("dump csv written", () -> new File(gameDir, "whathitme_dump.csv").length() > 1000, null);
         check("hint template lists vanilla + mobs", () -> {

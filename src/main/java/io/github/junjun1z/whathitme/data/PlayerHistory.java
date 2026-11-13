@@ -113,11 +113,15 @@ public final class PlayerHistory {
         return out;
     }
 
-    /** Records not older than {@code windowMs} before {@code now}, oldest first, at most {@code max} */
+    /**
+     * Records of the current life (after the last death) not older than {@code windowMs} before {@code now}, oldest
+     * first, at most {@code max}
+     */
     public List<DamageRecord> recent(long now, long windowMs, int max) {
         List<DamageRecord> all = records();
         List<DamageRecord> out = new ArrayList<>();
-        for (DamageRecord r : all) if (now - r.time <= windowMs) out.add(r);
+        long since = lastDeath == null ? Long.MIN_VALUE : lastDeath.time;
+        for (DamageRecord r : all) if (now - r.time <= windowMs && r.time > since) out.add(r);
         return out.size() > max ? new ArrayList<>(out.subList(out.size() - max, out.size())) : out;
     }
 

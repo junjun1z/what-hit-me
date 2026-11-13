@@ -36,6 +36,7 @@ public final class DeathPanel {
 
     private int scroll;
     private boolean dragging;
+    private long lastDragEvent;
     private int dragDX;
     private int dragDY;
     private long openedAt;
@@ -137,18 +138,18 @@ public final class DeathPanel {
         }
 
         // ---- position
-        sc = cfg.scale;
+        if (!dragging) sc = fitScale(cfg, gui, h);
         int pw = Math.round(W * sc);
         ph = Math.round(h * sc);
         int[] base = base(cfg.anchorPoint, gui.width, gui.height, pw, ph);
         baseX = base[0];
         baseY = base[1];
         if (dragging) {
-            if (!Mouse.isButtonDown(0)) {
+            // movement comes from the mouse events; this only ends a drag whose release was lost (e.g. outside the window)
+            if (Mouse.isButtonDown(0)) {
+                lastDragEvent = System.currentTimeMillis();
+            } else if (System.currentTimeMillis() - lastDragEvent > 1500) {
                 endDrag();
-            } else {
-                dragX = mouseX - dragDX;
-                dragY = mouseY - dragDY;
             }
         }
         int x = dragging ? dragX : baseX + cfg.offsetX;
@@ -243,6 +244,33 @@ public final class DeathPanel {
         return sb.toString();
     }
 
+    /**
+     * The configured scale, made smaller when the panel would cover the Respawn / Title screen buttons (large GUI scale,
+     * small window) or not fit on the screen. Never below one screen pixel per font pixel.
+     */
+    private static float fitScale(WhmConfig.Client cfg, GuiScreen gui, int h) {
+        float s = cfg.scale;
+        int factor = new net.minecraft.client.gui.ScaledResolution(mc()).getScaleFactor();
+        float floor = Math.max(0.25f, Math.min(s, 1f / Math.max(1, factor)));
+        int pw = Math.round(W * s);
+        int ph = Math.round(h * s);
+        int[] b = base(cfg.anchorPoint, gui.width, gui.height, pw, ph);
+        int x0 = Math.max(0, Math.min(gui.width - pw, b[0] + cfg.offsetX));
+        int left = gui.width / 2 - 102; // the death screen buttons are 200 wide, centered
+        int right = gui.width / 2 + 102;
+        if (x0 < left && x0 + pw > left) {
+            s = Math.min(s, (left - x0) / (float) W);
+        } else if (x0 + pw > right && x0 > left && x0 < right && "_RIGHT".equals(anchorSide(cfg.anchorPoint))) {
+            s = Math.min(s, (x0 + pw - right) / (float) W);
+        }
+        if (h * s > gui.height - 4) s = (gui.height - 4) / (float) h;
+        return Math.max(floor, s);
+    }
+
+    private static String anchorSide(String anchor) {
+        return anchor != null && anchor.endsWith("_RIGHT") ? "_RIGHT" : "_LEFT";
+    }
+
     private static boolean hover(int lx, int ly, int x0, int y0, int x1, int y1) {
         return lx >= x0 && lx < x1 && ly >= y0 && ly < y1;
     }
@@ -282,6 +310,12 @@ public final class DeathPanel {
         int button = Mouse.getEventButton();
         boolean down = Mouse.getEventButtonState();
         int wheel = Mouse.getEventDWheel();
+        if (dragging && button == -1) {
+            lastDragEvent = System.currentTimeMillis();
+            dragX = mx - dragDX;
+            dragY = my - dragDY;
+            return true;
+        }
         if (button == 0 && !down && dragging) {
             px = Math.max(0, Math.min(gui.width - Math.round(W * sc), mx - dragDX));
             py = Math.max(0, Math.min(gui.height - ph, my - dragDY));
@@ -309,6 +343,7 @@ public final class DeathPanel {
             }
             if (ly < HEADER) {
                 dragging = true;
+                lastDragEvent = System.currentTimeMillis();
                 dragDX = mx - px;
                 dragDY = my - py;
                 dragX = px;

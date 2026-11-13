@@ -1,6 +1,17 @@
 # Changelog
 
-The release workflow publishes the section whose heading matches the pushed tag (for example `## [1.0.0]` for tag `1.0.0`) as the release notes.
+The release workflow publishes the section whose heading matches the pushed tag (for example `## [1.0.1]
+
+Bug fixes found by a full in-game test pass (single player, dedicated server with and without the mod, a client without the mod, two players, a 21-mod pack).
+
+- Death screen panel: dragging the header could stop at once on some setups; the drag now follows the mouse events and the position is saved when the button is released.
+- Death screen panel: at large GUI scales (3 / Auto) or in small windows it no longer covers the Respawn / Title screen buttons; it shrinks to fit (never below one screen pixel per font pixel).
+- Death recap, respawn summary and "Last Xs Total" only count damage taken since the previous death. Before, hits and killing blows from an earlier life within the last 30 seconds were included after quick repeated deaths.
+- The first hit after respawning was wrongly marked "Ignores I-Frames" when the previous death was less than half a second earlier.
+- `/whm inspect` (client and server side) no longer shows `[Copy ID]` / `[Mute]` buttons in the inspected player's history.
+- Client fallback: a death that follows another one within 1.5 seconds no longer reuses the previous killing blow.
+
+## [1.0.0]` for tag `1.0.0`) as the release notes.
 
 ## [1.0.0]
 

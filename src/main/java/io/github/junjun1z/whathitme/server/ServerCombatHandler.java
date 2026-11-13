@@ -210,6 +210,7 @@ public final class ServerCombatHandler {
         Snapshot s = new Snapshot(Snapshot.DEATH, now, recs, key, msg);
         h.setLastDeath(s);
         h.summaryPending = true;
+        h.lastHurtTick = Long.MIN_VALUE; // the respawned player starts without invulnerability frames
         for (int i = pending.size() - 1; i >= 0; i--) if (pending.get(i).id.equals(uid)) pending.remove(i);
         if (DamageTracker.SERVER.isModded(uid)) WhmNetwork.channel.sendTo(new PacketRecap(PacketRecap.DEATH, "", 0, 0, s), mp);
     }

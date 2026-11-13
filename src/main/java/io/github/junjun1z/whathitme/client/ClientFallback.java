@@ -131,7 +131,7 @@ final class ClientFallback {
     private void onDeath(long now) {
         DamageRecord last = ClientState.FALLBACK.last();
         DamageRecord killing;
-        if (last != null && now - last.time <= 1500) {
+        if (last != null && now - last.time <= 1500 && !last.has(DamageRecord.KILLING)) {
             killing = last.withFlags(DamageRecord.KILLING);
             ClientState.FALLBACK.replace(last, killing);
         } else {

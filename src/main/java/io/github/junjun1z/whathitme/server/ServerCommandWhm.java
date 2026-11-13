@@ -161,9 +161,11 @@ public final class ServerCommandWhm extends CommandBase {
                 EntityPlayerMP t = server.getPlayerList().getPlayerByUsername(args[1]);
                 if (t == null) throw err(m, "whathitme.inspect.notfound", args[1]);
                 PlayerHistory th = DamageTracker.SERVER.get(t.getUniqueID());
+                // another player's records: no [Copy ID] / [Mute] buttons
+                RecapFormatter fi = new RecapFormatter(m, f.o.without(WhmConfig.Flag.ACTION_BUTTONS));
                 if (th.lastDeath() == null) sender.sendMessage(m.tr(TextFormatting.GRAY, "whathitme.inspect.nodeath", t.getName()));
-                else send(sender, f.fullRecap(th.lastDeath(), now, t.getName()));
-                send(sender, f.history(th.records(), now, WhmConfig.client != null ? WhmConfig.client.chatHistoryLines : 15, 0, false, t.getName()));
+                else send(sender, fi.fullRecap(th.lastDeath(), now, t.getName()));
+                send(sender, fi.history(th.records(), now, WhmConfig.client != null ? WhmConfig.client.chatHistoryLines : 15, 0, false, t.getName()));
                 break;
             }
             case "dump": {

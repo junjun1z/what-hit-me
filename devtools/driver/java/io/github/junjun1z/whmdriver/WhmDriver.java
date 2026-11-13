@@ -41,7 +41,14 @@ public class WhmDriver {
             System.out.println("WHMDRIVER: What Hit Me? is installed here, this test needs a client without it");
             return;
         }
-        plan();
+        String mode = "";
+        try {
+            mode = new String(Files.readAllBytes(new File(Loader.instance().getConfigDir(), "whmdriver.flag").toPath()), StandardCharsets.UTF_8).trim();
+        } catch (Exception ignored) {
+            // default plan
+        }
+        if (mode.equals("two")) planSecondPlayer();
+        else plan();
         MinecraftForge.EVENT_BUS.register(this);
     }
 
@@ -86,6 +93,41 @@ public class WhmDriver {
         log.add(s);
         System.out.println("WHMDRIVER " + s);
         if (!ok) fails++;
+    }
+
+    /** Second (non-op) player on a server with the mod, next to an op with the mod (two-player test) */
+    private void planSecondPlayer() {
+        steps.add(() -> mc().player != null && mc().getConnection() != null);
+        sleep(60);
+        say("/whm");
+        expect("second player: /whm history (English)", "Damage History", 60);
+        say("/whm inspect _junjun1z");
+        expect("second player: /whm inspect needs operator", "operator permission", 60);
+        say("/whm config showTimestamp false");
+        expect("second player: server config needs operator", "operator permission", 60);
+        steps.add(() -> {
+            autoRespawn = false;
+            return true;
+        });
+        final int[] wait = {3000};
+        steps.add(() -> mc().currentScreen instanceof GuiGameOver || --wait[0] <= 0);
+        sleep(40);
+        steps.add(() -> {
+            if (mc().currentScreen instanceof GuiGameOver) {
+                mc().player.respawnPlayer();
+                mc().displayGuiScreen(null);
+            }
+            return true;
+        });
+        expect("second player: killed by the op -> summary (English)", "Killing Blow", 200);
+        say("/whm ignore minecraft:outOfWorld");
+        expect("second player: personal ignore", "Now hiding minecraft:outOfWorld", 60);
+        say("/whm ignore minecraft:outOfWorld");
+        sleep(400); // stay online while the op inspects
+        steps.add(() -> {
+            ok("no raw translation keys in chat", !all().contains("whathitme."));
+            return true;
+        });
     }
 
     private void plan() {

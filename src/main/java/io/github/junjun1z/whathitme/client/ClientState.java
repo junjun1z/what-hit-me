@@ -154,7 +154,8 @@ public final class ClientState {
                 else print(new RecapFormatter(Msg.LOCAL, withoutActions(f.o)).fullRecap(s, now, msg.who));
                 break;
             case PacketRecap.INSPECT_HISTORY:
-                print(f.history(s == null ? new ArrayList<>() : s.records, now, WhmConfig.client.chatHistoryLines, 0, false, msg.who));
+                print(new RecapFormatter(Msg.LOCAL, withoutActions(f.o)).history(s == null ? new ArrayList<>() : s.records, now, WhmConfig.client.chatHistoryLines, 0, false,
+                    msg.who));
                 break;
             default:
                 break;
