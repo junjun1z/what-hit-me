@@ -277,7 +277,7 @@ public final class WhmConfig {
         void read() {
             super.read();
             anchorPoint = cfg.getString("anchorPoint", CAT_LAYOUT, "CENTER_LEFT", "Death screen panel anchor.", ANCHORS);
-            offsetX = cfg.getInt("offsetX", CAT_LAYOUT, 8, -4000, 4000, "Horizontal offset from the anchor (GUI pixels). Saved when you drag the panel.");
+            offsetX = cfg.getInt("offsetX", CAT_LAYOUT, 4, -4000, 4000, "Horizontal offset from the anchor (GUI pixels). Saved when you drag the panel.");
             offsetY = cfg.getInt("offsetY", CAT_LAYOUT, 0, -4000, 4000, "Vertical offset from the anchor (GUI pixels). Saved when you drag the panel.");
             scale = cfg.getFloat("scale", CAT_LAYOUT, 0.85f, 0.25f, 3f, "Panel scale.");
             backgroundOpacity = cfg.getFloat("backgroundOpacity", CAT_LAYOUT, 0.75f, 0f, 1f, "Panel background opacity (0.0 - 1.0).");
@@ -288,7 +288,7 @@ public final class WhmConfig {
         }
 
         public synchronized void saveLayout(int x, int y, boolean min) {
-            cfg.get(CAT_LAYOUT, "offsetX", 8).set(x);
+            cfg.get(CAT_LAYOUT, "offsetX", 4).set(x);
             cfg.get(CAT_LAYOUT, "offsetY", 0).set(y);
             cfg.get(CAT_LAYOUT, "minimized", false).set(min);
             cfg.save();

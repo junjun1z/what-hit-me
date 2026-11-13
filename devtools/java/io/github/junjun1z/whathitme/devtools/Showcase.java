@@ -122,6 +122,7 @@ public final class Showcase {
         e.renderYawOffset = 180f;
         e.setNoAI(true);
         e.enablePersistence();
+        if (e.getItemStackFromSlot(EntityEquipmentSlot.HEAD).isEmpty()) e.setItemStackToSlot(EntityEquipmentSlot.HEAD, new ItemStack(Items.CHAINMAIL_HELMET));
         p.world.spawnEntity(e);
         return e;
     }
@@ -197,7 +198,7 @@ public final class Showcase {
             for (Entity e : p.world.loadedEntityList) if (e instanceof EntityLiving) e.setDead();
             spot = flatSpot(p);
             p.world.setSpawnPoint(spot);
-            p.connection.setPlayerLocation(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5, 0f, 12f);
+            p.connection.setPlayerLocation(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5, 0f, 0f);
         });
         sleep(60);
         srv(p -> {
@@ -246,7 +247,7 @@ public final class Showcase {
         until(() -> mc.player.getHealth() > 0 && mc.currentScreen == null, 200);
         srv(p -> {
             for (Entity e : p.world.loadedEntityList) if (e instanceof EntityLiving) e.setDead();
-            if (spot != null) p.connection.setPlayerLocation(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5, 0f, 12f);
+            if (spot != null) p.connection.setPlayerLocation(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5, 0f, 0f);
         });
         sleep(40);
         shot("respawn-chat");
@@ -315,9 +316,9 @@ public final class Showcase {
         });
         sleep(20);
         hit(p -> DamageSource.causeMobDamage((EntityZombie) mobs[0]), 40f);
-        sleep(8);
+        sleep(26);
         shot("totem");
-        sleep(14);
+        sleep(10);
         shot("totem-late");
         act(() -> mc.shutdown());
     }

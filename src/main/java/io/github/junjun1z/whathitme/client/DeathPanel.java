@@ -29,7 +29,7 @@ public final class DeathPanel {
 
     public static final DeathPanel INSTANCE = new DeathPanel();
 
-    private static final int W = 260;
+    private static final int W = 250;
     private static final int HEADER = 14;
     private static final int LINE = 10;
     private static final int PAD = 4;

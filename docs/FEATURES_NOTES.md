@@ -81,7 +81,7 @@ enableDeathScreenPanel, enableRespawnChatSummary, enableTotemChatAlert, enableHe
 | key | default | meaning |
 |---|---|---|
 | anchorPoint | CENTER_LEFT | TOP_LEFT, TOP_RIGHT, BOTTOM_LEFT, BOTTOM_RIGHT, CENTER_LEFT, CENTER_RIGHT |
-| offsetX / offsetY | 8 / 0 | offset from the anchor (saved by dragging) |
+| offsetX / offsetY | 4 / 0 | offset from the anchor (saved by dragging) |
 | scale | 0.85 | panel scale |
 | backgroundOpacity | 0.75 | 0.0 - 1.0 |
 | maxVisibleLines | 8 | lines before scrolling |
