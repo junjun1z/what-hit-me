@@ -99,3 +99,9 @@ enableDeathScreenPanel, enableRespawnChatSummary, enableTotemChatAlert, enableHe
 - No chat on first join, every element toggleable, no client install required.
 - Performance: every damage handler returns on its first line for non-players (mob fights cost nothing); fake players are ignored; history = fixed-size ring buffer of immutable records holding only primitives and Strings (no Entity references); a player's buffer is dropped on logout; no per-tick work on the server except an empty-list check (lethal/heavy hits are checked at the end of that tick only); the client fallback reads a few floats per tick and scans entities only when health drops; packets only on death / totem / heavy hit / commands.
 - License MIT: free to include in modpacks.
+
+## Build / test (for README "Building" section)
+
+- `./gradlew build` (JDK 25 runs Gradle; the Java 8 toolchain is downloaded automatically). Version: `-Pmod_version=X.Y.Z` or env `VERSION`, default 1.0.0. Output: `build/libs/whathitme-<version>.jar` (reobfuscated, the only jar there).
+- Development self-test: `./gradlew build -Pselftest` adds `devtools/` (never in release jars). Put the jar in a 1.12.2 instance and create `config/whathitme/selftest.flag` containing `sp` (single player, 71 checks), `mp-mod` / `mp-nomod` (join a server with `--server`), `pack` (modded mobs) or `showcase` (documentation screenshots). Result: `whathitme_selftest_result.txt`. `build/devlibs/whmdriver-dev.jar` drives a client without the mod (`config/whmdriver.flag`).
+- Smart merge also joins interleaved damage (e.g. poison ticks between mob hits) with one of the last 5 lines.
