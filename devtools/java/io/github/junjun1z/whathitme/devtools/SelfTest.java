@@ -70,6 +70,8 @@ public final class SelfTest {
     final String mode;
     final File gameDir;
     private boolean finished;
+    /** Respawn at once when the player dies outside of a planned death (multiplayer runs) */
+    boolean autoRespawn;
     private int ticks;
 
     private SelfTest(String mode) {
@@ -155,6 +157,11 @@ public final class SelfTest {
     public void onTick(TickEvent.ClientTickEvent e) {
         if (e.phase != TickEvent.Phase.END || finished) return;
         ticks++;
+        if (autoRespawn && mc().currentScreen instanceof GuiGameOver && mc().player != null) {
+            info("unplanned death - respawning");
+            mc().player.respawnPlayer();
+            mc().displayGuiScreen(null);
+        }
         if (ticks > 20 * 60 * 6) {
             ok("global timeout", false, null);
             steps.clear();

@@ -29,6 +29,7 @@ final class MultiplayerPlan {
     void plan(boolean serverMod) {
         t.waitFor("connected to the server", () -> SelfTest.mc().player != null && SelfTest.mc().world != null && SelfTest.mc().getConnection() != null, 2400);
         t.sleep(80);
+        t.act(() -> t.autoRespawn = true);
         t.check("server has mod = " + serverMod, () -> ClientState.serverHasMod == serverMod, (java.util.function.Supplier<?>) () -> "serverHasMod=" + ClientState.serverHasMod);
         say("/gamemode survival");
         say("/difficulty normal");
@@ -53,14 +54,15 @@ final class MultiplayerPlan {
         // poison
         say("/effect @p poison 3 1");
         t.sleep(80);
-        // mob with a sword
+        // mob with a sword (resistance so the mobs cannot kill the player yet)
+        say("/effect @p resistance 60 3");
         say("/summon zombie ~2 ~ ~ {HandItems:[{id:\"minecraft:iron_sword\",Count:1b},{}]}");
-        t.sleep(160);
+        t.sleep(50);
         say("/kill @e[type=zombie]");
         say("/effect @p instant_health 1 10");
         // arrow with owner
         say("/summon skeleton ~6 ~ ~ {HandItems:[{id:\"minecraft:bow\",Count:1b},{}]}");
-        t.sleep(200);
+        t.sleep(120);
         say("/kill @e[type=skeleton]");
         say("/effect @p instant_health 1 10");
         // explosion
@@ -78,6 +80,9 @@ final class MultiplayerPlan {
         t.cmd("/whm effects", "Active Effects", 60);
         t.cmd("/whm search fall", "Search: fall", 60);
         // totem
+        say("/effect @p clear");
+        say("/effect @p instant_health 1 10");
+        t.sleep(10);
         t.clearChat();
         say("/replaceitem entity @p slot.weapon.offhand minecraft:totem_of_undying");
         t.sleep(10);
@@ -86,6 +91,7 @@ final class MultiplayerPlan {
         t.sleep(20);
         say("/effect @p clear");
         // death
+        t.act(() -> t.autoRespawn = false);
         t.clearChat();
         say("/kill");
         t.waitFor("death screen", () -> SelfTest.mc().currentScreen instanceof GuiGameOver, 100);

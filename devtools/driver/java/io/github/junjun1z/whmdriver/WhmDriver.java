@@ -32,6 +32,7 @@ public class WhmDriver {
     private int fails;
     private boolean done;
     private int ticks;
+    private boolean autoRespawn = true;
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent e) {
@@ -98,8 +99,9 @@ public class WhmDriver {
         say("/effect @p instant_health 1 10");
         say("/tp @p ~ ~12 ~");
         sleep(80);
+        say("/effect @p resistance 30 3");
         say("/summon zombie ~2 ~ ~ {HandItems:[{id:\"minecraft:iron_sword\",Count:1b},{}]}");
-        sleep(160);
+        sleep(50);
         say("/kill @e[type=zombie]");
         say("/effect @p instant_health 1 10");
         say("/whm");
@@ -117,11 +119,17 @@ public class WhmDriver {
         expect("/whm help", "What Hit Me? commands", 60);
         say("/whm last");
         expect("/whm last before dying", "No death recorded", 60);
+        say("/effect @p clear");
+        say("/effect @p instant_health 1 10");
         say("/replaceitem entity @p slot.weapon.offhand minecraft:totem_of_undying");
         sleep(10);
         say("/effect @p instant_damage 1 5");
         expect("totem alert (English)", "Totem of Undying saved you", 100);
         say("/effect @p clear");
+        steps.add(() -> {
+            autoRespawn = false;
+            return true;
+        });
         say("/kill");
         steps.add(() -> mc().currentScreen instanceof GuiGameOver);
         sleep(40);
@@ -155,6 +163,11 @@ public class WhmDriver {
     @SubscribeEvent
     public void onTick(TickEvent.ClientTickEvent e) {
         if (e.phase != TickEvent.Phase.END || done) return;
+        if (autoRespawn && mc().currentScreen instanceof GuiGameOver && mc().player != null) {
+            log.add("[INFO] unplanned death - respawning");
+            mc().player.respawnPlayer();
+            mc().displayGuiScreen(null);
+        }
         if (++ticks > 20 * 60 * 5) {
             ok("global timeout", false);
             steps.clear();
