@@ -89,7 +89,7 @@ public final class DeathPanel {
         return l;
     }
 
-    void render(GuiScreen gui, int mouseX, int mouseY) {
+    public void render(GuiScreen gui, int mouseX, int mouseY) {
         RecapFormatter f = ClientState.formatter();
         if (!f.o.on(Flag.DEATH_SCREEN_PANEL)) return;
         WhmConfig.Client cfg = WhmConfig.client;
@@ -112,8 +112,11 @@ public final class DeathPanel {
                     + (f.o.on(Flag.DAMAGE_AMOUNT) ? " [" + I18n.format("whathitme.hearts", RecapFormatter.hearts(key.taken())) + "]" : "")
                 : TextFormatting.DARK_RED + "☠ " + TextFormatting.RED + I18n.format("whathitme.unknown");
             top.addAll(wrap(fr, kill, inner, 2));
-            ITextComponent dm = f.deathMessage(s);
-            if (dm != null) for (String l : wrap(fr, TextFormatting.GRAY + dm.getUnformattedText(), inner, 2)) top.add(TextFormatting.GRAY + l);
+            // the vanilla death message is already shown above the buttons
+            if (key == null) {
+                ITextComponent dm = f.deathMessage(s);
+                if (dm != null) for (String l : wrap(fr, TextFormatting.GRAY + dm.getUnformattedText(), inner, 2)) top.add(TextFormatting.GRAY + l);
+            }
             if (key != null && f.o.on(Flag.DAMAGE_PROPERTIES) && (key.flags & DamageRecord.PROPERTY_MASK) != 0) {
                 top.addAll(wrap(fr, TextFormatting.DARK_AQUA + f.properties(key.flags).getUnformattedText(), inner, 2));
             }

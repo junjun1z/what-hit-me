@@ -1,0 +1,213 @@
+whathitme.hearts=%s ❤
+whathitme.unknown=Unbekannt
+whathitme.command.usage=/whm [history|last|effects|togglechat|ignore|rename|sethint|config|search|inspect|dump|reload|snapshot|help]
+
+whathitme.summary.header=========== [ What Hit Me? ] ==========
+whathitme.summary.footer======================================
+whathitme.summary.killing=☠ Todesstoß: %s
+whathitme.summary.properties=⚠ Eigenschaften: %s
+whathitme.summary.total=Σ Summe der letzten %s s: %s erlitten (%s Treffer)
+whathitme.summary.tip=✎ Tipp: %s
+whathitme.summary.recap=➜ %s (%s)
+whathitme.summary.recap.link=[Hier klicken für die vollständige Todesanalyse]
+whathitme.summary.toggle=✖ Um diese Nachricht auszuschalten, gib %s ein
+
+whathitme.prop.bypasses_armor=Ignoriert Rüstung
+whathitme.prop.absolute=Ignoriert Resistenz
+whathitme.prop.magic=Magie
+whathitme.prop.fire=Feuer
+whathitme.prop.explosion=Explosion
+whathitme.prop.projectile=Geschoss
+whathitme.prop.shield=Durch den Schild
+whathitme.prop.iframes=Ignoriert Unverwundbarkeit
+whathitme.prop.creative=Wirkt im Kreativmodus
+whathitme.prop.none=Keine
+
+whathitme.badge.invisible=[Unsichtbar]
+whathitme.badge.totem=[Totem]
+whathitme.badge.heavy=[Schwerer Treffer]
+whathitme.badge.estimated=[Client-Schätzung]
+
+whathitme.line.via=durch %s
+whathitme.line.raw=roh %s
+whathitme.line.mitigated=-%s%%
+whathitme.line.absorbed=absorbiert %s
+whathitme.line.hits=x%s Treffer
+whathitme.line.owner=Besitzer: %s
+
+whathitme.hover.id=ID: %s
+whathitme.hover.damage=Schaden: %s (%s LP)
+whathitme.hover.raw=Vor der Rüstung: %s
+whathitme.hover.mitigated=Reduziert: %s%%
+whathitme.hover.absorbed=Verbrauchte Absorption: %s
+whathitme.hover.health=Leben danach: %s / %s ❤
+whathitme.hover.hits=Zusammengefasste Treffer: %s
+whathitme.hover.attacker=Angreifer: %s
+whathitme.hover.direct=Geschoss / direkte Quelle: %s
+whathitme.hover.weapon=Waffe: %s
+whathitme.hover.distance=Entfernung: %s m
+whathitme.hover.owner=Besitzer: %s
+whathitme.hover.properties=Eigenschaften: %s
+whathitme.hover.mod=Mod: %s
+whathitme.hover.tip=Tipp: %s
+whathitme.hover.estimated=Von deinem Client geschätzt (der Server hat What Hit Me? nicht)
+
+whathitme.button.copyid=[ID kopieren]
+whathitme.button.copyid.hover=%s in die Zwischenablage kopieren
+whathitme.button.copyid.suggest=%s in das Chatfeld einfügen
+whathitme.button.mute=[Ausblenden]
+whathitme.button.mute.hover=%s ab jetzt ausblenden (erneut klicken zum Einblenden)
+whathitme.button.copyrecap=[Analyse kopieren]
+whathitme.button.copyrecap.hover=Die gesamte Analyse als reinen Text kopieren
+whathitme.button.view=[Ansehen]
+whathitme.button.details=[Details]
+whathitme.button.run=Führt %s aus
+
+whathitme.history.header=Schadensverlauf (%s)
+whathitme.history.empty=Noch kein Schaden aufgezeichnet.
+whathitme.history.snapshots=%s gespeicherte Momentaufnahme(n) (Totem / schwerer Treffer).
+whathitme.history.estimated=[Client-Schätzung] Der Server hat What Hit Me? nicht, daher schätzt dein Client diese Einträge.
+
+whathitme.last.header=Todesanalyse (vor %s)
+whathitme.last.none=In dieser Sitzung bist du noch nicht gestorben.
+
+whathitme.snapshot.header=%s (vor %s)
+whathitme.snapshot.none=Noch keine Momentaufnahme gespeichert.
+whathitme.snapshot.position=Momentaufnahme %s von %s. Mit /whm snapshot <Nummer> siehst du die anderen.
+whathitme.snapshot.trigger=⚠ Auslöser: %s
+whathitme.snapshot.kind.death=Tod
+whathitme.snapshot.kind.totem=Totem der Unsterblichkeit
+whathitme.snapshot.kind.heavy=Schwerer Treffer
+whathitme.snapshot.kind.prevented=Tod verhindert
+
+whathitme.alert.totem=⚠ [What Hit Me?] Ein Totem der Unsterblichkeit hat dich gerettet! Letzter Treffer: %s %s
+whathitme.alert.heavy=⚠ [What Hit Me?] Schwerer Treffer: %s hat auf einmal %s verursacht.
+whathitme.alert.prevented=⚠ [What Hit Me?] Tödlicher Schaden wurde verhindert! Letzter Treffer: %s %s
+
+whathitme.effects.header=Aktive Effekte (%s)
+whathitme.effects.none=Keine aktiven Effekte.
+whathitme.effects.milk.yes=[Milch ✔]
+whathitme.effects.milk.no=[Milch ✖]
+whathitme.effects.bad=Schädlich
+whathitme.effects.good=Nützlich
+whathitme.effects.curative=Entfernt durch: %s
+whathitme.effects.curative.none=nichts (Milch hilft nicht)
+whathitme.effects.estimated=[Client-Schätzung] Vom Client gelesen: Heilgegenstände können vom Server abweichen.
+
+whathitme.search.header=Suche: %s (%s Ergebnisse)
+whathitme.search.none=Nichts gefunden. Versuche #fire, #magic, #bypasses_armor, #explosion, #projectile, #absolute oder @modid.
+whathitme.search.more=...und %s weitere. Schränke die Suche ein, um sie zu sehen.
+whathitme.search.type.damage=Schaden
+whathitme.search.type.mob=Mob
+whathitme.search.type.effect=Effekt
+whathitme.search.seen=%s× gesehen
+whathitme.search.muted=(ausgeblendet)
+
+whathitme.togglechat.on=Chat-Zusammenfassung nach dem Wiederbeleben: AN
+whathitme.togglechat.off=Chat-Zusammenfassung nach dem Wiederbeleben: AUS (/whm togglechat erneut eingeben, um sie wieder einzuschalten)
+whathitme.ignore.added=%s wird jetzt ausgeblendet.
+whathitme.ignore.removed=%s wird wieder angezeigt.
+whathitme.rename.set=%s wird jetzt als „%s“ angezeigt.
+whathitme.rename.cleared=Eigener Name von %s entfernt.
+whathitme.sethint.set=Tipp für %s: %s
+whathitme.sethint.cleared=Eigener Tipp von %s entfernt.
+whathitme.config.keys=Einstellungen: %s
+whathitme.config.value=%s = %s
+whathitme.config.set=Gespeichert: %s = %s
+whathitme.config.unknown=Unbekannte Einstellung: %s
+whathitme.config.invalid=Ungültiger Wert für %s: %s
+whathitme.reload.done=Konfiguration von What Hit Me? neu geladen.
+whathitme.reload.server=Serverkonfiguration von What Hit Me? neu geladen.
+whathitme.dump.done=%s Einträge nach %s geschrieben
+whathitme.dump.template=hintMap- / renameMap-Vorlage mit %s Schadens-IDs nach %s geschrieben
+whathitme.dump.failed=Der Dump konnte nicht geschrieben werden: %s
+whathitme.copy.done=In die Zwischenablage kopiert: %s
+whathitme.copyrecap.done=Todesanalyse in die Zwischenablage kopiert.
+
+whathitme.inspect.death=Todesanalyse von %s (vor %s)
+whathitme.inspect.history=Schadensverlauf von %s (%s)
+whathitme.inspect.notfound=Spieler nicht gefunden (muss online sein): %s
+whathitme.inspect.nodeath=%s ist seit dem Einloggen nicht gestorben.
+
+whathitme.error.unknown=Unbekannter Unterbefehl: %s
+whathitme.error.usage=Verwendung: %s
+whathitme.error.noperm=Dafür brauchst du Operator-Rechte (Stufe 2).
+whathitme.error.player=Nur Spieler können das verwenden.
+whathitme.error.needserver=Dafür muss What Hit Me? auf dem Server installiert sein.
+
+whathitme.help.header=Befehle von What Hit Me? (Tab vervollständigt alles)
+whathitme.help.history=Zuletzt erlittener Schaden (auch /whm)
+whathitme.help.last=Vollständige Analyse deines letzten Todes
+whathitme.help.effects=Aktive Effekte, ihre Mod und ob Milch sie entfernt
+whathitme.help.togglechat=Chat-Zusammenfassung nach dem Wiederbeleben an/aus
+whathitme.help.ignore=<id> Schadens-ID aus- / einblenden
+whathitme.help.rename=<id> <Name...> Eigener Anzeigename (leer = entfernen)
+whathitme.help.sethint=<id> <Tipp...> Eigener Tipp (leer = entfernen)
+whathitme.help.config=<key> [value] Einstellung anzeigen oder ändern
+whathitme.help.search=<Text|#Tag|@modid> Schadensarten, Mobs und Effekte suchen
+whathitme.help.inspect=<player> Letzter Tod und Verlauf eines Spielers (Operatoren)
+whathitme.help.dump=whathitme_dump.csv und eine hintMap- / renameMap-Vorlage schreiben
+whathitme.help.reload=Konfigurationsdateien neu laden
+whathitme.help.snapshot=[Nummer] Gespeicherte Momentaufnahmen (Totem / schwerer Treffer)
+whathitme.help.server=<Unterbefehl> Unterbefehl auf dem Server ausführen (serverweite Einstellungen)
+
+whathitme.panel.title=What Hit Me?
+whathitme.panel.copy=Kopieren
+whathitme.panel.waiting=Warte auf den Server...
+whathitme.panel.nodata=Kein Schaden aufgezeichnet.
+whathitme.panel.estimated=von deinem Client geschätzt
+
+whathitme.damage.inFire=Feuer
+whathitme.damage.lightningBolt=Blitz
+whathitme.damage.onFire=Verbrennung
+whathitme.damage.lava=Lava
+whathitme.damage.hotFloor=Magmablock
+whathitme.damage.inWall=Ersticken
+whathitme.damage.cramming=Gedränge
+whathitme.damage.drown=Ertrinken
+whathitme.damage.starve=Verhungern
+whathitme.damage.cactus=Kaktus
+whathitme.damage.fall=Fallschaden
+whathitme.damage.flyIntoWall=Kinetische Energie (Elytren)
+whathitme.damage.outOfWorld=Leere
+whathitme.damage.generic=Allgemeiner Schaden
+whathitme.damage.magic=Magie / Gift
+whathitme.damage.wither=Ausdörrung
+whathitme.damage.anvil=Fallender Amboss
+whathitme.damage.fallingBlock=Fallender Block
+whathitme.damage.dragonBreath=Drachenatem
+whathitme.damage.fireworks=Feuerwerk
+whathitme.damage.mob=Mob-Angriff
+whathitme.damage.player=Spielerangriff
+whathitme.damage.arrow=Pfeil
+whathitme.damage.thrown=Wurfgeschoss
+whathitme.damage.indirectMagic=Magie
+whathitme.damage.thorns=Dornen
+whathitme.damage.explosion=Explosion
+whathitme.damage.explosion.player=Explosion
+whathitme.damage.fireball=Feuerball
+whathitme.damage.sweeping=Schwungangriff
+whathitme.damage.unknown=Unbekannt
+
+whathitme.hint.fall=Stiefel mit Federfall, ein Wassereimer oder Sanfter Fall verhindern den meisten Fallschaden.
+whathitme.hint.elytra=Flieg geradeaus und bremse vor Wänden: Elytren-Aufpralle ignorieren Rüstung.
+whathitme.hint.drown=Atmung, Tränke der Unterwasseratmung oder eine Tür / Lufttasche halten dich am Atmen.
+whathitme.hint.fire=Tränke der Feuerresistenz machen dich immun, Feuerschutz verringert den Schaden. Spring ins Wasser, um das Brennen zu stoppen.
+whathitme.hint.void=Nichts schützt vor der Leere. Baue Geländer und halte eine Enderperle bereit.
+whathitme.hint.starve=Behalte Essen in der Schnellleiste: Verhungern ignoriert Rüstung.
+whathitme.hint.suffocation=Stell dich nicht dorthin, wo dir Blöcke oder Kies auf den Kopf fallen können.
+whathitme.hint.cactus=Halte einen Block Abstand zu Kakteen.
+whathitme.hint.wither=Ausdörrung ignoriert Rüstung. Trink Milch, um sie zu entfernen, oder erhöhe deine maximale Gesundheit.
+whathitme.hint.magic=Magie ignoriert Rüstung. Trink Milch gegen Gift; Schutz und Resistenz helfen trotzdem.
+whathitme.hint.lightning=Meide bei Gewitter hohe, offene Stellen; nutze Blitzableiter aus Mods, falls vorhanden.
+whathitme.hint.falling_block=Schau vor dem Abbauen nach oben: Ein Helm verringert den Schaden fallender Blöcke.
+whathitme.hint.dragon_breath=Verlass die lila Wolke und trink einen Trank der Regeneration.
+whathitme.hint.thorns=Dornen-Verzauberungen verletzen dich, wenn du den Träger schlägst.
+whathitme.hint.absolute=Dieser Schaden ignoriert Rüstung UND Resistenz. Nur mehr maximale Gesundheit oder Ausweichen hilft.
+whathitme.hint.explosion=Explosionsschutz verringert Explosionen stark. Halte Abstand zu Creepern und TNT.
+whathitme.hint.bypasses_armor=Rüstung hilft hier nicht. Erhöhe deine maximale Gesundheit oder suche eine Resistenz gegen diese Schadensart.
+whathitme.hint.projectile=Blocke mit einem Schild oder nutze Schusssicher; geh vor Bogenschützen in Deckung.
+whathitme.hint.invisible=Der Angreifer war unsichtbar. Achte auf Partikel oder nutze Nachtsicht und beleuchte die Umgebung.
+whathitme.hint.player=Das war ein anderer Spieler. Bessere Rüstung, ein Schild und ein Goldener Apfel helfen im PvP.
+whathitme.hint.melee=Bessere Rüstung und die Verzauberung Schutz verringern Nahkampfschaden. Ein Schild blockt ihn ganz.
+whathitme.hint.generic=Bessere Rüstung und die Verzauberung Schutz verringern den meisten Schaden.

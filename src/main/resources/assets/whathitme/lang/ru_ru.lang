@@ -1,0 +1,213 @@
+whathitme.hearts=%s ❤
+whathitme.unknown=Неизвестно
+whathitme.command.usage=/whm [history|last|effects|togglechat|ignore|rename|sethint|config|search|inspect|dump|reload|snapshot|help]
+
+whathitme.summary.header=========== [ What Hit Me? ] ==========
+whathitme.summary.footer======================================
+whathitme.summary.killing=☠ Смертельный удар: %s
+whathitme.summary.properties=⚠ Свойства: %s
+whathitme.summary.total=Σ Всего за последние %s с: получено %s (%s ударов)
+whathitme.summary.tip=✎ Совет: %s
+whathitme.summary.recap=➜ %s (%s)
+whathitme.summary.recap.link=[Нажмите, чтобы увидеть полный разбор смерти]
+whathitme.summary.toggle=✖ Чтобы отключить это сообщение, введите %s
+
+whathitme.prop.bypasses_armor=Игнорирует броню
+whathitme.prop.absolute=Игнорирует сопротивление
+whathitme.prop.magic=Магия
+whathitme.prop.fire=Огонь
+whathitme.prop.explosion=Взрыв
+whathitme.prop.projectile=Снаряд
+whathitme.prop.shield=Сквозь щит
+whathitme.prop.iframes=Игнорирует неуязвимость
+whathitme.prop.creative=Действует в творческом
+whathitme.prop.none=Нет
+
+whathitme.badge.invisible=[Невидимый]
+whathitme.badge.totem=[Тотем]
+whathitme.badge.heavy=[Сильный удар]
+whathitme.badge.estimated=[Оценка клиента]
+
+whathitme.line.via=через %s
+whathitme.line.raw=исходно %s
+whathitme.line.mitigated=-%s%%
+whathitme.line.absorbed=поглощено %s
+whathitme.line.hits=x%s ударов
+whathitme.line.owner=Владелец: %s
+
+whathitme.hover.id=ID: %s
+whathitme.hover.damage=Урон: %s (%s ОЗ)
+whathitme.hover.raw=До брони: %s
+whathitme.hover.mitigated=Снижено: %s%%
+whathitme.hover.absorbed=Потрачено поглощения: %s
+whathitme.hover.health=Здоровье после: %s / %s ❤
+whathitme.hover.hits=Объединено ударов: %s
+whathitme.hover.attacker=Атакующий: %s
+whathitme.hover.direct=Снаряд / прямой источник: %s
+whathitme.hover.weapon=Оружие: %s
+whathitme.hover.distance=Расстояние: %s м
+whathitme.hover.owner=Владелец: %s
+whathitme.hover.properties=Свойства: %s
+whathitme.hover.mod=Мод: %s
+whathitme.hover.tip=Совет: %s
+whathitme.hover.estimated=Оценено вашим клиентом (на сервере нет What Hit Me?)
+
+whathitme.button.copyid=[Копировать ID]
+whathitme.button.copyid.hover=Скопировать %s в буфер обмена
+whathitme.button.copyid.suggest=Вставить %s в строку чата
+whathitme.button.mute=[Скрыть]
+whathitme.button.mute.hover=Больше не показывать %s (нажмите ещё раз, чтобы вернуть)
+whathitme.button.copyrecap=[Копировать разбор]
+whathitme.button.copyrecap.hover=Скопировать весь разбор обычным текстом
+whathitme.button.view=[Открыть]
+whathitme.button.details=[Подробнее]
+whathitme.button.run=Выполняет %s
+
+whathitme.history.header=История урона (%s)
+whathitme.history.empty=Урон пока не записан.
+whathitme.history.snapshots=Сохранённых снимков: %s (тотем / сильный удар).
+whathitme.history.estimated=[Оценка клиента] На сервере нет What Hit Me?, поэтому эти записи оценены вашим клиентом.
+
+whathitme.last.header=Разбор смерти (%s назад)
+whathitme.last.none=В этом сеансе смертей ещё не было.
+
+whathitme.snapshot.header=%s (%s назад)
+whathitme.snapshot.none=Снимков пока нет.
+whathitme.snapshot.position=Снимок %s из %s. Остальные: /whm snapshot <номер>.
+whathitme.snapshot.trigger=⚠ Причина: %s
+whathitme.snapshot.kind.death=Смерть
+whathitme.snapshot.kind.totem=Тотем бессмертия
+whathitme.snapshot.kind.heavy=Сильный удар
+whathitme.snapshot.kind.prevented=Смерть предотвращена
+
+whathitme.alert.totem=⚠ [What Hit Me?] Тотем бессмертия спас вас! Последний удар: %s %s
+whathitme.alert.heavy=⚠ [What Hit Me?] Сильный удар: %s снял %s за раз.
+whathitme.alert.prevented=⚠ [What Hit Me?] Смертельный урон был предотвращён! Последний удар: %s %s
+
+whathitme.effects.header=Активные эффекты (%s)
+whathitme.effects.none=Нет активных эффектов.
+whathitme.effects.milk.yes=[Молоко ✔]
+whathitme.effects.milk.no=[Молоко ✖]
+whathitme.effects.bad=Негативный
+whathitme.effects.good=Позитивный
+whathitme.effects.curative=Снимается: %s
+whathitme.effects.curative.none=ничем (молоко не помогает)
+whathitme.effects.estimated=[Оценка клиента] Данные клиента: предметы снятия могут отличаться от серверных.
+
+whathitme.search.header=Поиск: %s (результатов: %s)
+whathitme.search.none=Ничего не найдено. Попробуйте #fire, #magic, #bypasses_armor, #explosion, #projectile, #absolute или @modid.
+whathitme.search.more=...и ещё %s. Уточните запрос, чтобы увидеть их.
+whathitme.search.type.damage=Урон
+whathitme.search.type.mob=Моб
+whathitme.search.type.effect=Эффект
+whathitme.search.seen=встречено %s×
+whathitme.search.muted=(скрыто)
+
+whathitme.togglechat.on=Сводка в чате после возрождения: ВКЛ
+whathitme.togglechat.off=Сводка в чате после возрождения: ВЫКЛ (введите /whm togglechat снова, чтобы включить)
+whathitme.ignore.added=%s теперь скрыт.
+whathitme.ignore.removed=%s снова отображается.
+whathitme.rename.set=%s теперь отображается как «%s».
+whathitme.rename.cleared=Своё название для %s удалено.
+whathitme.sethint.set=Совет для %s: %s
+whathitme.sethint.cleared=Свой совет для %s удалён.
+whathitme.config.keys=Настройки: %s
+whathitme.config.value=%s = %s
+whathitme.config.set=Сохранено: %s = %s
+whathitme.config.unknown=Неизвестная настройка: %s
+whathitme.config.invalid=Недопустимое значение для %s: %s
+whathitme.reload.done=Настройки What Hit Me? перезагружены.
+whathitme.reload.server=Серверные настройки What Hit Me? перезагружены.
+whathitme.dump.done=Записано записей: %s в %s
+whathitme.dump.template=Шаблон hintMap / renameMap с %s ID урона записан в %s
+whathitme.dump.failed=Не удалось записать дамп: %s
+whathitme.copy.done=Скопировано в буфер обмена: %s
+whathitme.copyrecap.done=Разбор смерти скопирован в буфер обмена.
+
+whathitme.inspect.death=Разбор смерти игрока %s (%s назад)
+whathitme.inspect.history=История урона игрока %s (%s)
+whathitme.inspect.notfound=Игрок не найден (должен быть в сети): %s
+whathitme.inspect.nodeath=%s ещё не умирал с момента входа.
+
+whathitme.error.unknown=Неизвестная подкоманда: %s
+whathitme.error.usage=Использование: %s
+whathitme.error.noperm=Для этого нужны права оператора (уровень 2).
+whathitme.error.player=Только для игроков.
+whathitme.error.needserver=Для этого нужен What Hit Me? на сервере.
+
+whathitme.help.header=Команды What Hit Me? (Tab дополняет всё)
+whathitme.help.history=Недавно полученный урон (также /whm)
+whathitme.help.last=Полный разбор последней смерти
+whathitme.help.effects=Активные эффекты, их мод и снимает ли их молоко
+whathitme.help.togglechat=Вкл/выкл сводку в чате после возрождения
+whathitme.help.ignore=<id> Скрыть / показать ID урона
+whathitme.help.rename=<id> <название...> Своё название (пусто = удалить)
+whathitme.help.sethint=<id> <совет...> Свой совет (пусто = удалить)
+whathitme.help.config=<key> [value] Показать или изменить настройку
+whathitme.help.search=<текст|#тег|@modid> Поиск типов урона, мобов и эффектов
+whathitme.help.inspect=<player> Последняя смерть и история игрока (операторы)
+whathitme.help.dump=Записать whathitme_dump.csv и шаблон hintMap / renameMap
+whathitme.help.reload=Перезагрузить файлы настроек
+whathitme.help.snapshot=[номер] Сохранённые снимки тотема / сильного удара
+whathitme.help.server=<подкоманда> Выполнить подкоманду на сервере (настройки сервера)
+
+whathitme.panel.title=What Hit Me?
+whathitme.panel.copy=Копировать
+whathitme.panel.waiting=Ожидание сервера...
+whathitme.panel.nodata=Урон не записан.
+whathitme.panel.estimated=оценка вашего клиента
+
+whathitme.damage.inFire=Огонь
+whathitme.damage.lightningBolt=Молния
+whathitme.damage.onFire=Горение
+whathitme.damage.lava=Лава
+whathitme.damage.hotFloor=Магмовый блок
+whathitme.damage.inWall=Удушье
+whathitme.damage.cramming=Давка сущностей
+whathitme.damage.drown=Утопление
+whathitme.damage.starve=Голод
+whathitme.damage.cactus=Кактус
+whathitme.damage.fall=Падение
+whathitme.damage.flyIntoWall=Кинетическая энергия (элитры)
+whathitme.damage.outOfWorld=Пустота
+whathitme.damage.generic=Обычный урон
+whathitme.damage.magic=Магия / яд
+whathitme.damage.wither=Иссушение
+whathitme.damage.anvil=Падающая наковальня
+whathitme.damage.fallingBlock=Падающий блок
+whathitme.damage.dragonBreath=Драконье дыхание
+whathitme.damage.fireworks=Фейерверк
+whathitme.damage.mob=Атака моба
+whathitme.damage.player=Атака игрока
+whathitme.damage.arrow=Стрела
+whathitme.damage.thrown=Брошенный снаряд
+whathitme.damage.indirectMagic=Магия
+whathitme.damage.thorns=Шипы
+whathitme.damage.explosion=Взрыв
+whathitme.damage.explosion.player=Взрыв
+whathitme.damage.fireball=Огненный шар
+whathitme.damage.sweeping=Размашистый удар
+whathitme.damage.unknown=Неизвестно
+
+whathitme.hint.fall=Невесомость на ботинках, ведро воды или плавное падение спасают от большей части урона от падения.
+whathitme.hint.elytra=Летите по прямой и сбавляйте скорость перед стенами: столкновения на элитрах игнорируют броню.
+whathitme.hint.drown=Подводное дыхание, зелья подводного дыхания или дверь / воздушный карман помогут не задохнуться.
+whathitme.hint.fire=Зелье огнестойкости даёт иммунитет, огнеупорность снижает урон. Прыгните в воду, чтобы потушить себя.
+whathitme.hint.void=От пустоты ничто не защищает. Ставьте ограждения и держите эндер-жемчуг под рукой.
+whathitme.hint.starve=Держите еду на панели быстрого доступа: голод игнорирует броню.
+whathitme.hint.suffocation=Не стойте там, где вам на голову могут упасть блоки или гравий.
+whathitme.hint.cactus=Оставляйте вокруг кактусов один блок свободного места.
+whathitme.hint.wither=Иссушение игнорирует броню. Выпейте молоко, чтобы снять его, или повысьте максимальное здоровье.
+whathitme.hint.magic=Магия игнорирует броню. От яда помогает молоко; защита и сопротивление всё ещё работают.
+whathitme.hint.lightning=Во время грозы избегайте высоких открытых мест; используйте громоотводы из модов, если они есть.
+whathitme.hint.falling_block=Смотрите вверх перед тем, как копать: шлем снижает урон от падающих блоков.
+whathitme.hint.dragon_breath=Выйдите из фиолетового облака и выпейте зелье регенерации.
+whathitme.hint.thorns=Зачарование «Шипы» наносит ответный урон, когда вы бьёте его владельца.
+whathitme.hint.absolute=Этот урон игнорирует и броню, и сопротивление. Помогает только больше максимального здоровья или уклонение.
+whathitme.hint.explosion=Взрывоустойчивость сильно снижает урон от взрывов. Держитесь подальше от криперов и динамита.
+whathitme.hint.bypasses_armor=Броня здесь не поможет. Повысьте максимальное здоровье или найдите сопротивление этому типу урона.
+whathitme.hint.projectile=Блокируйте щитом или используйте защиту от снарядов; укрывайтесь от лучников.
+whathitme.hint.invisible=Атакующий был невидим. Ищите частицы или используйте ночное зрение и освещайте местность.
+whathitme.hint.player=Это сделал другой игрок. В PvP помогают хорошая броня, щит и золотое яблоко.
+whathitme.hint.melee=Хорошая броня и зачарование «Защита» снижают урон в ближнем бою. Щит блокирует его полностью.
+whathitme.hint.generic=Хорошая броня и зачарование «Защита» снижают большую часть урона.

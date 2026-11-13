@@ -41,7 +41,10 @@ sourceSets {
         java {
             srcDir genDir
             // development self-test, only with -Pselftest (never in release jars)
-            if (project.hasProperty('selftest')) srcDir 'devtools/java'
+            if (project.hasProperty('selftest')) {
+                srcDir 'devtools/java'
+                srcDir 'devtools/driver/java'
+            }
         }
     }
 }
@@ -70,3 +73,14 @@ jar {
 // keep only the reobfuscated (production) jar in build/libs
 tasks.named('jar') { destinationDirectory = layout.buildDirectory.dir('devlibs') }
 tasks.named('reobfJar') { destinationDirectory = layout.buildDirectory.dir('libs') }
+
+// Development only (-Pselftest): the test driver for "client without What Hit Me?" as its own jar
+if (project.hasProperty('selftest')) {
+    def driverJar = tasks.register('driverJar', Jar) {
+        dependsOn 'reobfJar'
+        archiveFileName = 'whmdriver-dev.jar'
+        destinationDirectory = layout.buildDirectory.dir('devlibs')
+        from({ zipTree(tasks.named('reobfJar').get().outputs.files.singleFile) }) { include 'io/github/junjun1z/whmdriver/**' }
+    }
+    tasks.named('assemble') { dependsOn driverJar }
+}
