@@ -10,6 +10,11 @@ Bug fixes found by a full in-game test pass (single player, dedicated server wit
 - The first hit after respawning was wrongly marked "Ignores I-Frames" when the previous death was less than half a second earlier.
 - `/whm inspect` (client and server side) no longer shows `[Copy ID]` / `[Mute]` buttons in the inspected player's history.
 - Client fallback: a death that follows another one within 1.5 seconds no longer reuses the previous killing blow.
+- Attackers whose mod builds the name itself (for example Lycanites Mobs "Ventoraptor Lvl 2", subspecies names) now show that name instead of the plain registry name.
+
+Added:
+
+- In-game settings screen: Mods list > What Hit Me? > Config, with both files (Personal / Modpack - server). Changes are saved and applied on Done; in single player the server side is updated too.
 
 ## [1.0.0]` for tag `1.0.0`) as the release notes.
 

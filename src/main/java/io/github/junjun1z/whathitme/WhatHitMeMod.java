@@ -20,7 +20,8 @@ import net.minecraftforge.fml.common.event.FMLServerStoppedEvent;
  * What Hit Me? - damage history, death recap and debuff list. Works on the client only, on the server only or on
  * both (acceptableRemoteVersions = "*"); client classes are reached only through {@link CommonProxy}.
  */
-@Mod(modid = WhatHitMeMod.MODID, name = "What Hit Me?", version = Tags.VERSION, acceptableRemoteVersions = "*", acceptedMinecraftVersions = "[1.12,1.12.2]")
+@Mod(modid = WhatHitMeMod.MODID, name = "What Hit Me?", version = Tags.VERSION, acceptableRemoteVersions = "*", acceptedMinecraftVersions = "[1.12,1.12.2]",
+    guiFactory = "io.github.junjun1z.whathitme.client.WhmGuiFactory")
 public class WhatHitMeMod {
 
     public static final String MODID = "whathitme";

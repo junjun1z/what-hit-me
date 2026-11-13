@@ -53,8 +53,9 @@ public final class Showcase {
     private int hoverLine = 1;
     private String hoverChatText = "";
 
-    public Showcase() {
-        plan();
+    public Showcase(String mode) {
+        if (mode.equals("showcase-pack")) planPack();
+        else plan();
     }
 
     private void then(SelfTest.Step s) {
@@ -231,14 +232,6 @@ public final class Showcase {
         until(() -> mc.currentScreen instanceof GuiGameOver && ClientState.currentDeath != null, 200);
         sleep(45);
         shot("death-screen");
-        act(() -> {
-            hoverMode = 1;
-            hoverLine = 2;
-        });
-        sleep(4);
-        shot("death-screen-tooltip");
-        act(() -> hoverMode = 0);
-        sleep(2);
         // ---- respawn summary
         act(() -> {
             mc.player.respawnPlayer();
@@ -314,12 +307,83 @@ public final class Showcase {
             p.setHealth(p.getMaxHealth());
             p.setItemStackToSlot(EntityEquipmentSlot.OFFHAND, new ItemStack(Items.TOTEM_OF_UNDYING));
         });
+        act(() -> mc.gameSettings.thirdPersonView = 2); // front view: the player and the skin are visible
         sleep(20);
         hit(p -> DamageSource.causeMobDamage((EntityZombie) mobs[0]), 40f);
-        sleep(26);
+        sleep(30);
         shot("totem");
-        sleep(10);
-        shot("totem-late");
+        act(() -> mc.gameSettings.thirdPersonView = 0);
+        // ---- in-game settings (Mods list > What Hit Me? > Config > Personal > Display switches)
+        sleep(40);
+        act(() -> mc.displayGuiScreen(new net.minecraftforge.fml.client.config.GuiConfig(null,
+            new net.minecraftforge.common.config.ConfigElement(io.github.junjun1z.whathitme.config.WhmConfig.client.cfg.getCategory("display")).getChildElements(),
+            "whathitme", false, false, net.minecraft.client.resources.I18n.format("whathitme.config.title"),
+            net.minecraft.client.resources.I18n.format("whathitme.config.client") + " > " + net.minecraft.client.resources.I18n.format("whathitme.config.cat.display"))));
+        sleep(20);
+        shot("config-gui");
+        act(() -> mc.displayGuiScreen(null));
+        act(() -> mc.shutdown());
+    }
+
+    /** Death screen in the 21-mod pack: killed by a Lycanites Mobs creature, tooltip shows the mod */
+    private void planPack() {
+        then(() -> {
+            if (mc.currentScreen instanceof GuiMainMenu) {
+                boolean exists = new File(mc.gameDir, "saves/whm_showcase_pack/level.dat").exists();
+                WorldSettings ws = new WorldSettings(20261114L, GameType.SURVIVAL, true, false, WorldType.DEFAULT);
+                ws.enableCommands();
+                mc.launchIntegratedServer("whm_showcase_pack", "whm_showcase_pack", exists ? null : ws);
+                return true;
+            }
+            return false;
+        });
+        until(() -> mc.player != null && server() != null && !server().getPlayerList().getPlayers().isEmpty() && ClientState.serverHasMod, 4800);
+        srv(p -> {
+            p.getServer().setDifficultyForAllWorlds(EnumDifficulty.NORMAL);
+            p.world.getGameRules().setOrCreateGameRule("doDaylightCycle", "false");
+            p.world.getGameRules().setOrCreateGameRule("doMobSpawning", "false");
+            p.world.getGameRules().setOrCreateGameRule("keepInventory", "true");
+            p.world.getGameRules().setOrCreateGameRule("announceAdvancements", "false");
+            p.world.setWorldTime(5000);
+            p.world.getWorldInfo().setRaining(false);
+            p.inventory.clear();
+            p.setItemStackToSlot(EntityEquipmentSlot.CHEST, new ItemStack(Items.IRON_CHESTPLATE));
+            p.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Items.IRON_SWORD));
+            p.setHealth(p.getMaxHealth());
+            for (Entity e : p.world.loadedEntityList) if (e instanceof EntityLiving) e.setDead();
+            // a clearing in front of the player so the creature is visible
+            int bx = (int) Math.floor(p.posX);
+            int bz = (int) Math.floor(p.posZ);
+            int gy = p.world.getHeight(bx, bz);
+            p.getEntityAttribute(net.minecraft.entity.SharedMonsterAttributes.KNOCKBACK_RESISTANCE).setBaseValue(1.0);
+            for (int dx = -8; dx <= 8; dx++) {
+                for (int dz = -8; dz <= 16; dz++) {
+                    for (int dy = 0; dy <= 10; dy++) p.world.setBlockToAir(new net.minecraft.util.math.BlockPos(bx + dx, gy + dy, bz + dz));
+                    p.world.setBlockState(new net.minecraft.util.math.BlockPos(bx + dx, gy - 1, bz + dz), net.minecraft.init.Blocks.GRASS.getDefaultState());
+                }
+            }
+            p.connection.setPlayerLocation(bx + 0.5, gy, bz + 0.5, 0f, 5f);
+        });
+        sleep(100);
+        srv(p -> {
+            Entity raptor = net.minecraft.entity.EntityList.createEntityByIDFromName(new net.minecraft.util.ResourceLocation("lycanitesmobs", "ventoraptor"), p.world);
+            if (raptor instanceof EntityLiving) mobs[0] = place((EntityLiving) raptor, p, 0.8, 4);
+            mobs[1] = place(withSword(new EntityZombie(p.world)), p, -2.5, 6);
+        });
+        sleep(60);
+        hit(p -> DamageSource.causeMobDamage((EntityZombie) mobs[1]), 5f);
+        hit(p -> DamageSource.causeMobDamage((EntityLiving) mobs[0]), 6f);
+        hit(p -> DamageSource.causeMobDamage((EntityLiving) mobs[0]), 6f);
+        hit(p -> DamageSource.causeMobDamage((EntityLiving) mobs[0]), 40f);
+        until(() -> mc.currentScreen instanceof GuiGameOver && ClientState.currentDeath != null, 200);
+        act(() -> mc.ingameGUI.getChatGUI().clearChatMessages(false)); // the pack's own chat messages
+        sleep(21);
+        act(() -> {
+            hoverMode = 1;
+            hoverLine = 0;
+        });
+        sleep(4);
+        shot("modpack-death-screen");
         act(() -> mc.shutdown());
     }
 
@@ -369,7 +433,7 @@ public final class Showcase {
                 scf.setAccessible(true);
                 float sc = scf.getFloat(dp);
                 int top = intField(dp, "linesTop");
-                int mx = px + Math.round(250 * sc);
+                int mx = px + Math.round(200 * sc);
                 int my = py + Math.round((top + hoverLine * 10 + 4) * sc);
                 dp.render(e.getGui(), mx, my);
             } else if (hoverMode == 2 && e.getGui() instanceof GuiChat) {

@@ -54,6 +54,8 @@ Properties shown: Bypasses Armor (`isUnblockable`), Bypasses Magic (`isDamageAbs
 
 ## Config files (`config/whathitme/`, Forge Configuration, re-read by `/whm reload`)
 
+In-game editor (1.0.1): Mods list > What Hit Me? > Config. Two groups: "Personal (whathitme-client.cfg)" and "Modpack / server (whathitme-common.cfg)", each with its categories (Display switches, Filters / names / tips, Death screen panel or Recording). Saved and applied on Done.
+
 An element is shown only if it is true in BOTH `whathitme-common.cfg` and `whathitme-client.cfg`. When the server has the mod, the server's common file replaces the client's common file (display switches + ignore/rename/hint lists + summarySeconds).
 
 ### Both files - category `display` (all default `true`)
@@ -105,3 +107,7 @@ enableDeathScreenPanel, enableRespawnChatSummary, enableTotemChatAlert, enableHe
 - `./gradlew build` (JDK 25 runs Gradle; the Java 8 toolchain is downloaded automatically). Version: `-Pmod_version=X.Y.Z` or env `VERSION`, default 1.0.0. Output: `build/libs/whathitme-<version>.jar` (reobfuscated, the only jar there).
 - Development self-test: `./gradlew build -Pselftest` adds `devtools/` (never in release jars). Put the jar in a 1.12.2 instance and create `config/whathitme/selftest.flag` containing `sp` (single player, 71 checks), `mp-mod` / `mp-nomod` (join a server with `--server`), `pack` (modded mobs) or `showcase` (documentation screenshots). Result: `whathitme_selftest_result.txt`. `build/devlibs/whmdriver-dev.jar` drives a client without the mod (`config/whmdriver.flag`).
 - Smart merge also joins interleaved damage (e.g. poison ticks between mob hits) with one of the last 5 lines.
+
+## Screenshots (docs/screenshots/)
+
+death-screen.png, respawn-chat.png, history.png (hover tooltip), effects.png, search.png, totem.png (third person, player skin visible), config-gui.png (in-game settings), modpack-death-screen.png (21-mod pack, Lycanites Mobs creature, tooltip with "Mod: Lycanites Mobs").

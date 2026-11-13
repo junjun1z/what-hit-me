@@ -20,6 +20,16 @@ import net.minecraftforge.fml.relauncher.SideOnly;
 public final class ClientEvents {
 
     @SubscribeEvent
+    public void onConfigChanged(net.minecraftforge.fml.client.event.ConfigChangedEvent.OnConfigChangedEvent event) {
+        if (!io.github.junjun1z.whathitme.WhatHitMeMod.MODID.equals(event.getModID())) return;
+        io.github.junjun1z.whathitme.config.WhmConfig.client.saveAndReload();
+        io.github.junjun1z.whathitme.config.WhmConfig.common.saveAndReload();
+        // single player: the integrated server uses the same common file; tell the client side about it
+        net.minecraft.server.integrated.IntegratedServer srv = Minecraft.getMinecraft().getIntegratedServer();
+        if (srv != null) srv.addScheduledTask(io.github.junjun1z.whathitme.server.ServerNet::broadcastInfo);
+    }
+
+    @SubscribeEvent
     public void onDisconnect(FMLNetworkEvent.ClientDisconnectionFromServerEvent event) {
         Minecraft.getMinecraft().addScheduledTask(ClientState::reset);
     }

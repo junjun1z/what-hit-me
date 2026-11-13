@@ -96,6 +96,8 @@ public final class WhmConfig {
                 if (cfg.getBoolean(f.key, CAT_DISPLAY, true, f.comment)) m |= f.bit();
             }
             mask = m;
+            cfg.setCategoryLanguageKey(CAT_DISPLAY, "whathitme.config.cat.display");
+            cfg.setCategoryLanguageKey(CAT_FILTERS, "whathitme.config.cat.filters");
             cfg.setCategoryComment(CAT_DISPLAY, "Display switches. An element is shown only when it is true in BOTH whathitme-common.cfg and whathitme-client.cfg.");
             minDamageThreshold = cfg.getFloat("minDamageThreshold", CAT_FILTERS, 0.05f, 0f, 1000f, "Damage below this (health + absorption) is not recorded.");
             heavyHitThreshold = cfg.getFloat("heavyHitThreshold", CAT_FILTERS, 0.8f, 0.05f, 100f, "A single hit taking at least this part of your max health is a heavy hit (0.8 = 80%).");
@@ -120,6 +122,12 @@ public final class WhmConfig {
 
         public synchronized void save() {
             cfg.save();
+        }
+
+        /** After the in-game config screen changed properties: write the file and apply the values */
+        public final synchronized void saveAndReload() {
+            if (cfg.hasChanged()) cfg.save();
+            read();
         }
 
         /** Adds or removes an id in ignoredDamageIds. @return true when it is ignored now */
@@ -255,6 +263,7 @@ public final class WhmConfig {
             summarySeconds = cfg.getInt("summarySeconds", CAT_TRACKING, 10, 1, 300, "Time window of the 'Last Xs Total' line.");
             recapSeconds = cfg.getInt("recapSeconds", CAT_TRACKING, 30, 1, 600, "Damage from this many seconds before death is kept in the death recap.");
             maxSnapshots = cfg.getInt("maxSnapshots", CAT_TRACKING, 5, 1, 50, "Totem / heavy-hit snapshots kept per player.");
+            cfg.setCategoryLanguageKey(CAT_TRACKING, "whathitme.config.cat.tracking");
             cfg.setCategoryComment(CAT_TRACKING, "Recording (server side, or the client when the server does not have the mod).");
         }
     }
@@ -284,6 +293,7 @@ public final class WhmConfig {
             maxVisibleLines = cfg.getInt("maxVisibleLines", CAT_LAYOUT, 8, 1, 40, "Damage lines visible at once (scroll with the mouse wheel for more).");
             minimized = cfg.getBoolean("minimized", CAT_LAYOUT, false, "Panel minimized with the [-] button.");
             chatHistoryLines = cfg.getInt("chatHistoryLines", CAT_LAYOUT, 15, 1, 100, "Lines shown by /whm history.");
+            cfg.setCategoryLanguageKey(CAT_LAYOUT, "whathitme.config.cat.layout");
             cfg.setCategoryComment(CAT_LAYOUT, "Death screen panel layout. Drag the panel header on the death screen to move it.");
         }
 

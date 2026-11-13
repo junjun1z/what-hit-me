@@ -83,7 +83,7 @@ public final class SelfTest {
         String mode = new String(Files.readAllBytes(flag.toPath()), StandardCharsets.UTF_8).trim();
         if (mode.isEmpty()) mode = "sp";
         if (mode.startsWith("showcase")) {
-            Showcase sc = new Showcase();
+            Showcase sc = new Showcase(mode);
             MinecraftForge.EVENT_BUS.register(sc);
             return;
         }

@@ -58,11 +58,22 @@ public final class Sources {
         return "unknown:" + e.getClass().getSimpleName().toLowerCase(java.util.Locale.ROOT);
     }
 
-    /** Translation key of an entity's default name, "" for players and custom names */
+    /**
+     * Translation key of an entity's default name, "" for players, custom names and names a mod builds itself (e.g.
+     * "Ashen Ventoraptor"): then the plain name is shown.
+     */
+    @SuppressWarnings("deprecation")
     public static String entityNameKey(Entity e) {
         if (e == null || e instanceof EntityPlayer || e.hasCustomName()) return "";
         String s = EntityList.getEntityString(e);
-        return s == null ? "" : "entity." + s + ".name";
+        if (s == null) return "";
+        String key = "entity." + s + ".name";
+        try {
+            if (net.minecraft.util.text.translation.I18n.canTranslate(key) && !net.minecraft.util.text.translation.I18n.translateToLocal(key).equals(e.getName())) return "";
+        } catch (Throwable ignored) {
+            // keep the key
+        }
+        return key;
     }
 
     public static String entityName(Entity e) {

@@ -151,6 +151,13 @@ whathitme.help.reload=Reload the configuration files
 whathitme.help.snapshot=[number] Saved totem / heavy-hit snapshots
 whathitme.help.server=<subcommand> Run a subcommand on the server (server-wide settings)
 
+whathitme.config.title=What Hit Me? settings
+whathitme.config.client=Personal (whathitme-client.cfg)
+whathitme.config.common=Modpack / server (whathitme-common.cfg)
+whathitme.config.cat.display=Display switches
+whathitme.config.cat.filters=Filters, names and tips
+whathitme.config.cat.tracking=Recording
+whathitme.config.cat.layout=Death screen panel
 whathitme.panel.title=What Hit Me?
 whathitme.panel.copy=Copy
 whathitme.panel.waiting=Waiting for the server...

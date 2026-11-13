@@ -645,6 +645,32 @@ final class ExplorePlan {
         respawnNow();
         t.waitFor("death in the end -> summary", () -> SelfTest.chatHas("Killing Blow"), 200);
         t.cmd("/whm", "Damage History", 60);
+        // ---- in-game config screen (Mods list "Config" button)
+        t.act(() -> mc().displayGuiScreen(new io.github.junjun1z.whathitme.client.WhmGuiFactory().createConfigGui(null)));
+        t.sleep(10);
+        t.check("config screen opens", () -> mc().currentScreen instanceof net.minecraftforge.fml.client.config.GuiConfig, (java.util.function.Supplier<?>) () -> mc().currentScreen);
+        t.screenshot("whm_explore_configgui");
+        t.act(() -> {
+            // what GuiConfig does on Done: change the property, then post the changed event
+            WhmConfig.client.cfg.getCategory(WhmConfig.CAT_DISPLAY).get("showTimestamp").set(false);
+            net.minecraftforge.common.MinecraftForge.EVENT_BUS.post(new net.minecraftforge.fml.client.event.ConfigChangedEvent.OnConfigChangedEvent("whathitme", null, true, false));
+        });
+        t.sleep(5);
+        t.check("config screen change applied and saved", () -> (WhmConfig.client.mask & WhmConfig.Flag.TIMESTAMP.bit()) == 0
+            && read(new File(t.gameDir, "config/whathitme/whathitme-client.cfg")).contains("B:showTimestamp=false"), null);
+        t.then(() -> {
+            GuiScreen g = mc().currentScreen;
+            // the Done button of GuiConfig: bottom center
+            if (g != null) moveGui(g.width / 2.0 - 60, g.height - 19);
+            return true;
+        });
+        t.sleep(3);
+        t.act(() -> click());
+        t.waitFor("config screen closes with the real Done button", () -> !(mc().currentScreen instanceof net.minecraftforge.fml.client.config.GuiConfig), 60);
+        t.act(() -> {
+            mc().displayGuiScreen(null);
+            WhmConfig.client.set("showTimestamp", "true");
+        });
         // ---- leave the world and come back: buffers cleared
         t.act(() -> {
             mc().world.sendQuittingDisconnectingPacket();
