@@ -126,6 +126,38 @@ public final class Showcase {
         return e;
     }
 
+    /** Somewhere flat and open (grass, no trees) in front of the player, so the scenery reads well */
+    private static net.minecraft.util.math.BlockPos flatSpot(EntityPlayerMP p) {
+        net.minecraft.world.World w = p.world;
+        int cx = (int) Math.floor(p.posX);
+        int cz = (int) Math.floor(p.posZ);
+        for (int r = 0; r <= 320; r += 16) {
+            for (int dx = -r; dx <= r; dx += 16) {
+                for (int dz = -r; dz <= r; dz += 16) {
+                    if (Math.max(Math.abs(dx), Math.abs(dz)) != r) continue;
+                    int x = cx + dx;
+                    int z = cz + dz;
+                    if (flat(w, x, z)) return new net.minecraft.util.math.BlockPos(x, w.getHeight(x, z), z);
+                }
+            }
+        }
+        return new net.minecraft.util.math.BlockPos(cx, w.getHeight(cx, cz), cz);
+    }
+
+    private static boolean flat(net.minecraft.world.World w, int x, int z) {
+        int h0 = w.getHeight(x, z);
+        for (int i = -6; i <= 6; i += 2) {
+            for (int j = -3; j <= 24; j += 3) {
+                int h = w.getHeight(x + i, z + j);
+                if (Math.abs(h - h0) > 1) return false;
+                if (w.getBlockState(new net.minecraft.util.math.BlockPos(x + i, h - 1, z + j)).getBlock() != net.minecraft.init.Blocks.GRASS) return false;
+            }
+        }
+        return true;
+    }
+
+    private net.minecraft.util.math.BlockPos spot;
+
     private void plan() {
         then(() -> {
             if (mc.currentScreen instanceof GuiMainMenu) {
@@ -144,6 +176,8 @@ public final class Showcase {
             p.world.getGameRules().setOrCreateGameRule("doMobSpawning", "false");
             p.world.getGameRules().setOrCreateGameRule("keepInventory", "true");
             p.world.getGameRules().setOrCreateGameRule("showDeathMessages", "true");
+            p.world.getGameRules().setOrCreateGameRule("announceAdvancements", "false");
+            p.world.getGameRules().setOrCreateGameRule("spawnRadius", "0");
             p.world.setWorldTime(5000);
             p.world.getWorldInfo().setRaining(false);
             p.world.getWorldInfo().setThundering(false);
@@ -161,9 +195,11 @@ public final class Showcase {
             p.setHealth(p.getMaxHealth());
             p.clearActivePotions();
             for (Entity e : p.world.loadedEntityList) if (e instanceof EntityLiving) e.setDead();
-            p.connection.setPlayerLocation(p.posX, p.posY, p.posZ, 0f, 8f);
+            spot = flatSpot(p);
+            p.world.setSpawnPoint(spot);
+            p.connection.setPlayerLocation(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5, 0f, 12f);
         });
-        sleep(30);
+        sleep(60);
         srv(p -> {
             EntityZombie z = new EntityZombie(p.world);
             ItemStack sword = new ItemStack(Items.IRON_SWORD);
@@ -193,12 +229,13 @@ public final class Showcase {
         hit(p -> DamageSource.causeExplosionDamage((EntityCreeper) mobs[2]), 60f);
         until(() -> mc.currentScreen instanceof GuiGameOver && ClientState.currentDeath != null, 200);
         sleep(45);
+        shot("death-screen");
         act(() -> {
             hoverMode = 1;
-            hoverLine = 1;
+            hoverLine = 2;
         });
         sleep(4);
-        shot("death-screen");
+        shot("death-screen-tooltip");
         act(() -> hoverMode = 0);
         sleep(2);
         // ---- respawn summary
@@ -209,7 +246,7 @@ public final class Showcase {
         until(() -> mc.player.getHealth() > 0 && mc.currentScreen == null, 200);
         srv(p -> {
             for (Entity e : p.world.loadedEntityList) if (e instanceof EntityLiving) e.setDead();
-            p.connection.setPlayerLocation(p.posX, p.posY, p.posZ, 0f, 8f);
+            if (spot != null) p.connection.setPlayerLocation(spot.getX() + 0.5, spot.getY(), spot.getZ() + 0.5, 0f, 12f);
         });
         sleep(40);
         shot("respawn-chat");
@@ -278,9 +315,9 @@ public final class Showcase {
         });
         sleep(20);
         hit(p -> DamageSource.causeMobDamage((EntityZombie) mobs[0]), 40f);
-        sleep(6);
+        sleep(8);
         shot("totem");
-        sleep(40);
+        sleep(14);
         shot("totem-late");
         act(() -> mc.shutdown());
     }
@@ -295,6 +332,7 @@ public final class Showcase {
     @SubscribeEvent
     public void onTick(TickEvent.ClientTickEvent e) {
         if (e.phase != TickEvent.Phase.END) return;
+        mc.getToastGui().clear();
         try {
             while (!steps.isEmpty()) {
                 if (!steps.peekFirst().run()) return;
@@ -330,24 +368,32 @@ public final class Showcase {
                 scf.setAccessible(true);
                 float sc = scf.getFloat(dp);
                 int top = intField(dp, "linesTop");
-                int mx = px + Math.round(120 * sc);
+                int mx = px + Math.round(250 * sc);
                 int my = py + Math.round((top + hoverLine * 10 + 4) * sc);
                 dp.render(e.getGui(), mx, my);
             } else if (hoverMode == 2 && e.getGui() instanceof GuiChat) {
                 // find a chat component whose text contains hoverChatText and draw its hover text
                 ScaledResolution sr = new ScaledResolution(mc);
                 int scale = sr.getScaleFactor();
+                ITextComponent best = null;
+                int bx = 0;
+                int by = 0;
                 for (int y = 20; y < mc.displayHeight / 2; y += 2) {
-                    for (int x = 4; x < 600; x += 6) {
+                    for (int x = 4; x < 900; x += 4) {
                         ITextComponent c = mc.ingameGUI.getChatGUI().getChatComponent(x, y);
-                        if (c != null && c.getStyle().getHoverEvent() != null && c.getUnformattedComponentText().contains(hoverChatText)) {
-                            Method m = findHover();
-                            int gx = x / scale;
-                            int gy = sr.getScaledHeight() - y / scale - 1;
-                            m.invoke(e.getGui(), c, gx, gy);
-                            return;
+                        if (c == null || c.getStyle().getHoverEvent() == null || c.getStyle().getClickEvent() != null) continue;
+                        String hv = c.getStyle().getHoverEvent().getValue().getUnformattedText();
+                        if (!hv.startsWith(hoverChatText)) continue;
+                        if (best == null || x > bx) {
+                            best = c;
+                            bx = x;
+                            by = y;
                         }
                     }
+                    if (best != null) break;
+                }
+                if (best != null) {
+                    findHover().invoke(e.getGui(), best, bx / scale, sr.getScaledHeight() - by / scale - 1);
                 }
             }
         } catch (Throwable t) {
