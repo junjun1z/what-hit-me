@@ -111,10 +111,6 @@ final class MultiplayerPlan {
         t.cmd("/whm dump", "Wrote", 80);
         if (serverMod) t.cmd("/whm server history", "Damage History", 60);
         t.cmd("/whm reload", "reloaded", 40);
-        t.act(() -> {
-            SelfTest.mc().world.sendQuittingDisconnectingPacket();
-            SelfTest.mc().loadWorld(null);
-        });
-        t.sleep(40);
+        t.sleep(20);
     }
 }

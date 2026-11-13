@@ -144,12 +144,7 @@ public class WhmDriver {
             ok("no raw translation keys in chat", !all().contains("whathitme."));
             return true;
         });
-        steps.add(() -> {
-            mc().world.sendQuittingDisconnectingPacket();
-            mc().loadWorld(null);
-            return true;
-        });
-        sleep(40);
+        sleep(20);
     }
 
     @SubscribeEvent

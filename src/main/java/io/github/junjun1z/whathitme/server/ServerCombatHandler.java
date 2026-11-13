@@ -80,6 +80,26 @@ public final class ServerCombatHandler {
         h.lastHurtTick = tick;
     }
 
+    /**
+     * Some mods (e.g. body-part health mods) cancel LivingHurtEvent and apply the damage their own way, so no
+     * LivingDamageEvent follows. Record those hits here with the amount they took over.
+     */
+    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
+    public void onHurtCancelled(LivingHurtEvent event) {
+        if (!(event.getEntityLiving() instanceof EntityPlayer)) return;
+        if (!event.isCanceled()) return;
+        EntityPlayer p = (EntityPlayer) event.getEntityLiving();
+        if (!tracked(p)) return;
+        PlayerHistory h = DamageTracker.SERVER.peek(p.getUniqueID());
+        if (h == null || h.pendingTick != p.world.getTotalWorldTime() || h.pendingSourceHash != System.identityHashCode(event.getSource())) return;
+        h.pendingTick = Long.MIN_VALUE;
+        float amount = Math.max(0f, event.getAmount());
+        if (amount < WhmConfig.common.minDamageThreshold || amount <= 0f) return;
+        DamageRecord r = build(p, event.getSource(), h.pendingRaw, amount, 0f, 0, p.getHealth());
+        h.add(r, (long) (WhmConfig.common.mergeWindowSeconds * 1000f));
+        DamageTracker.SERVER.catalog.register(r);
+    }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onDamage(LivingDamageEvent event) {
         if (!(event.getEntityLiving() instanceof EntityPlayer)) return;

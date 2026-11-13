@@ -284,6 +284,10 @@ public final class SelfTest {
             new MultiplayerPlan(this).plan(mode.equals("mp-mod"));
             return;
         }
+        if (mode.equals("pack")) {
+            new PackPlan(this).plan();
+            return;
+        }
         planSingleplayer();
     }
 
