@@ -108,6 +108,7 @@ public final class WhmConfig {
             }
             ignorePatterns = pats;
             renameMap = parseMap(cfg.getStringList("renameMap", CAT_FILTERS, new String[0], "Custom display names, one per line: \"modid:damage_id = Custom Name\". & or section sign color codes work. Use \"modid:damage_id = lang:your.translation.key\" to translate it with a resource pack. Wildcards (*) are allowed in the id. /whm dump writes config/whathitme/hint_template.cfg with every known id."));
+            cfg.setCategoryComment(CAT_FILTERS, "What is recorded and how it is named. In whathitme-common.cfg these apply to everyone (a server with the mod sends them to clients); in whathitme-client.cfg they add personal entries.");
             hintMap = parseMap(cfg.getStringList("hintMap", CAT_FILTERS, new String[0], "Custom tips, one per line: \"modid:damage_id = Tip text\" or \"modid:damage_id = lang:your.translation.key\". Ids without an entry get an automatic tip from the damage properties. Example: \"mob:minecraft:creeper = Creepers hiss before exploding - sprint away!\""));
         }
 
@@ -204,6 +205,15 @@ public final class WhmConfig {
                         }
                         break;
                     default:
+                        if (p.getMinValue() != null && p.getMaxValue() != null && !String.valueOf(Integer.MIN_VALUE).equals(p.getMinValue())) {
+                            // getFloat() stores numbers as strings with a range
+                            try {
+                                double d = Double.parseDouble(value);
+                                if (d < Double.parseDouble(p.getMinValue()) || d > Double.parseDouble(p.getMaxValue())) return "invalid";
+                            } catch (NumberFormatException e) {
+                                return "invalid";
+                            }
+                        }
                         String[] valid = p.getValidValues();
                         if (valid != null && valid.length > 0) {
                             String match = null;

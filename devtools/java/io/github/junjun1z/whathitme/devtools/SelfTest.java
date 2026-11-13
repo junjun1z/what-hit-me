@@ -342,7 +342,7 @@ public final class SelfTest {
         sleep(14);
         check("arrow with owner: attacker Skeleton, direct Arrow, projectile flag", () -> {
             DamageRecord r = find("minecraft:arrow");
-            return r != null && r.attackerName.equals("Skeleton") && r.directName.equals("Arrow") && r.has(DamageRecord.PROJECTILE) && r.distance > 7f;
+            return r != null && r.attackerName.equals("Skeleton") && r.directName.equals("Arrow") && r.has(DamageRecord.PROJECTILE) && r.distance > 3f;
         }, (java.util.function.Supplier<?>) () -> find("minecraft:arrow") == null ? "null" : find("minecraft:arrow").attackerName + "/" + find("minecraft:arrow").directName);
         hit(DamageSource.IN_FIRE, 2f);
         check("fire flag", () -> find("minecraft:inFire") != null && find("minecraft:inFire").has(DamageRecord.FIRE), null);

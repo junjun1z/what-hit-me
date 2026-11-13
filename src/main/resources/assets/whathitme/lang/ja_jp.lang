@@ -11,6 +11,7 @@ whathitme.summary.tip=✎ ヒント: %s
 whathitme.summary.recap=➜ %s (%s)
 whathitme.summary.recap.link=[クリックで死亡の詳細を表示]
 whathitme.summary.toggle=✖ このメッセージを消すには %s を実行
+
 whathitme.prop.bypasses_armor=防具貫通
 whathitme.prop.absolute=魔法耐性も貫通
 whathitme.prop.magic=魔法

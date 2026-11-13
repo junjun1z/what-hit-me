@@ -64,7 +64,7 @@ public final class PlayerHistory {
      */
     public DamageRecord add(DamageRecord r, long mergeWindowMs) {
         DamageRecord prev = last();
-        if (prev != null && mergeWindowMs > 0 && prev.sameSource(r) && r.time - prev.time <= mergeWindowMs && !prev.has(DamageRecord.KILLING)) {
+        if (prev != null && mergeWindowMs > 0 && prev.sameSource(r) && r.time - prev.time <= mergeWindowMs && !prev.has(DamageRecord.KILLING | DamageRecord.TOTEM | DamageRecord.HEAVY)) {
             DamageRecord m = prev.merge(r);
             ring[(head - 1 + ring.length) % ring.length] = m;
             return m;
