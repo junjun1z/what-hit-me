@@ -119,6 +119,7 @@ whathitme.config.invalid=Invalid value for %s: %s
 whathitme.reload.done=What Hit Me? configuration reloaded.
 whathitme.reload.server=Server configuration of What Hit Me? reloaded.
 whathitme.dump.done=Wrote %s entries to %s
+whathitme.dump.template=Wrote a hintMap / renameMap template with %s damage ids to %s
 whathitme.dump.failed=Could not write the dump: %s
 whathitme.copy.done=Copied to the clipboard: %s
 whathitme.copyrecap.done=Death recap copied to the clipboard.
@@ -145,7 +146,7 @@ whathitme.help.sethint=<id> <tip...> Custom tip (empty = remove)
 whathitme.help.config=<key> [value] Show or change a setting
 whathitme.help.search=<text|#tag|@modid> Search damage types, mobs and effects
 whathitme.help.inspect=<player> Last death and history of a player (operators)
-whathitme.help.dump=Write everything known to whathitme_dump.csv
+whathitme.help.dump=Write whathitme_dump.csv and a hintMap / renameMap template
 whathitme.help.reload=Reload the configuration files
 whathitme.help.snapshot=[number] Saved totem / heavy-hit snapshots
 whathitme.help.server=<subcommand> Run a subcommand on the server (server-wide settings)

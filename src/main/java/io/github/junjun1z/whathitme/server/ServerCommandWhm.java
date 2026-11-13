@@ -170,8 +170,12 @@ public final class ServerCommandWhm extends CommandBase {
                 if (!admin(sender)) throw err(m, "whathitme.error.noperm");
                 File file = new File(server.getDataDirectory(), "whathitme_dump.csv");
                 try {
-                    int n = DumpWriter.write(file, SearchEngine.all(DamageTracker.SERVER.catalog), c);
+                    List<Entry> all = SearchEngine.all(DamageTracker.SERVER.catalog);
+                    int n = DumpWriter.write(file, all, c);
                     sender.sendMessage(m.tr(TextFormatting.GREEN, "whathitme.dump.done", n, file.getAbsolutePath()));
+                    File tpl = new File(new File(Loader.instance().getConfigDir(), "whathitme"), "hint_template.cfg");
+                    int ids = DumpWriter.writeTemplate(tpl, all);
+                    sender.sendMessage(m.tr(TextFormatting.GREEN, "whathitme.dump.template", ids, tpl.getAbsolutePath()));
                 } catch (Exception e) {
                     throw err(m, "whathitme.dump.failed", String.valueOf(e.getMessage()));
                 }

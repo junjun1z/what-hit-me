@@ -107,8 +107,8 @@ public final class WhmConfig {
                 if (!t.isEmpty()) pats.add(glob(t));
             }
             ignorePatterns = pats;
-            renameMap = parseMap(cfg.getStringList("renameMap", CAT_FILTERS, new String[0], "Custom display names: \"modid:damage_id = Custom Name\" (§ color codes allowed)"));
-            hintMap = parseMap(cfg.getStringList("hintMap", CAT_FILTERS, new String[0], "Custom tips: \"modid:damage_id = Tip text\". Without an entry a tip is made from the damage properties."));
+            renameMap = parseMap(cfg.getStringList("renameMap", CAT_FILTERS, new String[0], "Custom display names, one per line: \"modid:damage_id = Custom Name\". & or section sign color codes work. Use \"modid:damage_id = lang:your.translation.key\" to translate it with a resource pack. Wildcards (*) are allowed in the id. /whm dump writes config/whathitme/hint_template.cfg with every known id."));
+            hintMap = parseMap(cfg.getStringList("hintMap", CAT_FILTERS, new String[0], "Custom tips, one per line: \"modid:damage_id = Tip text\" or \"modid:damage_id = lang:your.translation.key\". Ids without an entry get an automatic tip from the damage properties. Example: \"mob:minecraft:creeper = Creepers hiss before exploding - sprint away!\""));
         }
 
         public boolean isIgnored(String id) {

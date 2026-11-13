@@ -31,7 +31,7 @@ import net.minecraftforge.fml.common.ModContainer;
 /** Turns a DamageSource + entities into plain data: normalized id, mod, names, flags. Caches per damage type. */
 public final class Sources {
 
-    private static final Set<String> VANILLA_TYPES = new HashSet<>(Arrays.asList("inFire", "lightningBolt", "onFire", "lava", "hotFloor",
+    public static final Set<String> VANILLA_TYPES = new HashSet<>(Arrays.asList("inFire", "lightningBolt", "onFire", "lava", "hotFloor",
         "inWall", "cramming", "drown", "starve", "cactus", "fall", "flyIntoWall", "outOfWorld", "generic", "magic", "wither", "anvil",
         "fallingBlock", "dragonBreath", "fireworks", "mob", "player", "arrow", "thrown", "indirectMagic", "thorns", "explosion",
         "explosion.player", "fireball", "sweeping"));

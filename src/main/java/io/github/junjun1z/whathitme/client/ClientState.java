@@ -194,6 +194,9 @@ public final class ClientState {
         try {
             int n = DumpWriter.write(file, all, WhmConfig.common, WhmConfig.client);
             print(Msg.LOCAL.tr(TextFormatting.GREEN, "whathitme.dump.done", n, file.getAbsolutePath()));
+            File tpl = new File(new File(net.minecraftforge.fml.common.Loader.instance().getConfigDir(), "whathitme"), "hint_template.cfg");
+            int ids = DumpWriter.writeTemplate(tpl, all);
+            print(Msg.LOCAL.tr(TextFormatting.GREEN, "whathitme.dump.template", ids, tpl.getAbsolutePath()));
         } catch (Exception e) {
             print(Msg.LOCAL.tr(TextFormatting.RED, "whathitme.dump.failed", String.valueOf(e.getMessage())));
         }

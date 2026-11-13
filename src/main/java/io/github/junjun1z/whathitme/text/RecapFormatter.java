@@ -91,7 +91,7 @@ public final class RecapFormatter {
     /** Main name of a damage line: custom name > attacker > damage type */
     public ITextComponent displayName(DamageRecord r) {
         String ren = o.rename(r.damageId);
-        if (ren != null) return Msg.str(ren.replace('&', '§') + TextFormatting.RESET);
+        if (ren != null) return custom(ren);
         if (o.on(Flag.ATTACKER_NAME) && !r.attackerName.isEmpty()) {
             ITextComponent c = new TextComponentString("").appendSibling(attacker(r));
             if (!r.directName.isEmpty() && !r.directName.equals(r.attackerName)) {
@@ -131,11 +131,27 @@ public final class RecapFormatter {
         return c;
     }
 
+    /**
+     * A value from renameMap / hintMap: literal text (&amp; or section sign color codes) or "lang:translation.key" so packs can
+     * ship translations in a resource pack.
+     */
+    @SuppressWarnings("deprecation")
+    public ITextComponent custom(String value) {
+        String v = value.trim();
+        if (v.startsWith("lang:")) {
+            String key = v.substring(5).trim();
+            if (m.localized) return new TextComponentString("").appendSibling(new net.minecraft.util.text.TextComponentTranslation(key)).appendText(TextFormatting.RESET.toString());
+            if (net.minecraft.util.text.translation.I18n.canTranslate(key)) return Msg.str(net.minecraft.util.text.translation.I18n.translateToLocal(key) + TextFormatting.RESET);
+            return Msg.str(key);
+        }
+        return Msg.str(v.replace('&', '§') + TextFormatting.RESET);
+    }
+
     // ---------------------------------------------------------------- tips
 
     public ITextComponent tip(DamageRecord r) {
         String custom = o.hint(r.damageId);
-        if (custom != null) return Msg.str(custom.replace('&', '§'));
+        if (custom != null) return custom(custom);
         return m.tr("whathitme.hint." + Hints.autoKey(r));
     }
 
@@ -444,7 +460,7 @@ public final class RecapFormatter {
     public ITextComponent entryName(Entry e) {
         if (e.type == Entry.DAMAGE) {
             String ren = o.rename(e.id);
-            if (ren != null) return Msg.str(ren.replace('&', '§') + TextFormatting.RESET);
+            if (ren != null) return custom(ren);
             if (e.id.startsWith("mob:")) return m.name(e.nameKey, e.name);
             return typeName(e.name);
         }
