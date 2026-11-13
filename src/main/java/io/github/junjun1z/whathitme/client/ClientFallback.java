@@ -40,6 +40,9 @@ final class ClientFallback {
     private float prevHealth = -1f;
     private float prevAbsorption;
     private float prevFall;
+    /** Highest fall distance of the current / last fall, kept a few ticks after landing (damage arrives later) */
+    private float fallPeak;
+    private int groundTicks;
     private int prevTotems;
     private boolean dead;
     private String deathMessage = "";
@@ -70,6 +73,12 @@ final class ClientFallback {
             prevTotems = tot;
             dead = hp <= 0f;
             return;
+        }
+        if (p.fallDistance > 0f) {
+            fallPeak = Math.max(fallPeak, p.fallDistance);
+            groundTicks = 0;
+        } else if (++groundTicks > 15) {
+            fallPeak = 0f;
         }
         WhmConfig.Common c = WhmConfig.common;
         long now = System.currentTimeMillis();
@@ -135,7 +144,7 @@ final class ClientFallback {
             recs.add(killing);
             key = recs.size() - 1;
         }
-        Snapshot s = new Snapshot(Snapshot.DEATH, now, recs, key, deathMessage);
+        Snapshot s = refine(new Snapshot(Snapshot.DEATH, now, recs, key, deathMessage));
         ClientState.FALLBACK.setLastDeath(s);
         ClientState.onDeath(s);
     }
@@ -152,8 +161,9 @@ final class ClientFallback {
                         deathMessage = ITextComponent.Serializer.componentToJson(c);
                         Snapshot cur = ClientState.currentDeath;
                         if (cur != null && System.currentTimeMillis() - cur.time < 3000 && cur.deathMessage.isEmpty()) {
-                            ClientState.currentDeath = cur.withDeathMessage(deathMessage);
+                            ClientState.currentDeath = refine(cur.withDeathMessage(deathMessage));
                             if (ClientState.pendingSummary == cur) ClientState.pendingSummary = ClientState.currentDeath;
+                            if (ClientState.FALLBACK.lastDeath() == cur) ClientState.FALLBACK.setLastDeath(ClientState.currentDeath);
                         }
                     }
                     break;
@@ -161,6 +171,82 @@ final class ClientFallback {
             }
         } catch (Throwable ignored) {
             // no message
+        }
+    }
+
+    /**
+     * The vanilla death message is a translation like death.attack.outOfWorld / death.attack.mob(.item): it tells the
+     * real damage type of the killing blow, better than any guess.
+     */
+    private static Snapshot refine(Snapshot s) {
+        DamageRecord k = s.key();
+        if (k == null || !k.has(DamageRecord.ESTIMATED) || s.deathMessage.isEmpty()) return s;
+        try {
+            ITextComponent c = ITextComponent.Serializer.jsonToComponent(s.deathMessage);
+            if (!(c instanceof net.minecraft.util.text.TextComponentTranslation)) return s;
+            net.minecraft.util.text.TextComponentTranslation t = (net.minecraft.util.text.TextComponentTranslation) c;
+            String key = t.getKey();
+            String type;
+            if (key.startsWith("death.fell.")) type = "fall";
+            else if (key.startsWith("death.attack.")) {
+                type = key.substring("death.attack.".length());
+                if (type.endsWith(".item")) type = type.substring(0, type.length() - 5);
+                if (type.endsWith(".player") && !type.equals("explosion.player")) type = type.substring(0, type.length() - 7);
+            } else return s;
+            Object[] args = t.getFormatArgs();
+            String attacker = args.length > 1 ? (args[1] instanceof ITextComponent ? ((ITextComponent) args[1]).getUnformattedText() : String.valueOf(args[1])) : "";
+            if (key.startsWith("death.fell.") && !key.startsWith("death.fell.accident")) attacker = "";
+            boolean mob = "mob".equals(type) || "player".equals(type);
+            String id = mob ? (k.damageId.startsWith("mob:") ? k.damageId : "mob:unknown") : "minecraft:" + type;
+            String atk = attacker.isEmpty() ? k.attackerName : attacker;
+            int flags = (k.flags & ~DamageRecord.PROPERTY_MASK) | typeFlags(type);
+            DamageRecord nk = new DamageRecord(k.time, id, type, atk, attacker.isEmpty() ? k.attackerKey : "", k.attackerId, k.directName,
+                mob ? k.modId : "minecraft", mob ? k.modName : "Minecraft", k.raw, k.actual, k.absorbed, flags, k.distance, k.weaponName, k.weaponKey,
+                k.weaponEnchants, k.ownerName, k.hits, k.healthAfter, k.maxHealth, k.sourceTag);
+            java.util.List<DamageRecord> recs = new java.util.ArrayList<>(s.records);
+            recs.set(s.keyIndex, nk);
+            ClientState.FALLBACK.replace(k, nk);
+            ClientState.CATALOG.register(nk);
+            return new Snapshot(s.kind, s.time, recs, s.keyIndex, s.deathMessage);
+        } catch (Throwable e) {
+            return s;
+        }
+    }
+
+    private static int typeFlags(String type) {
+        switch (type) {
+            case "outOfWorld":
+                return DamageRecord.BYPASS_ARMOR | DamageRecord.BYPASS_CREATIVE;
+            case "fall":
+            case "drown":
+            case "inWall":
+            case "cramming":
+            case "flyIntoWall":
+            case "generic":
+                return DamageRecord.BYPASS_ARMOR;
+            case "starve":
+                return DamageRecord.BYPASS_ARMOR | DamageRecord.ABSOLUTE;
+            case "magic":
+            case "indirectMagic":
+                return DamageRecord.BYPASS_ARMOR | DamageRecord.MAGIC;
+            case "wither":
+                return DamageRecord.BYPASS_ARMOR;
+            case "onFire":
+                return DamageRecord.BYPASS_ARMOR | DamageRecord.FIRE;
+            case "inFire":
+            case "lava":
+            case "hotFloor":
+                return DamageRecord.FIRE;
+            case "explosion":
+            case "explosion.player":
+                return DamageRecord.EXPLOSION;
+            case "arrow":
+            case "thrown":
+                return DamageRecord.PROJECTILE;
+            case "fireball":
+                return DamageRecord.PROJECTILE | DamageRecord.FIRE;
+            default:
+                return 0;
         }
     }
 
@@ -174,7 +260,8 @@ final class ClientFallback {
         if (p.posY < -60) {
             type = "outOfWorld";
             flags |= DamageRecord.BYPASS_ARMOR | DamageRecord.ABSOLUTE | DamageRecord.BYPASS_CREATIVE;
-        } else if (prevFall > 3f && p.fallDistance < prevFall) {
+        } else if (fallPeak > 3f && (p.onGround || p.fallDistance < prevFall)) {
+            fallPeak = 0f;
             type = "fall";
             flags |= DamageRecord.BYPASS_ARMOR;
         } else if (p.isInLava()) {
