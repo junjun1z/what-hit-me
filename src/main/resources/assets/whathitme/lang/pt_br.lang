@@ -151,6 +151,13 @@ whathitme.help.reload=Recarregar os arquivos de configuração
 whathitme.help.snapshot=[número] Registros salvos (totem / golpe pesado)
 whathitme.help.server=<subcomando> Executar um subcomando no servidor (configurações do servidor)
 
+whathitme.config.title=Configurações do What Hit Me?
+whathitme.config.client=Pessoal (whathitme-client.cfg)
+whathitme.config.common=Modpack / servidor (whathitme-common.cfg)
+whathitme.config.cat.display=Opções de exibição
+whathitme.config.cat.filters=Filtros, nomes e dicas
+whathitme.config.cat.tracking=Registro
+whathitme.config.cat.layout=Painel da tela de morte
 whathitme.panel.title=What Hit Me?
 whathitme.panel.copy=Copiar
 whathitme.panel.waiting=Aguardando o servidor...

@@ -24,6 +24,10 @@ What Hit Me? records the damage a player takes and explains a death in plain wor
 |---|---|
 | ![Search](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/docs/screenshots/search.png) | ![Totem](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/docs/screenshots/totem.png) |
 
+| In a 21-mod pack | In-game settings |
+|---|---|
+| ![Modpack death screen](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/docs/screenshots/modpack-death-screen.png) | ![Config GUI](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/docs/screenshots/config-gui.png) |
+
 ## For modpack makers
 
 ### Why include it
@@ -44,7 +48,7 @@ Single player counts as "client and server". Mixed servers work too: each player
 
 ### Config files
 
-Both files are in `config/whathitme/` and are re-read by `/whm reload` without a restart.
+Both files are in `config/whathitme/` and are re-read by `/whm reload` without a restart. You can also edit them in game: **Mods → What Hit Me? → Config** (Personal and Modpack / server groups).
 
 | File | Who it is for | Contents |
 |---|---|---|

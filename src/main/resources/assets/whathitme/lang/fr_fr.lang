@@ -151,6 +151,13 @@ whathitme.help.reload=Recharger les fichiers de configuration
 whathitme.help.snapshot=[numéro] Instantanés enregistrés (totem / coup lourd)
 whathitme.help.server=<sous-commande> Exécuter une sous-commande sur le serveur (paramètres du serveur)
 
+whathitme.config.title=Paramètres de What Hit Me?
+whathitme.config.client=Personnel (whathitme-client.cfg)
+whathitme.config.common=Modpack / serveur (whathitme-common.cfg)
+whathitme.config.cat.display=Options d'affichage
+whathitme.config.cat.filters=Filtres, noms et astuces
+whathitme.config.cat.tracking=Enregistrement
+whathitme.config.cat.layout=Panneau de l’écran de mort
 whathitme.panel.title=What Hit Me?
 whathitme.panel.copy=Copier
 whathitme.panel.waiting=En attente du serveur...

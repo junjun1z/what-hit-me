@@ -151,6 +151,13 @@ whathitme.help.reload=설정 파일 다시 불러오기
 whathitme.help.snapshot=[번호] 저장된 토템 / 강타 스냅샷
 whathitme.help.server=<하위 명령어> 서버에서 하위 명령어 실행 (서버 전체 설정)
 
+whathitme.config.title=What Hit Me? 설정
+whathitme.config.client=개인용 (whathitme-client.cfg)
+whathitme.config.common=모드팩 / 서버 (whathitme-common.cfg)
+whathitme.config.cat.display=표시 전환
+whathitme.config.cat.filters=필터, 이름 및 팁
+whathitme.config.cat.tracking=기록
+whathitme.config.cat.layout=사망 화면 패널
 whathitme.panel.title=What Hit Me?
 whathitme.panel.copy=복사
 whathitme.panel.waiting=서버를 기다리는 중...

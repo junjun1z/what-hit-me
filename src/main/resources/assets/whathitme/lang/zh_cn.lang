@@ -151,6 +151,13 @@ whathitme.help.reload=重新加载配置文件
 whathitme.help.snapshot=[编号] 已保存的图腾 / 重击快照
 whathitme.help.server=<子命令> 在服务器上执行子命令 (全服设置)
 
+whathitme.config.title=What Hit Me? 设置
+whathitme.config.client=个人（whathitme-client.cfg）
+whathitme.config.common=整合包／服务器（whathitme-common.cfg）
+whathitme.config.cat.display=显示开关
+whathitme.config.cat.filters=过滤、名称与提示
+whathitme.config.cat.tracking=记录
+whathitme.config.cat.layout=死亡界面面板
 whathitme.panel.title=What Hit Me?
 whathitme.panel.copy=复制
 whathitme.panel.waiting=正在等待服务器……

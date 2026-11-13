@@ -1,6 +1,8 @@
 # Changelog
 
-The release workflow publishes the section whose heading matches the pushed tag (for example `## [1.0.1]
+The release workflow publishes the section whose heading matches the pushed tag (for example `## [1.0.0]` for tag `1.0.0`) as the release notes.
+
+## [1.0.1]
 
 Bug fixes found by a full in-game test pass (single player, dedicated server with and without the mod, a client without the mod, two players, a 21-mod pack).
 
@@ -15,8 +17,6 @@ Bug fixes found by a full in-game test pass (single player, dedicated server wit
 Added:
 
 - In-game settings screen: Mods list > What Hit Me? > Config, with both files (Personal / Modpack - server). Changes are saved and applied on Done; in single player the server side is updated too.
-
-## [1.0.0]` for tag `1.0.0`) as the release notes.
 
 ## [1.0.0]
 

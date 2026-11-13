@@ -151,6 +151,13 @@ whathitme.help.reload=Перезагрузить файлы настроек
 whathitme.help.snapshot=[номер] Сохранённые снимки тотема / сильного удара
 whathitme.help.server=<подкоманда> Выполнить подкоманду на сервере (настройки сервера)
 
+whathitme.config.title=Настройки What Hit Me?
+whathitme.config.client=Личные (whathitme-client.cfg)
+whathitme.config.common=Сборка / сервер (whathitme-common.cfg)
+whathitme.config.cat.display=Переключатели отображения
+whathitme.config.cat.filters=Фильтры, названия и советы
+whathitme.config.cat.tracking=Запись
+whathitme.config.cat.layout=Панель экрана смерти
 whathitme.panel.title=What Hit Me?
 whathitme.panel.copy=Копировать
 whathitme.panel.waiting=Ожидание сервера...

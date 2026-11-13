@@ -45,6 +45,8 @@ GALLERY_TITLES = {
     "effects": "Active effects: source mod and milk curability",
     "search": "Search damage types, mobs and effects",
     "totem": "Totem of Undying snapshot alert",
+    "modpack-death-screen": "In a 21-mod pack: the tooltip names the mod of the attacker",
+    "config-gui": "In-game settings: every display element can be switched off",
 }
 
 

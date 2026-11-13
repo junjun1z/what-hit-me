@@ -151,6 +151,13 @@ whathitme.help.reload=Konfigurationsdateien neu laden
 whathitme.help.snapshot=[Nummer] Gespeicherte Momentaufnahmen (Totem / schwerer Treffer)
 whathitme.help.server=<Unterbefehl> Unterbefehl auf dem Server ausführen (serverweite Einstellungen)
 
+whathitme.config.title=What Hit Me?-Einstellungen
+whathitme.config.client=Persönlich (whathitme-client.cfg)
+whathitme.config.common=Modpack / Server (whathitme-common.cfg)
+whathitme.config.cat.display=Anzeige-Schalter
+whathitme.config.cat.filters=Filter, Namen und Tipps
+whathitme.config.cat.tracking=Aufzeichnung
+whathitme.config.cat.layout=Todesbildschirm-Panel
 whathitme.panel.title=What Hit Me?
 whathitme.panel.copy=Kopieren
 whathitme.panel.waiting=Warte auf den Server...

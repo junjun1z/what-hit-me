@@ -151,6 +151,13 @@ whathitme.help.reload=設定ファイルを再読み込み
 whathitme.help.snapshot=[番号] 保存されたトーテム / 大ダメージのスナップショット
 whathitme.help.server=<サブコマンド> サーバー側でサブコマンドを実行 (サーバー全体の設定)
 
+whathitme.config.title=What Hit Me? の設定
+whathitme.config.client=個人用（whathitme-client.cfg）
+whathitme.config.common=modpack／サーバー用（whathitme-common.cfg）
+whathitme.config.cat.display=表示の切り替え
+whathitme.config.cat.filters=フィルター・表示名・ヒント
+whathitme.config.cat.tracking=記録
+whathitme.config.cat.layout=死亡画面パネル
 whathitme.panel.title=What Hit Me?
 whathitme.panel.copy=コピー
 whathitme.panel.waiting=サーバーの応答を待っています…
