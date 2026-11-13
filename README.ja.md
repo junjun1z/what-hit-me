@@ -87,7 +87,7 @@
 | キー | 初期値 | 意味 |
 |---|---|---|
 | `anchorPoint` | `CENTER_LEFT` | `TOP_LEFT`、`TOP_RIGHT`、`BOTTOM_LEFT`、`BOTTOM_RIGHT`、`CENTER_LEFT`、`CENTER_RIGHT` |
-| `offsetX` / `offsetY` | 8 / 0 | 基準位置からのずれ。パネルをドラッグすると保存 |
+| `offsetX` / `offsetY` | 4 / 0 | 基準位置からのずれ。パネルをドラッグすると保存 |
 | `scale` | 0.85 | パネルの大きさ |
 | `backgroundOpacity` | 0.75 | 背景の不透明度（0.0〜1.0） |
 | `maxVisibleLines` | 8 | スクロールせずに見える行数 |
@@ -168,7 +168,7 @@ English、日本語、简体中文、繁體中文、한국어、Русский�
 
 ## ビルド
 
-Gradle の実行には JDK 25 が必要です（Mod 本体は Gradle のツールチェーンで Java 8 向けにコンパイルされます）。
+Gradle の実行には JDK 25 が必要です。Mod 本体は Java 8 向けにコンパイルされ、そのツールチェーンは Gradle が自動でダウンロードします。
 
 ```
 ./gradlew build -Pmod_version=1.0.0

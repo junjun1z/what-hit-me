@@ -87,7 +87,7 @@ The thresholds in `whathitme-client.cfg` only matter in client-only mode; otherw
 | Key | Default | Meaning |
 |---|---|---|
 | `anchorPoint` | `CENTER_LEFT` | `TOP_LEFT`, `TOP_RIGHT`, `BOTTOM_LEFT`, `BOTTOM_RIGHT`, `CENTER_LEFT`, `CENTER_RIGHT` |
-| `offsetX` / `offsetY` | 8 / 0 | Offset from the anchor, saved when you drag the panel |
+| `offsetX` / `offsetY` | 4 / 0 | Offset from the anchor, saved when you drag the panel |
 | `scale` | 0.85 | Panel scale |
 | `backgroundOpacity` | 0.75 | 0.0 - 1.0 |
 | `maxVisibleLines` | 8 | Lines before scrolling |
@@ -168,7 +168,7 @@ English, 日本語, 简体中文, 繁體中文, 한국어, Русский, Deuts
 
 ## Building
 
-Requires JDK 25 to run Gradle (the mod itself is compiled for Java 8 through a Gradle toolchain).
+Requires JDK 25 to run Gradle. The mod itself is compiled for Java 8; Gradle downloads that toolchain automatically.
 
 ```
 ./gradlew build -Pmod_version=1.0.0
