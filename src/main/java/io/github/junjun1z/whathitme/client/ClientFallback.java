@@ -89,6 +89,7 @@ final class ClientFallback {
         float threshold = Math.max(c.minDamageThreshold, WhmConfig.client.minDamageThreshold);
         if (!dead && taken > 0f && taken >= threshold) {
             DamageRecord r = estimate(mc, p, lostHp, taken - lostHp, hp, now);
+            ClientState.FALLBACK.resize(WhmConfig.common.historySize);
             DamageRecord stored = ClientState.FALLBACK.add(r, (long) (c.mergeWindowSeconds * 1000f));
             ClientState.CATALOG.register(r);
             boolean totemPop = tot < prevTotems && hp > 0f && p.isPotionActive(MobEffects.REGENERATION);

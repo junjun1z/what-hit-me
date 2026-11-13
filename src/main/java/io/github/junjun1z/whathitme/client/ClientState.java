@@ -162,7 +162,8 @@ public final class ClientState {
     }
 
     private static DisplayOptions withoutActions(DisplayOptions o) {
-        return o;
+        // inspect shows another player's records: no [Copy ID] / [Mute] buttons there
+        return o.without(Flag.ACTION_BUTTONS);
     }
 
     static void onEntries(PacketEntries msg) {

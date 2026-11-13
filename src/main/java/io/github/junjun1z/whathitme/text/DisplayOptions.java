@@ -45,6 +45,15 @@ public final class DisplayOptions {
         return this;
     }
 
+    /** A copy of these options with one flag turned off */
+    public DisplayOptions without(Flag f) {
+        DisplayOptions o = new DisplayOptions(mask & ~f.bit(), clientActions, summarySeconds);
+        o.ignore.addAll(ignore);
+        o.rename.putAll(rename);
+        o.hint.putAll(hint);
+        return o;
+    }
+
     public boolean on(Flag f) {
         return (mask & f.bit()) != 0;
     }

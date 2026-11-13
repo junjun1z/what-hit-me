@@ -85,7 +85,7 @@ public final class ServerCommandWhm extends CommandBase {
             case "history": {
                 if (player == null) throw err(m, "whathitme.error.player");
                 PlayerHistory h = DamageTracker.SERVER.get(player.getUniqueID());
-                send(sender, f.history(h.records(), now, 15, h.snapshots().size(), false, null));
+                send(sender, f.history(h.records(), now, WhmConfig.client != null ? WhmConfig.client.chatHistoryLines : 15, h.snapshots().size(), false, null));
                 break;
             }
             case "last": {
@@ -163,7 +163,7 @@ public final class ServerCommandWhm extends CommandBase {
                 PlayerHistory th = DamageTracker.SERVER.get(t.getUniqueID());
                 if (th.lastDeath() == null) sender.sendMessage(m.tr(TextFormatting.GRAY, "whathitme.inspect.nodeath", t.getName()));
                 else send(sender, f.fullRecap(th.lastDeath(), now, t.getName()));
-                send(sender, f.history(th.records(), now, 15, 0, false, t.getName()));
+                send(sender, f.history(th.records(), now, WhmConfig.client != null ? WhmConfig.client.chatHistoryLines : 15, 0, false, t.getName()));
                 break;
             }
             case "dump": {
