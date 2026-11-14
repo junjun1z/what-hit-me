@@ -1,13 +1,34 @@
 pluginManagement {
     repositories {
-        maven { url = 'https://maven.minecraftforge.net/' }
-        maven { url = 'https://nexus.gtnewhorizons.com/repository/public/' }
+        maven { name = 'Fabric'; url = 'https://maven.fabricmc.net/' }
+        maven { name = 'NeoForged'; url = 'https://maven.neoforged.net/releases' }
         mavenCentral()
         gradlePluginPortal()
     }
 }
+
 plugins {
-    // Downloads the Java 8 toolchain automatically
+    // Downloads missing JDKs (8 / 17 / 21 / 25) automatically for the Java toolchains
     id 'org.gradle.toolchains.foojay-resolver-convention' version '1.0.0'
 }
+
 rootProject.name = 'whathitme'
+
+// Every build target: <minecraft version>-<loader>. Each has targets/<name>/gradle.properties.
+def targets = file('targets').listFiles().findAll { it.isDirectory() && new File(it, 'gradle.properties').exists() }
+        .collect { it.name }.sort()
+// -Ptargets=1.20.1-forge,1.21.1-fabric builds only these
+def only = providers.gradleProperty('targets').orNull
+if (only) targets = targets.findAll { only.split(',').contains(it) }
+targets.each { t ->
+    include(":$t")
+    project(":$t").projectDir = file("targets/$t")
+    project(":$t").buildFileName = '../../gradle/target.gradle'
+}
+
+// MinecraftForge targets that need RetroFuturaGradle / ForgeGradle 7 / Architectury Loom live in a nested build
+// with its own plugin classpath
+includeBuild('legacy')
+
+// MinecraftForge 1.7.10 / 1.8.9 - 1.11.2 (Unimined) lives in another nested build with its own plugin classpath
+includeBuild('oldforge')

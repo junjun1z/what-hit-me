@@ -12,12 +12,14 @@ concurrency:
 
 jobs:
   build:
-    name: Minecraft 1.12.2 (Forge)
+    name: All targets (Forge / Fabric / NeoForge)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
           fetch-depth: 0
+
+      # Gradle runs on JDK 25; the targets use Java toolchains 8 / 17 / 21 / 25 (missing ones are downloaded)
       - uses: actions/setup-java@v4
         with:
           distribution: temurin
@@ -26,15 +28,29 @@ jobs:
             17
             21
             25
+
       - uses: gradle/actions/setup-gradle@v4
+
       - name: Build
         env:
           JAVA_HOME: ${{ env.JAVA_HOME_25_X64 }}
+          MOD_VERSION: 0.0.0-ci.${{ github.run_number }}
         run: |
           chmod +x gradlew
-          ./gradlew build --no-daemon --stacktrace -Pmod_version="0.0.0-ci.${{ github.run_number }}"
+          ./gradlew collectJars --no-daemon --stacktrace -Pmod_version="$MOD_VERSION"
+          ls -la build/dist
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Check publish.json matches the jars
+        run: |
+          pip install --quiet requests
+          python tools/publish.py --version "0.0.0-ci.${{ github.run_number }}" --list-files
+
       - uses: actions/upload-artifact@v4
         with:
           name: whathitme-ci
-          path: build/libs/whathitme-*.jar
+          path: build/dist/whathitme-*.jar
           if-no-files-found: error

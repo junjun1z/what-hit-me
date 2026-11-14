@@ -164,19 +164,19 @@ Mod のダメージ種類は、そのワールドで一度誰かに当たると�
 
 English、日本語、简体中文、繁體中文、한국어、Русский、Deutsch、Français、Español、Português (Brasil)。
 
-`python tools/check_lang.py` で、各言語ファイルに `en_us.lang` と比べて足りないキーや余分なキーがないか確認できます。
+`python tools/check_lang.py` で、各言語ファイルに `en_us.json` と比べて足りないキーや余分なキーがないか確認できます。
 
 ## ビルド
 
-Gradle の実行には JDK 25 が必要です。Mod 本体は Java 8 向けにコンパイルされ、そのツールチェーンは Gradle が自動でダウンロードします。
+Gradle の実行には JDK 25 が必要です。各ターゲットの Java 8 / 17 / 21 / 25 ツールチェーンは自動でダウンロードされます。
 
 ```
-./gradlew build -Pmod_version=1.0.0
+./gradlew collectJars -Pmod_version=1.0.0
 ```
 
-jar は `build/libs/`（`whathitme-<バージョン>.jar`）に出力されます。`-Pmod_version` を省略すると環境変数 `VERSION`、それもなければ `1.0.0` になります。
+Minecraft バージョン / ローダーごとに 1 ターゲットで、すべての jar が `build/dist/` にコピーされます。構成、アーキテクチャ、バージョンの追加方法、ゲーム内セルフテストは [BUILD.md](BUILD.md) を参照してください。
 
-リリース: `1.0.0` のようなタグを push すると `.github/workflows/release.yml` が jar をビルドし、[CHANGELOG.md](CHANGELOG.md) の該当バージョンの節を添えて GitHub Releases、Modrinth、CurseForge に公開します。
+リリース: `1.0.0` のようなタグを push すると `.github/workflows/release.yml` が全ターゲットをビルドし、`publish.json` に載っている jar を [CHANGELOG.md](CHANGELOG.md) の該当バージョンの節を添えて GitHub Releases、Modrinth、CurseForge に公開します。
 
 ## ライセンス
 

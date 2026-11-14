@@ -164,19 +164,19 @@ Yes. MIT license, no need to ask.
 
 English, 日本語, 简体中文, 繁體中文, 한국어, Русский, Deutsch, Français, Español, Português (Brasil).
 
-`python tools/check_lang.py` lists keys missing or extra in each language compared to `en_us.lang`.
+`python tools/check_lang.py` lists keys missing or extra in each language compared to `en_us.json`.
 
 ## Building
 
-Requires JDK 25 to run Gradle. The mod itself is compiled for Java 8; Gradle downloads that toolchain automatically.
+Requires JDK 25 to run Gradle; the Java 8 / 17 / 21 / 25 toolchains of the targets are downloaded automatically.
 
 ```
-./gradlew build -Pmod_version=1.0.0
+./gradlew collectJars -Pmod_version=1.0.0
 ```
 
-The jar is written to `build/libs/` (`whathitme-<version>.jar`). Without `-Pmod_version` the version comes from the `VERSION` environment variable, or defaults to `1.0.0`.
+Every Minecraft version / loader is one target; all jars are copied to `build/dist/`. Layout, architecture, how to add a version and the in-game self-test: [BUILD.md](BUILD.md).
 
-Releases: pushing a tag such as `1.0.0` runs `.github/workflows/release.yml`, which builds the jar and publishes it to GitHub Releases, Modrinth and CurseForge with the matching section of [CHANGELOG.md](CHANGELOG.md).
+Releases: pushing a tag such as `1.0.0` runs `.github/workflows/release.yml`, which builds every target and publishes the jars listed in `publish.json` to GitHub Releases, Modrinth and CurseForge with the matching section of [CHANGELOG.md](CHANGELOG.md).
 
 ## License
 

@@ -1,0 +1,120 @@
+// Settings shared by every target. Applied by the loader scripts (gradle/<loader>.gradle) after their plugin.
+def mcv = project.property('mc_version') as String
+def loader = project.property('loader') as String
+def codeVersion = project.property('code_version') as String
+def javaVersion = (project.property('java_version') as String).toInteger()
+
+// Version: -Pmod_version=X.Y.Z > MOD_VERSION environment variable > gradle.properties (0.0.0-dev)
+def cliVersion = gradle.startParameter.projectProperties['mod_version']
+def envVersion = System.getenv('MOD_VERSION')
+version = cliVersion ?: (envVersion ?: project.property('mod_version'))
+group = project.property('mod_group')
+// published loader name (e.g. "forge" for forge_rfg / forge7 / forge_arch targets)
+def loaderName = project.findProperty('loader_name') ?: loader
+base { archivesName = "whathitme-${loaderName}-${mcv}" }
+
+java {
+    toolchain { languageVersion = JavaLanguageVersion.of(javaVersion) }
+}
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+    if (javaVersion > 8) options.release = javaVersion // javac 8 has no --release (the Java 8 toolchain is used as-is)
+}
+
+// repository root (also when used from the nested legacy/ and oldforge/ builds)
+def root = new File(rootProject.projectDir, 'common').exists() ? rootProject.projectDir : rootProject.projectDir.parentFile
+def selftest = project.hasProperty('selftest')
+sourceSets {
+    main {
+        java {
+            // loader-independent core (plain Java 8, no Minecraft classes)
+            srcDir new File(root, 'common/src/main/java')
+            // adapter to one Minecraft API generation
+            srcDir new File(root, "versions/${codeVersion}/src/main/java")
+            // loader entry point, events, networking, commands
+            srcDir new File(root, "loaders/${loader}/${codeVersion}/src/main/java")
+            // development self-test and the "client without the mod" driver, only with -Pselftest (never in release jars)
+            if (selftest) {
+                srcDir new File(root, 'devtest/common/java')
+                srcDir new File(root, "devtest/${codeVersion}/java")
+                srcDir new File(root, "devtest/${loader}/${codeVersion}/java")
+                srcDir new File(root, 'devtest/driver/common/java')
+                srcDir new File(root, "devtest/driver/${loader}/${codeVersion}/java")
+            }
+        }
+        resources {
+            srcDir new File(root, 'common/src/main/resources')
+            srcDir new File(root, "loaders/${loader}/${codeVersion}/src/main/resources")
+        }
+    }
+}
+
+def expandProps = [
+    version        : project.version,
+    mod_id         : project.property('mod_id'),
+    mod_name       : project.property('mod_name'),
+    mod_authors    : project.property('mod_authors'),
+    mod_license    : project.property('mod_license'),
+    mod_description: project.property('mod_description'),
+    mod_homepage   : project.property('mod_homepage'),
+    mod_issues     : project.property('mod_issues'),
+    mc_version     : mcv,
+    mc_range       : project.findProperty('mc_range') ?: mcv,
+    loader_range   : project.findProperty('loader_range') ?: '*',
+    java_version   : javaVersion,
+]
+processResources {
+    inputs.properties(expandProps)
+    // mod icon: single source in docs/
+    def icon = new File(root, 'docs/icon_128.png')
+    if (icon.exists()) from(icon) { into 'assets/whathitme'; rename { 'icon.png' } }
+    filesMatching(['fabric.mod.json', 'META-INF/mods.toml', 'META-INF/neoforge.mods.toml', 'mcmod.info', 'pack.mcmeta']) {
+        expand expandProps
+    }
+}
+
+jar {
+    from(new File(root, 'LICENSE')) { rename { 'LICENSE_whathitme' } }
+    manifest {
+        attributes(
+            'Implementation-Title': 'What Hit Me?',
+            'Implementation-Version': project.version,
+            'Implementation-Vendor': 'junjun1z'
+        )
+    }
+}
+
+// -Pselftest: after the production jar is built (remapped / reobfuscated), split it into
+//   build/devlibs/whathitme-selftest.jar  (the mod with the self-test, without the driver's loader entry point;
+//                                          use it on test servers too - the libs/ jar of a -Pselftest build
+//                                          also contains the driver's @Mod and Forge refuses to load it)
+//   build/devlibs/whmdriver-dev.jar       (the "client without What Hit Me?" test driver, its own mod)
+// The production jar task is named by the loader script in ext.whmProductionJar.
+if (selftest) {
+    afterEvaluate {
+        def prodName = project.ext.has('whmProductionJar') ? project.ext.whmProductionJar : 'jar'
+        def prod = tasks.named(prodName)
+        // loaders that rename the jar in place after it is built (forge7_srg)
+        def after = tasks.findByName('reobfJar') ? ['reobfJar'] : []
+        def prodFile = { prod.get().outputs.files.files.find { it.name.endsWith('.jar') } }
+        def driverRes = new File(root, "devtest/driver/${loader}/${codeVersion}/resources")
+        def selftestJar = tasks.register('selftestJar', Jar) {
+            dependsOn prod
+            dependsOn after
+            archiveFileName = 'whathitme-selftest.jar'
+            destinationDirectory = layout.buildDirectory.dir('devlibs')
+            from({ zipTree(prodFile()) }) { exclude 'io/github/junjun1z/whmdriver/entry/**', 'META-INF/MANIFEST.MF' }
+        }
+        def driverJar = tasks.register('driverJar', Jar) {
+            dependsOn prod
+            dependsOn after
+            archiveFileName = 'whmdriver-dev.jar'
+            destinationDirectory = layout.buildDirectory.dir('devlibs')
+            from({ zipTree(prodFile()) }) { include 'io/github/junjun1z/whmdriver/**' }
+            if (driverRes.isDirectory()) {
+                from(driverRes)
+            }
+        }
+        tasks.named('assemble') { dependsOn selftestJar, driverJar }
+    }
+}

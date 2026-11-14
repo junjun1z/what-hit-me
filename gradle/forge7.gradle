@@ -1,0 +1,23 @@
+// MinecraftForge 1.20.6+ / 1.21.x / 26.x through ForgeGradle 7 (Mojang names in production: no reobfuscation).
+// Nested legacy/ build.
+apply plugin: 'java'
+apply plugin: 'net.minecraftforge.gradle'
+apply from: rootProject.file('../gradle/common.gradle')
+
+repositories {
+    minecraft.mavenizer(it)
+    maven fg.forgeMaven
+    maven fg.minecraftLibsMaven
+    mavenCentral()
+}
+
+dependencies {
+    implementation minecraft.dependency("net.minecraftforge:forge:${project.property('mc_version')}-${project.property('forge_version')}")
+}
+
+ext.whmProductionJar = 'jar'
+
+dependencies {
+    def extra = rootProject.file("../gradle/deps-forge7-${project.property('code_version')}.gradle")
+    if (extra.exists()) apply from: extra, to: project
+}

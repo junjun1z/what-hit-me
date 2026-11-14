@@ -1,0 +1,16 @@
+// MinecraftForge 1.14.4 - 1.16.5 through Architectury Loom (official mappings, remapped to SRG for production).
+// Nested legacy/ build.
+apply plugin: 'dev.architectury.loom'
+apply from: rootProject.file('../gradle/common.gradle')
+
+loom {
+    silentMojangMappingsLicense()
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.property('mc_version')}"
+    mappings loom.officialMojangMappings()
+    forge "net.minecraftforge:forge:${project.property('mc_version')}-${project.property('forge_version')}"
+}
+
+ext.whmProductionJar = 'remapJar'

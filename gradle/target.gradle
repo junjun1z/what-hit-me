@@ -1,0 +1,4 @@
+// Build file shared by every target (targets/<mc>-<loader>/gradle.properties sets mc_version, loader, ...)
+def loader = project.property('loader')
+def rootDirWhm = new File(rootProject.projectDir, 'common').exists() ? rootProject.projectDir : rootProject.projectDir.parentFile
+apply from: new File(rootDirWhm, "gradle/${loader}.gradle")
