@@ -51,6 +51,32 @@ public final class Registries17 implements Registries {
         return (mod == null || mod.isEmpty() ? "unknown" : mod) + ":" + EntityIds.snake(name.replace('.', '_')).toLowerCase(Locale.ROOT);
     }
 
+    private static volatile java.lang.reflect.Field badField;
+
+    /**
+     * Potion#isBadEffect is client-only on 1.7.10 (missing on a dedicated server): read its field, the only final
+     * boolean of Potion
+     */
+    static boolean bad(Potion p) {
+        try {
+            java.lang.reflect.Field f = badField;
+            if (f == null) {
+                for (java.lang.reflect.Field c : Potion.class.getDeclaredFields()) {
+                    if (c.getType() == boolean.class && java.lang.reflect.Modifier.isFinal(c.getModifiers()) && !java.lang.reflect.Modifier.isStatic(c.getModifiers())) {
+                        c.setAccessible(true);
+                        f = c;
+                        break;
+                    }
+                }
+                if (f == null) return false;
+                badField = f;
+            }
+            return f.getBoolean(p);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
     @Override
     public List<Entry> mobs() {
         List<Entry> out = new ArrayList<>();
@@ -73,7 +99,7 @@ public final class Registries17 implements Registries {
             String id = potionId(p);
             String ns = id.substring(0, id.indexOf(':'));
             String key = p.getName();
-            out.add(new Entry(Entry.EFFECT, id, tr(key), key, ns, Platform.modName(ns), p.isBadEffect() ? 1 : 0, 0, 0, 0, false, ""));
+            out.add(new Entry(Entry.EFFECT, id, tr(key), key, ns, Platform.modName(ns), bad(p) ? 1 : 0, 0, 0, 0, false, ""));
         }
         return out;
     }
@@ -117,7 +143,7 @@ public final class Registries17 implements Registries {
             } catch (Throwable ignored) {
                 // a mod returning odd curative items
             }
-            out.add(new Entry(Entry.ACTIVE_EFFECT, id, tr(p.getName()), p.getName(), mod, Platform.modName(mod), p.isBadEffect() ? 1 : 0, 0, pe.getAmplifier(),
+            out.add(new Entry(Entry.ACTIVE_EFFECT, id, tr(p.getName()), p.getName(), mod, Platform.modName(mod), bad(p) ? 1 : 0, 0, pe.getAmplifier(),
                 pe.getDuration(), milk, cur.toString()));
         }
         return out;
