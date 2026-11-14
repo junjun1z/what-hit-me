@@ -1,0 +1,83 @@
+package io.github.junjun1z.whathitme.forge;
+
+import java.util.function.Supplier;
+
+import io.github.junjun1z.whathitme.core.net.Packets;
+import io.github.junjun1z.whathitme.core.server.ServerCore;
+import net.minecraft.network.Connection;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraftforge.network.NetworkDirection;
+import net.minecraftforge.network.NetworkEvent;
+import net.minecraftforge.network.NetworkRegistry;
+import net.minecraftforge.network.PacketDistributor;
+import net.minecraftforge.network.simple.SimpleChannel;
+
+/**
+ * The "whathitme:main" channel: one message carrying the core packet bytes (type byte + body). Both sides accept a
+ * missing remote channel, so vanilla / unmodded clients and servers can connect.
+ */
+public final class ForgeNet {
+
+    private static final String VERSION = String.valueOf(Packets.PROTOCOL);
+    static SimpleChannel channel;
+
+    private ForgeNet() {}
+
+    /** Core packet bytes */
+    public static final class Raw {
+        final byte[] data;
+
+        Raw(byte[] data) {
+            this.data = data;
+        }
+    }
+
+    static void init() {
+        channel = NetworkRegistry.newSimpleChannel(new ResourceLocation(io.github.junjun1z.whathitme.core.Platform.MODID, Packets.CHANNEL_PATH), () -> VERSION,
+            NetworkRegistry.acceptMissingOr(VERSION), NetworkRegistry.acceptMissingOr(VERSION));
+        channel.messageBuilder(Raw.class, 0)
+            .encoder((m, buf) -> buf.writeBytes(m.data))
+            .decoder(buf -> {
+                byte[] b = new byte[buf.readableBytes()];
+                buf.readBytes(b);
+                return new Raw(b);
+            })
+            .consumer(ForgeNet::handleAsync)
+            .add();
+    }
+
+    private static void handleAsync(Raw msg, Supplier<NetworkEvent.Context> ctx) {
+        ctx.get().enqueueWork(() -> handle(msg, ctx));
+        ctx.get().setPacketHandled(true);
+    }
+
+    private static void handle(Raw msg, Supplier<NetworkEvent.Context> ctx) {
+        Packets.Packet p;
+        try {
+            p = Packets.decode(msg.data);
+        } catch (RuntimeException e) {
+            return; // malformed: ignore
+        }
+        NetworkEvent.Context c = ctx.get();
+        if (c.getDirection() == NetworkDirection.PLAY_TO_SERVER) {
+            ServerPlayer sp = c.getSender();
+            if (sp != null && Packets.serverbound(p.type())) ServerCore.onPacket(new ForgePlayer(sp), p);
+        } else if (!Packets.serverbound(p.type())) {
+            ForgeClient.onPacket(p);
+        }
+    }
+
+    static void sendTo(ServerPlayer p, Packets.Packet pkt) {
+        if (!channel.isRemotePresent(p.connection.connection)) return;
+        channel.send(PacketDistributor.PLAYER.with(() -> p), new Raw(Packets.encode(pkt)));
+    }
+
+    static boolean serverPresent(Connection c) {
+        return c != null && channel.isRemotePresent(c);
+    }
+
+    static void sendToServer(Packets.Packet pkt) {
+        channel.sendToServer(new Raw(Packets.encode(pkt)));
+    }
+}
