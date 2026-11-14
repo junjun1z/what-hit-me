@@ -82,13 +82,14 @@ public class WhmDriverFabric implements ClientModInitializer, DriverPort {
         mc().stop();
     }
 
-    /** Current screen: Minecraft.screen() (26.2+) or the field Minecraft.screen (26.1) */
+    /** Current screen: the field Minecraft.screen (26.1) or Minecraft.gui.screen() (26.2+) */
     private static Object screen() {
         try {
             try {
-                return Minecraft.class.getMethod("screen").invoke(mc());
-            } catch (NoSuchMethodException e) {
                 return Minecraft.class.getField("screen").get(mc());
+            } catch (NoSuchFieldException e) {
+                Object gui = Minecraft.class.getField("gui").get(mc());
+                return gui.getClass().getMethod("screen").invoke(gui);
             }
         } catch (Exception e) {
             return null;

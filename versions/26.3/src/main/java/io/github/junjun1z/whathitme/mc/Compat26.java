@@ -17,11 +17,11 @@ public final class Compat26 {
 
     private Compat26() {}
 
-    private static Method screenM, chatHolderM, targetM, invulGet, invulSet;
+    private static Method screenM, chatHolderM, targetM, invulGet, invulSet, swingM;
     private static Field screenF, chatHolderF, invulF, swingF;
     private static boolean screenInit, chatInit, targetInit, invulInit, swingInit;
 
-    /** Current screen: Minecraft.screen() (26.2+) or the field Minecraft.screen (26.1) */
+    /** Current screen: the field Minecraft.screen (26.1) or Minecraft.gui.screen() (26.2+) */
     public static Screen screen() {
         Minecraft mc = Minecraft.getInstance();
         if (mc == null) return null;
@@ -29,33 +29,32 @@ public final class Compat26 {
             if (!screenInit) {
                 screenInit = true;
                 try {
-                    screenM = Minecraft.class.getMethod("screen");
-                } catch (NoSuchMethodException e) {
                     screenF = Minecraft.class.getField("screen");
+                } catch (NoSuchFieldException e) {
+                    screenM = net.minecraft.client.gui.Gui.class.getMethod("screen");
                 }
             }
-            return (Screen) (screenM != null ? screenM.invoke(mc) : screenF.get(mc));
+            return (Screen) (screenF != null ? screenF.get(mc) : screenM.invoke(mc.gui));
         } catch (Exception e) {
             return null;
         }
     }
 
-    /** The chat: Minecraft.hud.getChat() (26.2+) or Minecraft.gui.getChat() (26.1) */
+    /** The chat: Minecraft.gui.getChat() (26.1) or Minecraft.gui.hud.getChat() (26.2+) */
     public static ChatComponent chat() {
         Minecraft mc = Minecraft.getInstance();
-        if (mc == null) return null;
+        if (mc == null || mc.gui == null) return null;
         try {
             if (!chatInit) {
                 chatInit = true;
                 try {
-                    chatHolderF = Minecraft.class.getField("hud");
-                    chatHolderM = chatHolderF.getType().getMethod("getChat");
-                } catch (NoSuchFieldException | NoSuchMethodException e) {
-                    chatHolderF = Minecraft.class.getField("gui");
+                    chatHolderM = net.minecraft.client.gui.Gui.class.getMethod("getChat");
+                } catch (NoSuchMethodException e) {
+                    chatHolderF = net.minecraft.client.gui.Gui.class.getField("hud");
                     chatHolderM = chatHolderF.getType().getMethod("getChat");
                 }
             }
-            Object holder = chatHolderF.get(mc);
+            Object holder = chatHolderF == null ? mc.gui : chatHolderF.get(mc.gui);
             return holder == null ? null : (ChatComponent) chatHolderM.invoke(holder);
         } catch (Exception e) {
             return null;
@@ -106,7 +105,7 @@ public final class Compat26 {
         }
     }
 
-    /** Is the entity swinging its arm? (the field is gone in 26.3: false) */
+    /** Is the entity swinging its arm? The field swinging (26.1, 26.2) or isSwinging() (26.3) */
     public static boolean swinging(LivingEntity e) {
         try {
             if (!swingInit) {
@@ -114,10 +113,15 @@ public final class Compat26 {
                 try {
                     swingF = LivingEntity.class.getField("swinging");
                 } catch (NoSuchFieldException ex) {
-                    swingF = null;
+                    try {
+                        swingM = LivingEntity.class.getMethod("isSwinging");
+                    } catch (NoSuchMethodException ex2) {
+                        swingM = null;
+                    }
                 }
             }
-            return swingF != null && swingF.getBoolean(e);
+            if (swingF != null) return swingF.getBoolean(e);
+            return swingM != null && (Boolean) swingM.invoke(e);
         } catch (Exception ex) {
             return false;
         }
