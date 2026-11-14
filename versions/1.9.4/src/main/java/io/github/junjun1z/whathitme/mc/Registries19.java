@@ -22,8 +22,8 @@ public final class Registries19 implements Registries {
     public static final Registries19 INSTANCE = new Registries19();
 
     /** Damage type names of vanilla 1.9 (melee "mob" / "player" excluded) */
-    private static final List<String> VANILLA = Arrays.asList("inFire", "lightningBolt", "onFire", "lava", "hotFloor", "inWall", "cramming", "drown",
-        "starve", "cactus", "fall", "flyIntoWall", "outOfWorld", "generic", "magic", "wither", "anvil", "fallingBlock", "dragonBreath", "fireworks",
+    private static final List<String> VANILLA = Arrays.asList("inFire", "lightningBolt", "onFire", "lava", "inWall", "drown",
+        "starve", "cactus", "fall", "flyIntoWall", "outOfWorld", "generic", "magic", "wither", "anvil", "fallingBlock", "dragonBreath",
         "arrow", "thrown", "indirectMagic", "thorns", "explosion", "explosion.player", "fireball");
 
     private Registries19() {}
