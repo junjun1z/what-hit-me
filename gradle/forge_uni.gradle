@@ -43,7 +43,9 @@ def genLang = tasks.register('generateLegacyLang') {
 processResources {
     dependsOn genLang
     from(langOut)
-    exclude 'assets/whathitme/lang/*.json'
+    // en_US.lang targets keep en_us.json: the core reads its English texts from en_us.json / en_us.lang (clients without the mod)
+    def keepEnglishJson = project.findProperty('lang_upper') == 'true'
+    exclude { it.path.startsWith('assets/whathitme/lang/') && it.name.endsWith('.json') && !(keepEnglishJson && it.name == 'en_us.json') }
 }
 
 // keep only the reobfuscated (production) jar in build/libs
