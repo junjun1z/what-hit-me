@@ -15,6 +15,7 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
+import net.neoforged.neoforge.event.entity.living.LivingUseTotemEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
@@ -23,7 +24,9 @@ import net.neoforged.neoforge.event.tick.ServerTickEvent;
 /**
  * NeoForge 26.3 events of the logical server, forwarded to {@link ServerCore}. Every handler returns on its first
  * line for anything that is not a player. LivingIncomingDamageEvent comes before armor (like Fabric's ALLOW_DAMAGE),
- * LivingDamageEvent.Post after the damage was applied (lethal hits too, before the totem check).
+ * LivingDamageEvent.Post after the damage was applied. Since 26.1 Post is fired at the very end of hurtServer, after
+ * the totem check and the death, so a lethal hit is also recorded from LivingUseTotemEvent / LivingDeathEvent (the
+ * core ignores the second call for the same hit).
  */
 public final class NeoServerEvents {
 
@@ -86,6 +89,16 @@ public final class NeoServerEvents {
             () -> Facts.hit(p, event.getSource()));
     }
 
+    /** A lethal hit, before the totem saves the player: record it now (Post comes after the totem healed the player) */
+    @SubscribeEvent(priority = EventPriority.HIGHEST)
+    public void onTotem(LivingUseTotemEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer)) return;
+        ServerPlayer p = tracked(event.getEntity());
+        if (p == null) return;
+        ServerCore.onDamageAfter(new NeoPlayer(p), p.level().getGameTime(), event.getSource(), p.getHealth(), p.getAbsorptionAmount(),
+            () -> Facts.hit(p, event.getSource()));
+    }
+
     @SubscribeEvent(priority = EventPriority.LOWEST)
     public void onDeath(LivingDeathEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer)) return;
@@ -97,6 +110,9 @@ public final class NeoServerEvents {
         } catch (Throwable ignored) {
             // no message
         }
+        // the lethal hit itself (Post comes after the death)
+        ServerCore.onDamageAfter(new NeoPlayer(p), p.level().getGameTime(), event.getSource(), p.getHealth(), p.getAbsorptionAmount(),
+            () -> Facts.hit(p, event.getSource()));
         ServerCore.onDeath(new NeoPlayer(p), () -> Facts.hit(p, event.getSource()), msg);
     }
 

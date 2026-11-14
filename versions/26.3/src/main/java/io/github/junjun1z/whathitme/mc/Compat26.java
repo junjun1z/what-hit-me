@@ -17,7 +17,7 @@ public final class Compat26 {
 
     private Compat26() {}
 
-    private static Method screenM, chatHolderM, targetM, invulGet, invulSet, swingM;
+    private static Method screenM, chatHolderM, targetM, swingM;
     private static Field screenF, chatHolderF, invulF, swingF;
     private static boolean screenInit, chatInit, targetInit, invulInit, swingInit;
 
@@ -83,9 +83,9 @@ public final class Compat26 {
         if (invulInit) return;
         invulInit = true;
         try {
-            invulGet = Entity.class.getMethod("getInvulnerableTime");
-            invulSet = Entity.class.getMethod("setInvulnerableTime", int.class);
-        } catch (NoSuchMethodException e) {
+            // 26.3: the damage cooldown moved to LivingEntity.damageCooldownTime (Entity.invulnerableTime is something else there)
+            invulF = LivingEntity.class.getField("damageCooldownTime");
+        } catch (NoSuchFieldException e) {
             try {
                 invulF = Entity.class.getField("invulnerableTime");
             } catch (NoSuchFieldException e2) {
@@ -94,12 +94,11 @@ public final class Compat26 {
         }
     }
 
-    /** Entity.getInvulnerableTime() (26.3+) or the field invulnerableTime */
+    /** Damage cooldown ("invulnerability frames"): LivingEntity.damageCooldownTime (26.3) or Entity.invulnerableTime (26.1, 26.2) */
     public static int invulnerableTime(Entity e) {
         initInvul();
         try {
-            if (invulGet != null) return (Integer) invulGet.invoke(e);
-            return invulF == null ? 0 : invulF.getInt(e);
+            return invulF == null || !invulF.getDeclaringClass().isInstance(e) ? 0 : invulF.getInt(e);
         } catch (Exception ex) {
             return 0;
         }

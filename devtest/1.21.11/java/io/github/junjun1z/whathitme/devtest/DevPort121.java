@@ -51,7 +51,12 @@ public class DevPort121 implements DevPort {
 
     @Override
     public String mcVersion() {
-        return "1.21.11";
+        try {
+            // the running game (one jar covers several patch versions)
+            return net.minecraft.SharedConstants.getCurrentVersion().name();
+        } catch (Throwable t) {
+            return "1.21.11"; // asked before the game detected its version
+        }
     }
 
     @Override
