@@ -6,7 +6,6 @@ import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
@@ -16,7 +15,8 @@ import net.minecraftforge.fml.common.gameevent.TickEvent;
 
 /**
  * Forge 1.12 events of the logical server, forwarded to {@link ServerCore}. Every handler returns on its first line for
- * anything that is not a player, so mob fights cost nothing.
+ * anything that is not a player, so mob fights cost nothing. The damage after armor comes from {@link DamageEvents}
+ * (Forge 1.12.2) or {@link DeferredDamageEvents} (Forge 1.12 / 1.12.1, which have no LivingDamageEvent).
  */
 public final class ServerEvents {
 
@@ -42,15 +42,6 @@ public final class ServerEvents {
         EntityPlayerMP p = tracked(event.getEntityLiving());
         if (p == null) return;
         ServerCore.onHurtCancelled(new PlayerHandle112(p), p.world.getTotalWorldTime(), event.getSource(), event.getAmount(),
-            () -> Facts.hit(p, event.getSource()));
-    }
-
-    @SubscribeEvent(priority = EventPriority.LOWEST)
-    public void onDamage(LivingDamageEvent event) {
-        if (!(event.getEntityLiving() instanceof EntityPlayer)) return;
-        EntityPlayerMP p = tracked(event.getEntityLiving());
-        if (p == null) return;
-        ServerCore.onDamage(new PlayerHandle112(p), p.world.getTotalWorldTime(), event.getSource(), event.getAmount(), p.getAbsorptionAmount(), p.getHealth(),
             () -> Facts.hit(p, event.getSource()));
     }
 

@@ -19,6 +19,7 @@ import net.minecraftforge.fml.common.registry.ForgeRegistries;
 /** Forge 1.12 registries (entities, potions) and active effects. */
 public final class Registries112 implements Registries {
 
+    // registries are iterated directly: IForgeRegistry.getValuesCollection() does not exist in Forge for 1.12 / 1.12.1
     public static final Registries112 INSTANCE = new Registries112();
 
     /** Damage type names of vanilla 1.12 (melee "mob" / "player" excluded) */
@@ -42,7 +43,7 @@ public final class Registries112 implements Registries {
     @Override
     public List<Entry> mobs() {
         List<Entry> out = new ArrayList<>();
-        for (EntityEntry e : ForgeRegistries.ENTITIES.getValuesCollection()) {
+        for (EntityEntry e : ForgeRegistries.ENTITIES) {
             ResourceLocation id = e.getRegistryName();
             if (id == null) continue;
             String key = "entity." + e.getName() + ".name";
@@ -56,7 +57,7 @@ public final class Registries112 implements Registries {
     @Override
     public List<Entry> effects() {
         List<Entry> out = new ArrayList<>();
-        for (Potion p : ForgeRegistries.POTIONS.getValuesCollection()) {
+        for (Potion p : ForgeRegistries.POTIONS) {
             ResourceLocation id = p.getRegistryName();
             if (id == null) continue;
             String key = p.getName();
@@ -69,7 +70,7 @@ public final class Registries112 implements Registries {
     @Override
     public List<String> livingEntityIds() {
         List<String> out = new ArrayList<>();
-        for (EntityEntry ee : ForgeRegistries.ENTITIES.getValuesCollection()) {
+        for (EntityEntry ee : ForgeRegistries.ENTITIES) {
             if (ee.getRegistryName() == null || ee.getEntityClass() == null) continue;
             if (EntityLivingBase.class.isAssignableFrom(ee.getEntityClass())) out.add(ee.getRegistryName().toString());
         }

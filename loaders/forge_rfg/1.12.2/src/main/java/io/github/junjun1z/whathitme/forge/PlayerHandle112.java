@@ -21,7 +21,7 @@ import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.util.Constants;
 
 /** A 1.12 server player for the core. Per-player settings live in the player's persistent NBT. */
-public final class PlayerHandle112 implements PlayerHandle {
+public class PlayerHandle112 implements PlayerHandle {
 
     private static final String KEY_CHAT_OFF = "whathitme_chatOff";
     private static final String KEY_IGNORED = "whathitme_ignored";

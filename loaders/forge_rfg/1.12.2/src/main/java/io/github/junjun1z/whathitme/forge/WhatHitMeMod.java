@@ -68,7 +68,16 @@ public class WhatHitMeMod {
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
+        boolean damageEvent = true;
+        try {
+            Class.forName("net.minecraftforge.event.entity.living.LivingDamageEvent");
+        } catch (Throwable t) {
+            damageEvent = false; // Forge for 1.12 / 1.12.1
+        }
+        // the deferred handlers must run before the ServerEvents handlers of the same priority: register them first
+        if (!damageEvent) MinecraftForge.EVENT_BUS.register(new DeferredDamageEvents());
         MinecraftForge.EVENT_BUS.register(new ServerEvents());
+        if (damageEvent) MinecraftForge.EVENT_BUS.register(new DamageEvents());
         proxy.init(event);
     }
 
