@@ -19,7 +19,6 @@ import io.github.junjun1z.whathitme.mc.ServerPortMc;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
@@ -32,8 +31,10 @@ import net.minecraft.world.damagesource.DamageSource;
 
 /**
  * What Hit Me? on Fabric 1.19.2. Optional on both sides (works on the client only, the server only or both). Damage is
- * read through Fabric API's living entity events (ALLOW_DAMAGE before armor, ALLOW_DEATH / AFTER_DEATH); Fabric API has
- * no "after damage" event before 1.21, so {@code PlayerMixin} reports the health after armor and absorption.
+ * read by two tiny mixins, as Fabric API for 1.19 / 1.19.1 has no living entity damage / death events (they came with
+ * the 1.19.2 builds; the mixins keep one jar for 1.19 - 1.19.2): {@code PlayerMixin}
+ * (start and end of Player#actuallyHurt: before armor, and the health left after it) and {@code ServerPlayerMixin}
+ * (ServerPlayer#die).
  */
 public final class WhatHitMeFabric implements ModInitializer {
 
@@ -41,8 +42,6 @@ public final class WhatHitMeFabric implements ModInitializer {
     /** Vanilla invulnerability ticks of a fresh hit */
     private static final int MAX_INVUL = 20;
     private static ServerPortMc port;
-    /** Death message read before the death is processed (the combat tracker is reset afterwards) */
-    private static final java.util.Map<java.util.UUID, String> DEATH_MSG = new java.util.HashMap<>();
 
     @Override
     public void onInitialize() {
@@ -90,55 +89,36 @@ public final class WhatHitMeFabric implements ModInitializer {
             if (port != null) ServerCore.execute(port.source(s), args);
         }, (s, args) -> port == null ? java.util.Collections.<String>emptyList() : ServerCore.complete(port.source(s), args)));
 
-        ServerLivingEntityEvents.ALLOW_DAMAGE.register((entity, source, amount) -> {
-            if (!(entity instanceof ServerPlayer)) return true;
-            ServerPlayer p = (ServerPlayer) entity;
-            if (amount > 0) {
-                // a hit during the invulnerability frames only deals the difference: not a fresh hit
-                boolean fresh = p.invulnerableTime <= 10;
-                ServerCore.onHurt(p.getUUID(), p.level.getGameTime(), source, amount, p.getAbsorptionAmount(), p.getHealth(), p.isBlocking(), fresh, MAX_INVUL);
-            }
-            return true;
-        });
-        ServerLivingEntityEvents.ALLOW_DEATH.register((entity, source, amount) -> {
-            // lethal: the damage was applied, the totem check comes next
-            if (entity instanceof ServerPlayer) {
-                ServerPlayer p = (ServerPlayer) entity;
-                afterDamage(p, source);
-                try {
-                    DEATH_MSG.put(p.getUUID(), McText.toJson(p.getCombatTracker().getDeathMessage()));
-                } catch (Throwable ignored) {
-                    // no message
-                }
-            }
-            return true;
-        });
-        ServerLivingEntityEvents.AFTER_DEATH.register((entity, source) -> {
-            if (!(entity instanceof ServerPlayer)) return;
-            ServerPlayer p = (ServerPlayer) entity;
-            String msg = DEATH_MSG.remove(p.getUUID());
-            if (msg == null) {
-                try {
-                    msg = McText.toJson(p.getCombatTracker().getDeathMessage());
-                } catch (Throwable ignored) {
-                    msg = "";
-                }
-            }
-            ServerCore.onDeath(new FabricPlayer(p), () -> Facts.hit(p, source), msg);
-        });
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
             if (!alive) ServerCore.onRespawn(new FabricPlayer(newPlayer));
         });
         ServerTickEvents.END_SERVER_TICK.register(server -> ServerCore.onTickEnd());
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
-            DEATH_MSG.remove(handler.getPlayer().getUUID());
             ServerCore.onLogout(handler.getPlayer().getUUID());
         });
     }
 
+    /** Damage is about to be applied, before armor (start of Player#actuallyHurt, from PlayerMixin) */
+    public static void beforeDamage(ServerPlayer p, DamageSource source, float amount) {
+        if (amount <= 0) return;
+        // a fresh hit has just reset invulnerableTime to its maximum (a hit during the i-frames only deals the difference)
+        ServerCore.onHurt(p.getUUID(), p.level.getGameTime(), source, amount, p.getAbsorptionAmount(), p.getHealth(), p.isBlocking(),
+            p.invulnerableTime >= MAX_INVUL, MAX_INVUL);
+    }
+
     /** Health and absorption were reduced (end of Player#actuallyHurt, from PlayerMixin) */
     public static void afterDamage(ServerPlayer p, DamageSource source) {
-        if (p.getHealth() > 0f) DEATH_MSG.remove(p.getUUID()); // survived (e.g. a totem saved it earlier)
         ServerCore.onDamageAfter(new FabricPlayer(p), p.level.getGameTime(), source, p.getHealth(), p.getAbsorptionAmount(), () -> Facts.hit(p, source));
+    }
+
+    /** The player died (start of ServerPlayer#die, from ServerPlayerMixin: the combat tracker still has the message) */
+    public static void onDeath(ServerPlayer p, DamageSource source) {
+        String msg;
+        try {
+            msg = McText.toJson(p.getCombatTracker().getDeathMessage());
+        } catch (Throwable ignored) {
+            msg = "";
+        }
+        ServerCore.onDeath(new FabricPlayer(p), () -> Facts.hit(p, source), msg);
     }
 }
