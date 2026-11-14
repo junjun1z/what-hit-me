@@ -107,6 +107,7 @@ public final class ForgeServerEvents {
 
     @SubscribeEvent
     public void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
+        ForgeNet.MOD_CLIENTS.remove(event.getPlayer().getUUID());
         ServerCore.onLogout(event.getPlayer().getUUID());
     }
 }

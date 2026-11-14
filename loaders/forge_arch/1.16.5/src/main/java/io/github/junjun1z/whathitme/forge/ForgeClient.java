@@ -35,7 +35,7 @@ public final class ForgeClient {
         @Override
         public boolean connected() {
             Minecraft mc = mc();
-            return mc.getConnection() != null && ForgeNet.serverPresent(mc.getConnection().getConnection());
+            return mc.getConnection() != null && (mc.hasSingleplayerServer() || ForgeNet.serverPresent(mc.getConnection().getConnection()));
         }
     };
 
