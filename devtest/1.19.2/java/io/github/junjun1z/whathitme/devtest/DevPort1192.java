@@ -135,7 +135,7 @@ public class DevPort1192 implements DevPort {
         for (Field f : ChatComponent.class.getDeclaredFields()) {
             if (!List.class.isAssignableFrom(f.getType())) continue;
             Type t = f.getGenericType();
-            if (t instanceof ParameterizedType && ((ParameterizedType) t).getActualTypeArguments()[0] == GuiMessage.class) {
+            if (t instanceof ParameterizedType && isGuiMessage(((ParameterizedType) t).getActualTypeArguments()[0])) {
                 try {
                     f.setAccessible(true);
                     return (List<GuiMessage>) f.get(chat);
@@ -150,7 +150,7 @@ public class DevPort1192 implements DevPort {
     @Override
     public List<String> chat() {
         List<String> out = new ArrayList<>();
-        for (GuiMessage m : new ArrayList<>(messages())) out.add(m.content().getString());
+        for (Object m : new ArrayList<Object>(messages())) out.add(content(m));
         return out;
     }
 
@@ -167,8 +167,52 @@ public class DevPort1192 implements DevPort {
     /** Like the chat screen: "/..." goes through the client commands first (the loader hooks sendCommand) */
     @Override
     public void say(String text) {
-        if (text.startsWith("/")) mc().player.commandSigned(text.substring(1), null);
-        else mc().player.chatSigned(text, null);
+        try {
+            if (text.startsWith("/")) mc().player.commandSigned(text.substring(1), null);
+            else mc().player.chatSigned(text, null);
+        } catch (NoSuchMethodError e) {
+            say119(text);
+        }
+    }
+
+    /** 1.19 (before 1.19.1): GuiMessage&lt;Component&gt; is generic there */
+    private static boolean isGuiMessage(Type t) {
+        return t == GuiMessage.class || (t instanceof ParameterizedType && ((ParameterizedType) t).getRawType() == GuiMessage.class);
+    }
+
+    /** The text of a chat line: record component on 1.19.1+, a field of the old GuiMessage class on 1.19 */
+    private static String content(Object m) {
+        try {
+            return ((GuiMessage) m).content().getString();
+        } catch (NoSuchMethodError e) {
+            for (Field f : m.getClass().getDeclaredFields()) {
+                try {
+                    f.setAccessible(true);
+                    Object v = f.get(m);
+                    if (v instanceof net.minecraft.network.chat.Component) return ((net.minecraft.network.chat.Component) v).getString();
+                } catch (Exception ignored) {
+                    // next field
+                }
+            }
+            return "";
+        }
+    }
+
+    /** 1.19 has no chatSigned / commandSigned: use the chat screen's own "send" method (public, (String, boolean)) */
+    private static void say119(String text) {
+        try {
+            net.minecraft.client.gui.screens.ChatScreen s = new net.minecraft.client.gui.screens.ChatScreen("");
+            s.init(mc(), 320, 240);
+            for (java.lang.reflect.Method m : net.minecraft.client.gui.screens.ChatScreen.class.getDeclaredMethods()) {
+                Class<?>[] pt = m.getParameterTypes();
+                if (java.lang.reflect.Modifier.isPublic(m.getModifiers()) && pt.length == 2 && pt[0] == String.class && pt[1] == boolean.class) {
+                    m.invoke(s, text, false);
+                    return;
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
     @Override
