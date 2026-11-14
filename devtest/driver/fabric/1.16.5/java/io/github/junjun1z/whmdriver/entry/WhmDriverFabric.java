@@ -37,9 +37,28 @@ public class WhmDriverFabric implements ClientModInitializer, DriverPort {
         }
         plan = new DriverPlan(this, mode);
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
+            autoConnect();
             pollChat();
             plan.tick();
         });
+    }
+
+    private boolean connectTried;
+
+    /** Joins the server in .minecraft/whm_connect.txt at the title screen (Prism's --server crashes 1.14 - 1.17 clients) */
+    private void autoConnect() {
+        if (connectTried || !(mc().screen instanceof net.minecraft.client.gui.screens.TitleScreen) || mc().getOverlay() != null) return;
+        connectTried = true;
+        File f = new File(mc().gameDirectory, "whm_connect.txt");
+        if (!f.isFile()) return;
+        try {
+            String a = new String(java.nio.file.Files.readAllBytes(f.toPath()), java.nio.charset.StandardCharsets.UTF_8).trim();
+            int i = a.lastIndexOf(':');
+            mc().setScreen(new net.minecraft.client.gui.screens.ConnectScreen(mc().screen, mc(), i > 0 ? a.substring(0, i) : a,
+                i > 0 ? Integer.parseInt(a.substring(i + 1)) : 25565));
+        } catch (Exception e) {
+            System.out.println("WHMDRIVER cannot connect: " + e);
+        }
     }
 
     private static Minecraft mc() {

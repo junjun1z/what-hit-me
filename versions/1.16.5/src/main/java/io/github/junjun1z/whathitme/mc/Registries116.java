@@ -43,6 +43,27 @@ public final class Registries116 implements Registries {
         }
     }
 
+    private static volatile java.lang.reflect.Field categoryField;
+
+    /** MobEffect#getCategory is client-only on this version: read the field (by type, any mapping) */
+    public static boolean harmful(MobEffect e) {
+        try {
+            java.lang.reflect.Field f = categoryField;
+            if (f == null) {
+                for (java.lang.reflect.Field c : MobEffect.class.getDeclaredFields()) {
+                    if (c.getType() == MobEffectCategory.class) {
+                        c.setAccessible(true);
+                        categoryField = f = c;
+                        break;
+                    }
+                }
+            }
+            return f != null && f.get(e) == MobEffectCategory.HARMFUL;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     private static String tr(String key) {
         if (key == null || key.isEmpty()) return "";
         return Language.getInstance().getOrDefault(key);
@@ -73,7 +94,7 @@ public final class Registries116 implements Registries {
             if (id == null) continue;
             String key = e.getDescriptionId();
             out.add(new Entry(Entry.EFFECT, id.toString(), tr(key), key, id.getNamespace(), Platform.modName(id.getNamespace()),
-                e.getCategory() == MobEffectCategory.HARMFUL ? 1 : 0, 0, 0, 0, false, ""));
+                harmful(e) ? 1 : 0, 0, 0, 0, false, ""));
         }
         return out;
     }
@@ -114,7 +135,7 @@ public final class Registries116 implements Registries {
                 c = new Cure(false, "");
             }
             out.add(new Entry(Entry.ACTIVE_EFFECT, id == null ? p.getDescriptionId() : id.toString(), tr(p.getDescriptionId()), p.getDescriptionId(), mod,
-                Platform.modName(mod), p.getCategory() == MobEffectCategory.HARMFUL ? 1 : 0, 0, pe.getAmplifier(), pe.getDuration(), c.milk, c.items));
+                Platform.modName(mod), harmful(p) ? 1 : 0, 0, pe.getAmplifier(), pe.getDuration(), c.milk, c.items));
         }
         return out;
     }

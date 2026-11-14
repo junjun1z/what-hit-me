@@ -40,7 +40,8 @@ public final class McText {
         Style s = c.getStyle();
         if (t.color() != null) s = s.withColor(ChatFormatting.valueOf(t.color().name()));
         if (t.bold() != null) s = s.withBold(t.bold());
-        if (t.underlined() != null) s = s.withUnderlined(t.underlined());
+        // Style#withUnderlined is client-only on this version
+        if (Boolean.TRUE.equals(t.underlined())) s = s.applyFormat(ChatFormatting.UNDERLINE);
         if (t.clickAction() != null) {
             s = s.withClickEvent(new ClickEvent(t.clickAction() == Txt.Click.RUN_COMMAND ? ClickEvent.Action.RUN_COMMAND : ClickEvent.Action.SUGGEST_COMMAND,
                 t.clickValue()));
