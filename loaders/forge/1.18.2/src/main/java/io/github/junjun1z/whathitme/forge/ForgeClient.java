@@ -5,6 +5,7 @@ import java.io.File;
 import io.github.junjun1z.whathitme.core.Platform;
 import io.github.junjun1z.whathitme.core.client.ClientCore;
 import io.github.junjun1z.whathitme.core.client.DeathPanel;
+import io.github.junjun1z.whathitme.core.cmd.Completion;
 import io.github.junjun1z.whathitme.core.net.Packets;
 import io.github.junjun1z.whathitme.mc.Brig;
 import io.github.junjun1z.whathitme.mc.ClientPortMc;
@@ -14,6 +15,7 @@ import io.github.junjun1z.whathitme.mc.McText;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraftforge.client.event.ClientChatEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.ScreenEvent;
@@ -56,6 +58,26 @@ public final class ForgeClient {
     @SubscribeEvent
     public void onClientCommands(RegisterClientCommandsEvent event) {
         Brig.register(event.getDispatcher(), (s, args) -> ClientCore.execute(args), (s, args) -> ClientCore.complete(args));
+    }
+
+    /**
+     * Forge 1.18 merges the server's command tree over the client commands: when the server also has /whm (single
+     * player, server with the mod) the client command would be replaced by "send to the server". The chat event comes
+     * first, so the client /whm is run from here (the registration above stays for tab completion and for servers
+     * without the mod).
+     */
+    @SubscribeEvent
+    public void onClientChat(ClientChatEvent event) {
+        String msg = event.getMessage();
+        if (msg == null) return;
+        String rest;
+        if (msg.equals("/whm") || msg.equals("/whathitme")) rest = "";
+        else if (msg.startsWith("/whm ")) rest = msg.substring(5);
+        else if (msg.startsWith("/whathitme ")) rest = msg.substring(11);
+        else return;
+        event.setCanceled(true);
+        Minecraft.getInstance().gui.getChat().addRecentChat(msg);
+        ClientCore.execute(Completion.args(rest));
     }
 
     @SubscribeEvent
