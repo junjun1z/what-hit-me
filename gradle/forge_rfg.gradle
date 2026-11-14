@@ -1,20 +1,23 @@
-// MinecraftForge 1.12.2 through RetroFuturaGradle (MCP names, reobfuscated to SRG for production). Nested legacy/ build.
+// MinecraftForge 1.12.2 / 1.7.10 through RetroFuturaGradle (MCP names, reobfuscated to SRG for production). Nested legacy/ build.
 apply plugin: 'com.gtnewhorizons.retrofuturagradle'
 apply from: rootProject.file('../gradle/common.gradle')
 
 minecraft {
     mcVersion = project.property('mc_version')
-    mcpMappingChannel = 'stable'
-    mcpMappingVersion = '39'
+    // 1.12.2: stable 39 (default); 1.7.10 sets mcp_version=12 in its target
+    mcpMappingChannel = project.findProperty('mcp_channel') ?: 'stable'
+    mcpMappingVersion = project.findProperty('mcp_version') ?: '39'
     username = 'Developer'
 }
 
-// 1.12.2 reads .lang language files: generate them from the shared JSON files (common/src/main/resources/.../lang)
+// 1.12.2 / 1.7.10 read .lang language files: generate them from the shared JSON files (common/src/main/resources/.../lang)
 def langOut = layout.buildDirectory.dir('generated/legacylang')
 def genLang = tasks.register('generateLegacyLang') {
     def whmRoot = new File(rootProject.projectDir, 'common').exists() ? rootProject.projectDir : rootProject.projectDir.parentFile
     def src = new File(whmRoot, 'common/src/main/resources/assets/whathitme/lang')
+    def upper = project.findProperty('lang_upper') == 'true' // 1.7.10 uses en_US.lang
     inputs.dir(src)
+    inputs.property('upper', upper)
     outputs.dir(langOut)
     doLast {
         def outDir = new File(langOut.get().asFile, 'assets/whathitme/lang')
@@ -23,6 +26,10 @@ def genLang = tasks.register('generateLegacyLang') {
         src.listFiles().findAll { it.name.endsWith('.json') }.each { f ->
             def map = new groovy.json.JsonSlurper().parse(f, 'UTF-8')
             def name = f.name.replace('.json', '.lang') // 1.12 uses lower-case names like en_us.lang
+            if (upper) {
+                def i = name.indexOf('_')
+                if (i > 0) name = name.substring(0, i) + '_' + name.substring(i + 1, name.length() - 5).toUpperCase() + '.lang'
+            }
             new File(outDir, name).withWriter('UTF-8') { w -> map.each { k, v -> w << "${k}=${v}\n" } }
         }
     }

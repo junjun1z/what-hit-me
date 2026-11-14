@@ -1,0 +1,13 @@
+[{
+  "modid": "whathitme",
+  "name": "What Hit Me?",
+  "description": "${mod_description}",
+  "version": "${version}",
+  "mcversion": "${mc_version}",
+  "url": "${mod_homepage}",
+  "authorList": ["${mod_authors}"],
+  "logoFile": "assets/whathitme/icon.png",
+  "requiredMods": [],
+  "dependencies": [],
+  "useDependencyInformation": false
+}]
