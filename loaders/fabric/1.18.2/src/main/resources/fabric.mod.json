@@ -16,7 +16,7 @@
   "mixins": ["whathitme.mixins.json"],
   "depends": {
     "fabricloader": ">=0.15",
-    "fabric-api": "*",
+    "fabric": "*",
     "minecraft": "${mc_range}",
     "java": ">=${java_version}"
   }

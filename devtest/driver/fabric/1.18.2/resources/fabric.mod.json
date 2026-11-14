@@ -8,5 +8,5 @@
   "entrypoints": {
     "client": ["io.github.junjun1z.whmdriver.entry.WhmDriverFabric"]
   },
-  "depends": { "fabricloader": ">=0.15", "fabric-api": "*", "minecraft": "*" }
+  "depends": { "fabricloader": ">=0.15", "fabric": "*", "minecraft": "*" }
 }
