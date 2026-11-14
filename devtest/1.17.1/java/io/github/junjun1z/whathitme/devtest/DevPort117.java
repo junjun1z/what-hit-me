@@ -52,7 +52,7 @@ public class DevPort117 implements DevPort {
 
     @Override
     public String mcVersion() {
-        return "1.17.1";
+        return net.minecraft.SharedConstants.getCurrentVersion().getName();
     }
 
     @Override
@@ -184,7 +184,20 @@ public class DevPort117 implements DevPort {
 
     @Override
     public void screenshot(String name) {
-        Screenshot.grab(gameDir(), name + ".png", mc().getMainRenderTarget(), msg -> {});
+        // 1.17: grab(File, String, int, int, RenderTarget, Consumer); 1.17.1: grab(File, String, RenderTarget, Consumer)
+        try {
+            for (java.lang.reflect.Method m : Screenshot.class.getMethods()) {
+                Class<?>[] pt = m.getParameterTypes();
+                if (!java.lang.reflect.Modifier.isStatic(m.getModifiers()) || pt.length < 4 || pt[0] != File.class || pt[1] != String.class
+                    || pt[pt.length - 1] != java.util.function.Consumer.class) continue;
+                java.util.function.Consumer<Component> c = msg -> {};
+                if (pt.length == 4) m.invoke(null, gameDir(), name + ".png", mc().getMainRenderTarget(), c);
+                else m.invoke(null, gameDir(), name + ".png", mc().getWindow().getWidth(), mc().getWindow().getHeight(), mc().getMainRenderTarget(), c);
+                return;
+            }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
