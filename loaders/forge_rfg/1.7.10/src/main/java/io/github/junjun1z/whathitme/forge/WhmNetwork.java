@@ -139,13 +139,26 @@ public final class WhmNetwork {
         }
     }
 
+    // 1.7.10 names each handler in the channel pipeline after its class: one handler class per message
+    public static class HelloHandler extends ServerHandler {}
+
+    public static class RequestHandler extends ServerHandler {}
+
+    public static class ServerInfoHandler extends ClientHandler {}
+
+    public static class RecapHandler extends ClientHandler {}
+
+    public static class EntriesHandler extends ClientHandler {}
+
+    public static class MessageHandler extends ClientHandler {}
+
     public static void init() {
         channel = NetworkRegistry.INSTANCE.newSimpleChannel(io.github.junjun1z.whathitme.core.Platform.MODID);
-        channel.registerMessage(new ServerHandler(), Hello.class, Packets.HELLO, Side.SERVER);
-        channel.registerMessage(new ServerHandler(), Request.class, Packets.REQUEST, Side.SERVER);
-        channel.registerMessage(new ClientHandler(), ServerInfo.class, Packets.SERVER_INFO, Side.CLIENT);
-        channel.registerMessage(new ClientHandler(), Recap.class, Packets.RECAP, Side.CLIENT);
-        channel.registerMessage(new ClientHandler(), Entries.class, Packets.ENTRIES, Side.CLIENT);
-        channel.registerMessage(new ClientHandler(), Message.class, Packets.MESSAGE, Side.CLIENT);
+        channel.registerMessage(new HelloHandler(), Hello.class, Packets.HELLO, Side.SERVER);
+        channel.registerMessage(new RequestHandler(), Request.class, Packets.REQUEST, Side.SERVER);
+        channel.registerMessage(new ServerInfoHandler(), ServerInfo.class, Packets.SERVER_INFO, Side.CLIENT);
+        channel.registerMessage(new RecapHandler(), Recap.class, Packets.RECAP, Side.CLIENT);
+        channel.registerMessage(new EntriesHandler(), Entries.class, Packets.ENTRIES, Side.CLIENT);
+        channel.registerMessage(new MessageHandler(), Message.class, Packets.MESSAGE, Side.CLIENT);
     }
 }

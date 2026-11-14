@@ -296,9 +296,9 @@ public final class SelfTest {
             return r.weaponName.contains("Sword") && (r.weaponEnchants.contains("damage.all") || r.weaponEnchants.contains("sharpness")) && r.distance > 2f;
         }, describe("mob:minecraft:zombie"));
         hit(Act.ARROW, 3f);
-        check("arrow with owner: attacker Skeleton, direct Arrow, projectile flag", () -> {
+        check("arrow with owner: attacker Skeleton, direct Arrow (1.7.10 lang: arrow), projectile flag", () -> {
             DamageRecord r = find(id("arrow"));
-            return r != null && r.attackerName.equals("Skeleton") && r.directName.equals("Arrow") && r.has(DamageRecord.PROJECTILE) && r.distance > 3f;
+            return r != null && r.attackerName.equals("Skeleton") && r.directName.equalsIgnoreCase("Arrow") && r.has(DamageRecord.PROJECTILE) && r.distance > 3f;
         }, describe(id("arrow")));
         hit(Act.IN_FIRE, 2f);
         check("fire flag", () -> find(id("inFire")) != null && find(id("inFire")).has(DamageRecord.FIRE), describe(id("inFire")));
