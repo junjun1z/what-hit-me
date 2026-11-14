@@ -55,6 +55,192 @@
         ],
         "optional": []
       }
+    },
+    {
+      "path": "targets/1.14.4-fabric/build/libs/whathitme-fabric-1.14.4-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "fabric"
+      ],
+      "game_versions": [
+        "1.14",
+        "1.14.1",
+        "1.14.2",
+        "1.14.3",
+        "1.14.4"
+      ],
+      "java": 8,
+      "dependencies": {
+        "required": [
+          "fabric-api"
+        ],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.15.2-fabric/build/libs/whathitme-fabric-1.15.2-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "fabric"
+      ],
+      "game_versions": [
+        "1.15",
+        "1.15.1",
+        "1.15.2"
+      ],
+      "java": 8,
+      "dependencies": {
+        "required": [
+          "fabric-api"
+        ],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.16.1-fabric/build/libs/whathitme-fabric-1.16.1-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "fabric"
+      ],
+      "game_versions": [
+        "1.16",
+        "1.16.1"
+      ],
+      "java": 8,
+      "dependencies": {
+        "required": [
+          "fabric-api"
+        ],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.16.5-fabric/build/libs/whathitme-fabric-1.16.5-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "fabric"
+      ],
+      "game_versions": [
+        "1.16.2",
+        "1.16.3",
+        "1.16.4",
+        "1.16.5"
+      ],
+      "java": 8,
+      "dependencies": {
+        "required": [
+          "fabric-api"
+        ],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.17.1-fabric/build/libs/whathitme-fabric-1.17.1-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "fabric"
+      ],
+      "game_versions": [
+        "1.17",
+        "1.17.1"
+      ],
+      "java": 16,
+      "dependencies": {
+        "required": [
+          "fabric-api"
+        ],
+        "optional": []
+      }
+    },
+    {
+      "path": "legacy/targets/1.14.4-forge/build/libs/whathitme-forge-1.14.4-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.14.4"
+      ],
+      "java": 8,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "legacy/targets/1.15.2-forge/build/libs/whathitme-forge-1.15.2-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.15.1",
+        "1.15.2"
+      ],
+      "java": 8,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "legacy/targets/1.16.5-forge/build/libs/whathitme-forge-1.16.5-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.16.3",
+        "1.16.4",
+        "1.16.5"
+      ],
+      "java": 8,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.17.1-forge/build/libs/whathitme-forge-1.17.1-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.17.1"
+      ],
+      "java": 16,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
     }
   ]
 }

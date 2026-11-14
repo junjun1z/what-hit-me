@@ -206,9 +206,10 @@ public class DevPort114 implements DevPort {
         switch (act) {
             case SETUP:
                 s.setDifficulty(Difficulty.NORMAL, true);
-                level.getGameRules().getRule(GameRules.RULE_DAYLIGHT).set(false, s);
-                level.getGameRules().getRule(GameRules.RULE_DOMOBSPAWNING).set(false, s);
-                level.getGameRules().getRule(GameRules.RULE_KEEPINVENTORY).set(true, s);
+                // through commands: the GameRules API changed in 1.14.3
+                for (String c : new String[] {"gamerule doDaylightCycle false", "gamerule doMobSpawning false", "gamerule keepInventory true"}) {
+                    s.getCommands().performCommand(s.createCommandSourceStack(), c);
+                }
                 level.setDayTime(6000);
                 p.setGameMode(GameType.SURVIVAL);
                 p.removeAllEffects();
