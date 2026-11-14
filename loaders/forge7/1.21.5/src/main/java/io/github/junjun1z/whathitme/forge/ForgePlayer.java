@@ -8,7 +8,6 @@ import io.github.junjun1z.whathitme.mc.McPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerPlayer;
 
 /** A Forge 1.21.5 server player: packets through {@link ForgeNet}, settings in the player's persistent NBT (kept on death). */
@@ -28,19 +27,22 @@ final class ForgePlayer extends McPlayer {
 
     private CompoundTag persisted() {
         CompoundTag root = p.getPersistentData();
-        if (!root.contains(ServerPlayer.PERSISTED_NBT_TAG, Tag.TAG_COMPOUND)) root.put(ServerPlayer.PERSISTED_NBT_TAG, new CompoundTag());
-        return root.getCompound(ServerPlayer.PERSISTED_NBT_TAG);
+        java.util.Optional<CompoundTag> t = root.getCompound(ServerPlayer.PERSISTED_NBT_TAG);
+        if (t.isPresent()) return t.get();
+        CompoundTag n = new CompoundTag();
+        root.put(ServerPlayer.PERSISTED_NBT_TAG, n);
+        return n;
     }
 
     @Override
     public boolean chatOff() {
-        return persisted().getBoolean(KEY_CHAT_OFF);
+        return persisted().getBooleanOr(KEY_CHAT_OFF, false);
     }
 
     @Override
     public boolean toggleChat() {
         CompoundTag t = persisted();
-        boolean off = !t.getBoolean(KEY_CHAT_OFF);
+        boolean off = !t.getBooleanOr(KEY_CHAT_OFF, false);
         t.putBoolean(KEY_CHAT_OFF, off);
         return !off;
     }
@@ -48,8 +50,8 @@ final class ForgePlayer extends McPlayer {
     @Override
     public List<String> personalIgnored() {
         List<String> out = new ArrayList<>();
-        ListTag l = persisted().getList(KEY_IGNORED, Tag.TAG_STRING);
-        for (int i = 0; i < l.size(); i++) out.add(l.getString(i));
+        ListTag l = persisted().getListOrEmpty(KEY_IGNORED);
+        for (int i = 0; i < l.size(); i++) l.getString(i).ifPresent(out::add);
         return out;
     }
 

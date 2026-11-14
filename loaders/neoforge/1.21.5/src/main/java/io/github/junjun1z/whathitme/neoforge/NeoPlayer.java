@@ -8,7 +8,6 @@ import io.github.junjun1z.whathitme.mc.McPlayer;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.ListTag;
 import net.minecraft.nbt.StringTag;
-import net.minecraft.nbt.Tag;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.player.Player;
 
@@ -29,19 +28,22 @@ final class NeoPlayer extends McPlayer {
 
     private CompoundTag persisted() {
         CompoundTag root = p.getPersistentData();
-        if (!root.contains(Player.PERSISTED_NBT_TAG, Tag.TAG_COMPOUND)) root.put(Player.PERSISTED_NBT_TAG, new CompoundTag());
-        return root.getCompound(Player.PERSISTED_NBT_TAG);
+        java.util.Optional<CompoundTag> t = root.getCompound(Player.PERSISTED_NBT_TAG);
+        if (t.isPresent()) return t.get();
+        CompoundTag n = new CompoundTag();
+        root.put(Player.PERSISTED_NBT_TAG, n);
+        return n;
     }
 
     @Override
     public boolean chatOff() {
-        return persisted().getBoolean(KEY_CHAT_OFF);
+        return persisted().getBooleanOr(KEY_CHAT_OFF, false);
     }
 
     @Override
     public boolean toggleChat() {
         CompoundTag t = persisted();
-        boolean off = !t.getBoolean(KEY_CHAT_OFF);
+        boolean off = !t.getBooleanOr(KEY_CHAT_OFF, false);
         t.putBoolean(KEY_CHAT_OFF, off);
         return !off;
     }
@@ -49,8 +51,8 @@ final class NeoPlayer extends McPlayer {
     @Override
     public List<String> personalIgnored() {
         List<String> out = new ArrayList<>();
-        ListTag l = persisted().getList(KEY_IGNORED, Tag.TAG_STRING);
-        for (int i = 0; i < l.size(); i++) out.add(l.getString(i));
+        ListTag l = persisted().getListOrEmpty(KEY_IGNORED);
+        for (int i = 0; i < l.size(); i++) l.getString(i).ifPresent(out::add);
         return out;
     }
 

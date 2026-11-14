@@ -44,7 +44,7 @@ public final class FallbackEnv121 implements FallbackEnv {
 
     @Override
     public float fallDistance() {
-        return p.fallDistance;
+        return (float) p.fallDistance;
     }
 
     @Override

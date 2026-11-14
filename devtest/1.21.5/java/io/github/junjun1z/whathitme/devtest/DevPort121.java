@@ -283,7 +283,7 @@ public class DevPort121 implements DevPort {
                 break;
             case POISON:
                 p.addEffect(new MobEffectInstance(MobEffects.POISON, 400, 1));
-                p.addEffect(new MobEffectInstance(MobEffects.MOVEMENT_SLOWDOWN, 400, 0));
+                p.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 400, 0));
                 break;
             case CLEAR_EFFECTS:
                 p.removeAllEffects();

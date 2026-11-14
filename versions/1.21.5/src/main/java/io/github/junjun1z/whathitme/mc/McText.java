@@ -59,10 +59,9 @@ public final class McText {
         if (t.bold() != null) s = s.withBold(t.bold());
         if (t.underlined() != null) s = s.withUnderlined(t.underlined());
         if (t.clickAction() != null) {
-            s = s.withClickEvent(new ClickEvent(t.clickAction() == Txt.Click.RUN_COMMAND ? ClickEvent.Action.RUN_COMMAND : ClickEvent.Action.SUGGEST_COMMAND,
-                t.clickValue()));
+            s = s.withClickEvent(t.clickAction() == Txt.Click.RUN_COMMAND ? new ClickEvent.RunCommand(t.clickValue()) : new ClickEvent.SuggestCommand(t.clickValue()));
         }
-        if (t.hoverText() != null) s = s.withHoverEvent(new HoverEvent(HoverEvent.Action.SHOW_TEXT, of(t.hoverText())));
+        if (t.hoverText() != null) s = s.withHoverEvent(new HoverEvent.ShowText(of(t.hoverText())));
         c.setStyle(s);
         for (Txt sib : t.siblings()) c.append(of(sib));
         return c;

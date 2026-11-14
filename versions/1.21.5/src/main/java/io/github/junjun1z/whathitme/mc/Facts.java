@@ -90,7 +90,8 @@ public final class Facts {
             OwnableEntity o = (OwnableEntity) e;
             Entity owner = o.getOwner();
             if (owner != null) return entityName(owner);
-            UUID id = o.getOwnerUUID();
+            net.minecraft.world.entity.EntityReference<LivingEntity> ref = o.getOwnerReference();
+            UUID id = ref == null ? null : ref.getUUID();
             if (id != null) return id.toString().substring(0, 8);
         }
         return "";
