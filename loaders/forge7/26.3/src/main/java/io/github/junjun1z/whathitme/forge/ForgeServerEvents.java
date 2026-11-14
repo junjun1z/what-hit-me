@@ -54,7 +54,7 @@ public final class ForgeServerEvents {
             if (p == null || event.getAmount() <= 0) return false;
             // a fresh hit has just reset invulnerableTime to its maximum
             ServerCore.onHurt(p.getUUID(), p.level().getGameTime(), event.getSource(), event.getAmount(), p.getAbsorptionAmount(), p.getHealth(),
-                p.isBlocking(), p.invulnerableTime >= MAX_INVUL, MAX_INVUL);
+                p.isBlocking(), io.github.junjun1z.whathitme.mc.Compat26.invulnerableTime(p) >= MAX_INVUL, MAX_INVUL);
             return false;
         });
         // monitor: sees whether another mod cancelled the hit

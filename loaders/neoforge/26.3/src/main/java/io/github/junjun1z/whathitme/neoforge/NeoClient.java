@@ -91,13 +91,13 @@ public final class NeoClient {
 
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void onMousePressed(ScreenEvent.MouseButtonPressed.Pre event) {
-        if (event.getScreen() instanceof DeathScreen && DeathPanel.INSTANCE.mouseDown(event.getButton(), event.getMouseX(), event.getMouseY())) event.setCanceled(true);
+        if (event.getScreen() instanceof DeathScreen && DeathPanel.INSTANCE.mouseDown(io.github.junjun1z.whathitme.mc.Compat26.button(event.getButton()), event.getMouseX(), event.getMouseY())) event.setCanceled(true);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGH)
     public void onMouseReleased(ScreenEvent.MouseButtonReleased.Pre event) {
         Screen s = event.getScreen();
-        if (s instanceof DeathScreen && DeathPanel.INSTANCE.mouseUp(event.getButton(), event.getMouseX(), event.getMouseY(), s.width, s.height)) event.setCanceled(true);
+        if (s instanceof DeathScreen && DeathPanel.INSTANCE.mouseUp(io.github.junjun1z.whathitme.mc.Compat26.button(event.getButton()), event.getMouseX(), event.getMouseY(), s.width, s.height)) event.setCanceled(true);
     }
 
     @SubscribeEvent(priority = EventPriority.HIGH)

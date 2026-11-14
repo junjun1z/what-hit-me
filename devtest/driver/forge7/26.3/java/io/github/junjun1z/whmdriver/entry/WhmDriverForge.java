@@ -24,7 +24,7 @@ public class WhmDriverForge implements DriverPort {
         if (FMLEnvironment.dist != Dist.CLIENT) return;
         String mode = DriverPlan.mode(FMLPaths.CONFIGDIR.get().toFile());
         if (mode == null) return;
-        if (ModList.get().isLoaded("whathitme")) {
+        if (ModList.isLoaded("whathitme")) {
             System.out.println("WHMDRIVER: What Hit Me? is installed here, this test needs a client without it");
             return;
         }

@@ -45,13 +45,13 @@ public class WhatHitMeForge {
         Platform.mods = new Platform.Mods() {
             @Override
             public String modName(String modId) {
-                return ModList.get().getModContainerById(modId).map(c -> c.getModInfo().getDisplayName()).orElse(modId);
+                return ModList.getModContainerById(modId).map(c -> c.getModInfo().getDisplayName()).orElse(modId);
             }
 
             @Override
             public Collection<String> modIds() {
                 List<String> out = new ArrayList<>();
-                for (IModInfo i : ModList.get().getMods()) out.add(i.getModId());
+                for (IModInfo i : ModList.getMods()) out.add(i.getModId());
                 return out;
             }
         };

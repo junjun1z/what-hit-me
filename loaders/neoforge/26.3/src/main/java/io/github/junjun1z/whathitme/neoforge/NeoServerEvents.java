@@ -64,7 +64,7 @@ public final class NeoServerEvents {
         ServerPlayer p = tracked(event.getEntity());
         if (p == null || event.getAmount() <= 0) return;
         // a hit during the invulnerability frames only deals the difference: not a fresh hit
-        boolean fresh = p.invulnerableTime <= 10 || event.getSource().is(DamageTypeTags.BYPASSES_COOLDOWN);
+        boolean fresh = io.github.junjun1z.whathitme.mc.Compat26.invulnerableTime(p) <= 10 || event.getSource().is(DamageTypeTags.BYPASSES_COOLDOWN);
         ServerCore.onHurt(p.getUUID(), p.level().getGameTime(), event.getSource(), event.getAmount(), p.getAbsorptionAmount(), p.getHealth(), p.isBlocking(),
             fresh, MAX_INVUL);
     }

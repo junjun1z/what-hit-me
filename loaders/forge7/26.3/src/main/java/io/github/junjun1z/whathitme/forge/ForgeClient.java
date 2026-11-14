@@ -70,10 +70,10 @@ public final class ForgeClient {
         });
         // predicate listeners: returning true cancels the event (the screen never sees it)
         ScreenEvent.MouseButtonPressed.Pre.BUS.addListener(Priority.HIGH, (ScreenEvent.MouseButtonPressed.Pre event) ->
-            event.getScreen() instanceof DeathScreen && DeathPanel.INSTANCE.mouseDown(event.getButton(), event.getMouseX(), event.getMouseY()));
+            event.getScreen() instanceof DeathScreen && DeathPanel.INSTANCE.mouseDown(io.github.junjun1z.whathitme.mc.Compat26.button(event.getButton()), event.getMouseX(), event.getMouseY()));
         ScreenEvent.MouseButtonReleased.Pre.BUS.addListener(Priority.HIGH, (ScreenEvent.MouseButtonReleased.Pre event) -> {
             Screen s = event.getScreen();
-            return s instanceof DeathScreen && DeathPanel.INSTANCE.mouseUp(event.getButton(), event.getMouseX(), event.getMouseY(), s.width, s.height);
+            return s instanceof DeathScreen && DeathPanel.INSTANCE.mouseUp(io.github.junjun1z.whathitme.mc.Compat26.button(event.getButton()), event.getMouseX(), event.getMouseY(), s.width, s.height);
         });
         ScreenEvent.MouseDragged.Pre.BUS.addListener(Priority.HIGH, (ScreenEvent.MouseDragged.Pre event) ->
             event.getScreen() instanceof DeathScreen && DeathPanel.INSTANCE.mouseDrag(event.getMouseX(), event.getMouseY()));
