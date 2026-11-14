@@ -121,7 +121,7 @@ public final class Facts {
     public static String itemKey(ItemStack stack) {
         try {
             if (stack.has(DataComponents.CUSTOM_NAME)) return "";
-            String key = stack.getDescriptionId();
+            String key = stack.getItem().getDescriptionId();
             String english = Language.getInstance().getOrDefault(key);
             return english.equals(stack.getHoverName().getString()) ? key : "";
         } catch (Throwable t) {

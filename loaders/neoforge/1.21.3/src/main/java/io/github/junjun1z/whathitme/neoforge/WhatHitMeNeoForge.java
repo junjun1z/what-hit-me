@@ -11,14 +11,11 @@ import io.github.junjun1z.whathitme.core.Platform;
 import io.github.junjun1z.whathitme.core.config.CfgFile;
 import io.github.junjun1z.whathitme.core.config.WhmConfig;
 import io.github.junjun1z.whathitme.mc.McText;
-import io.github.junjun1z.whathitme.mc.Registries121;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.loading.FMLEnvironment;
 import net.neoforged.fml.loading.FMLPaths;
-import net.neoforged.neoforge.common.EffectCure;
-import net.neoforged.neoforge.common.EffectCures;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforgespi.language.IModInfo;
 
@@ -58,25 +55,7 @@ public class WhatHitMeNeoForge {
         };
         Platform.serverLang = McText.LANG;
         Platform.configDir = FMLPaths.CONFIGDIR.get().toFile();
-        // NeoForge's effect cures (milk does not cure every modded effect)
-        Registries121.cures = e -> {
-            boolean milk = false;
-            StringBuilder sb = new StringBuilder();
-            for (EffectCure c : e.getCures()) {
-                String name;
-                if (c == EffectCures.MILK) {
-                    milk = true;
-                    name = "Milk Bucket";
-                } else if (c == EffectCures.HONEY) {
-                    name = "Honey Bottle";
-                } else {
-                    continue;
-                }
-                if (sb.length() > 0) sb.append(", ");
-                sb.append(name);
-            }
-            return new Registries121.Cure(milk, sb.toString());
-        };
+        // NeoForge 1.21.2+ has no effect cures any more: milk (vanilla) removes every effect (Registries121 default)
         boolean client = FMLEnvironment.dist.isClient();
         WhmConfig.init(Platform.configDir, client, CfgFile::new);
         modBus.addListener(NeoNet::register);

@@ -23,6 +23,7 @@ import net.minecraft.world.effect.MobEffectInstance;
 import net.minecraft.world.effect.MobEffects;
 import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.EntityType;
+import net.minecraft.world.entity.EntitySpawnReason;
 import net.minecraft.world.entity.monster.Creeper;
 import net.minecraft.world.entity.monster.Skeleton;
 import net.minecraft.world.entity.monster.Zombie;
@@ -69,10 +70,10 @@ public class DevPort121 implements DevPort {
             mc().createWorldOpenFlows().openWorld(folder, () -> {});
             return;
         }
-        GameRules rules = new GameRules();
+        GameRules rules = new GameRules(WorldDataConfiguration.DEFAULT.enabledFeatures());
         LevelSettings ls = new LevelSettings(folder, GameType.SURVIVAL, false, Difficulty.NORMAL, true, rules, WorldDataConfiguration.DEFAULT);
         mc().createWorldOpenFlows().createFreshLevel(folder, ls, new WorldOptions(4242L, false, false),
-            access -> access.registryOrThrow(Registries.WORLD_PRESET).getHolderOrThrow(WorldPresets.FLAT).value().createWorldDimensions(), mc().screen);
+            access -> access.lookupOrThrow(Registries.WORLD_PRESET).getOrThrow(WorldPresets.FLAT).value().createWorldDimensions(), mc().screen);
     }
 
     static MinecraftServer server() {
@@ -214,19 +215,19 @@ public class DevPort121 implements DevPort {
                 p.getInventory().clearContent();
                 break;
             case SPAWN_MOBS: {
-                zombie = EntityType.ZOMBIE.create(level);
+                zombie = EntityType.ZOMBIE.create(level, EntitySpawnReason.TRIGGERED);
                 zombie.setPos(p.getX() + 3, p.getY(), p.getZ());
                 ItemStack sword = new ItemStack(Items.IRON_SWORD);
-                sword.enchant(level.registryAccess().registryOrThrow(Registries.ENCHANTMENT).getHolderOrThrow(Enchantments.SHARPNESS), 3);
+                sword.enchant(level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.SHARPNESS), 3);
                 zombie.setItemSlot(EquipmentSlot.MAINHAND, sword);
                 zombie.setNoAi(true);
                 level.addFreshEntity(zombie);
-                skeleton = EntityType.SKELETON.create(level);
+                skeleton = EntityType.SKELETON.create(level, EntitySpawnReason.TRIGGERED);
                 skeleton.setPos(p.getX() - 8, p.getY(), p.getZ());
                 skeleton.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.BOW));
                 skeleton.setNoAi(true);
                 level.addFreshEntity(skeleton);
-                creeper = EntityType.CREEPER.create(level);
+                creeper = EntityType.CREEPER.create(level, EntitySpawnReason.TRIGGERED);
                 creeper.setPos(p.getX(), p.getY(), p.getZ() + 4);
                 creeper.setNoAi(true);
                 level.addFreshEntity(creeper);

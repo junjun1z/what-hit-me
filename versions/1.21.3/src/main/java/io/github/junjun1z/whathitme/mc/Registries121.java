@@ -106,7 +106,7 @@ public final class Registries121 implements Registries {
 
     private Registry<DamageType> damageTypes() {
         RegistryAccess a = access.get();
-        return a == null ? null : a.registryOrThrow(net.minecraft.core.registries.Registries.DAMAGE_TYPE);
+        return a == null ? null : a.lookupOrThrow(net.minecraft.core.registries.Registries.DAMAGE_TYPE);
     }
 
     @Override

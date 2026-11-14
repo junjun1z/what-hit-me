@@ -78,7 +78,7 @@ public final class FallbackEnv121 implements FallbackEnv {
 
     @Override
     public boolean inVoid() {
-        return p.getY() < p.level().getMinBuildHeight() - 60;
+        return p.getY() < p.level().getMinY() - 60;
     }
 
     @Override
