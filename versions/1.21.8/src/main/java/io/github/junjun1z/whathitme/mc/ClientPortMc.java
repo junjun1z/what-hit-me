@@ -27,6 +27,7 @@ public abstract class ClientPortMc implements io.github.junjun1z.whathitme.core.
 
     private static RegistryAccess access() {
         Minecraft mc = mc();
+        if (mc == null) return null; // not started yet (NeoForge loads mods in parallel with the game start)
         if (mc.getConnection() != null) return mc.getConnection().registryAccess();
         return mc.level == null ? null : mc.level.registryAccess();
     }
