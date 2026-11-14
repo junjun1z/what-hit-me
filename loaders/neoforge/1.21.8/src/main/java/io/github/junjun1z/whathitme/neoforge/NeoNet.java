@@ -37,7 +37,7 @@ public final class NeoNet {
     private NeoNet() {}
 
     static void register(RegisterPayloadHandlersEvent event) {
-        event.registrar(String.valueOf(Packets.PROTOCOL)).optional().playBidirectional(Payload.TYPE, Payload.CODEC, NeoNet::handle);
+        event.registrar(String.valueOf(Packets.PROTOCOL)).optional().playBidirectional(Payload.TYPE, Payload.CODEC, NeoNet::handle, NeoNet::handle);
     }
 
     private static void handle(Payload payload, IPayloadContext ctx) {
