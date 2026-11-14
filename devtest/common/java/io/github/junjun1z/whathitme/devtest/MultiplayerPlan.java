@@ -25,8 +25,11 @@ final class MultiplayerPlan {
     }
 
     private void say(String c) {
-        t.act(() -> p.say(c));
-        t.sleep(3);
+        // a few old-version commands are several commands (VanillaCommands)
+        for (String one : c.split("\n")) {
+            t.act(() -> p.say(one));
+            t.sleep(3);
+        }
     }
 
     private static boolean fallbackHas(String id) {
@@ -115,16 +118,18 @@ final class MultiplayerPlan {
         }
         t.cmd("/whm effects", "Active Effects", 60);
         t.cmd("/whm search fall", "Search: fall", 60);
-        // totem
-        say(vc.effectClear());
-        say(vc.effect("instant_health", 1, 10));
-        t.sleep(10);
-        t.clearChat();
-        say(vc.totemOffhand());
-        t.sleep(10);
-        say(vc.effect("instant_damage", 1, 5));
-        t.waitFor("totem alert", () -> t.chatHas("Totem of Undying saved you"), 100);
-        t.sleep(20);
+        // totem (1.11+)
+        if (vc.hasTotem()) {
+            say(vc.effectClear());
+            say(vc.effect("instant_health", 1, 10));
+            t.sleep(10);
+            t.clearChat();
+            say(vc.totemOffhand());
+            t.sleep(10);
+            say(vc.effect("instant_damage", 1, 5));
+            t.waitFor("totem alert", () -> t.chatHas("Totem of Undying saved you"), 100);
+            t.sleep(20);
+        }
         say(vc.effectClear());
         // death
         t.act(() -> t.autoRespawn = false);
@@ -147,7 +152,7 @@ final class MultiplayerPlan {
         t.waitFor("respawn summary", () -> t.chatHas("Killing Blow"), 100);
         t.act(() -> t.info("summary: " + t.chatText().replace('\n', '|')));
         t.cmd("/whm last", "Death Recap", 60);
-        t.cmd("/whm snapshot 1", "Totem of Undying", 60);
+        if (vc.hasTotem()) t.cmd("/whm snapshot 1", "Totem of Undying", 60);
         t.clearChat();
         t.then(() -> {
             p.command("/whm inspect " + p.playerName());

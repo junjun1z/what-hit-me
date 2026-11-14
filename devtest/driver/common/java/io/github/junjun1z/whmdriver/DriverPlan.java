@@ -46,11 +46,14 @@ public final class DriverPlan {
     }
 
     private void say(String c) {
-        steps.add(() -> {
-            port.say(c);
-            return true;
-        });
-        sleep(4);
+        // a few old-version commands are several commands (VanillaCommands)
+        for (String one : c.split("\n")) {
+            steps.add(() -> {
+                port.say(one);
+                return true;
+            });
+            sleep(4);
+        }
     }
 
     private void sleep(int t) {
@@ -153,11 +156,13 @@ public final class DriverPlan {
         expect("/whm last before dying", "No death recorded", 60);
         say(cmd.effectClear());
         say(cmd.effect("instant_health", 1, 10));
-        say(cmd.totemOffhand());
-        sleep(10);
-        say(cmd.effect("instant_damage", 1, 5));
-        expect("totem alert (English)", "Totem of Undying saved you", 100);
-        say(cmd.effectClear());
+        if (cmd.hasTotem()) {
+            say(cmd.totemOffhand());
+            sleep(10);
+            say(cmd.effect("instant_damage", 1, 5));
+            expect("totem alert (English)", "Totem of Undying saved you", 100);
+            say(cmd.effectClear());
+        }
         steps.add(() -> {
             autoRespawn = false;
             return true;
@@ -173,8 +178,10 @@ public final class DriverPlan {
         expect("respawn summary: recap link", "Click here for full death recap", 20);
         say("/whm last");
         expect("/whm last", "Death Recap", 60);
-        say("/whm snapshot 1");
-        expect("/whm snapshot 1", "Totem of Undying", 60);
+        if (cmd.hasTotem()) {
+            say("/whm snapshot 1");
+            expect("/whm snapshot 1", "Totem of Undying", 60);
+        }
         say("/whm ignore minecraft:fall");
         expect("/whm ignore (personal or op)", "Now hiding minecraft:fall", 60);
         say("/whm ignore minecraft:fall");

@@ -96,4 +96,9 @@ public interface DevPort {
 
     /** The integrated server is a dedicated one / none (multiplayer) */
     boolean dedicated();
+
+    /** The version has the Totem of Undying (1.11+); the totem steps are skipped otherwise */
+    default boolean hasTotem() {
+        return true;
+    }
 }

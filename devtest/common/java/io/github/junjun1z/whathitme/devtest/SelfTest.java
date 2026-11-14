@@ -333,15 +333,17 @@ public final class SelfTest {
         hit(Act.GENERIC, 17f);
         waitFor("heavy hit alert in chat", () -> chatHas("Heavy hit"), 60);
         check("heavy hit snapshot saved", () -> serverHistory().snapshots().size() >= 1 && serverHistory().snapshots().get(0).kind == Snapshot.HEAVY, null);
-        // totem
-        clearChat();
-        srv(Act.TOTEM);
-        sleep(2);
-        hit(Act.MAGIC, 100f);
-        waitFor("totem alert in chat", () -> chatHas("Totem of Undying saved you"), 60);
-        check("totem snapshot + record marked [Totem]", () -> serverHistory().snapshots().get(0).kind == Snapshot.TOTEM && serverHistory().last().has(DamageRecord.TOTEM),
-            (Supplier<?>) () -> "kind=" + serverHistory().snapshots().get(0).kind + " last=" + serverHistory().last().damageId + " flags=" + serverHistory().last().flags);
-        check("player alive after totem", () -> port.health() > 0f, null);
+        // totem (1.11+)
+        if (port.hasTotem()) {
+            clearChat();
+            srv(Act.TOTEM);
+            sleep(2);
+            hit(Act.MAGIC, 100f);
+            waitFor("totem alert in chat", () -> chatHas("Totem of Undying saved you"), 60);
+            check("totem snapshot + record marked [Totem]", () -> serverHistory().snapshots().get(0).kind == Snapshot.TOTEM && serverHistory().last().has(DamageRecord.TOTEM),
+                (Supplier<?>) () -> "kind=" + serverHistory().snapshots().get(0).kind + " last=" + serverHistory().last().damageId + " flags=" + serverHistory().last().flags);
+            check("player alive after totem", () -> port.health() > 0f, null);
+        }
         // commands while alive
         cmd("/whm", "Damage History", 60);
         check("history shows hit counter and buttons", () -> chatHas("x3 hits") && chatHas("[Copy ID]") && chatHas("[Mute]"), (Supplier<?>) this::chatText);
@@ -350,8 +352,12 @@ public final class SelfTest {
         sleep(5);
         cmd("/whm effects", "Active Effects", 60);
         check("effects list shows milk info", () -> chatHas("[Milk ✔]") && chatHas("Poison"), (Supplier<?>) this::chatText);
-        cmd("/whm snapshot 1", "Totem of Undying", 60);
-        cmd("/whm snapshot 2", "Heavy Hit", 60);
+        if (port.hasTotem()) {
+            cmd("/whm snapshot 1", "Totem of Undying", 60);
+            cmd("/whm snapshot 2", "Heavy Hit", 60);
+        } else {
+            cmd("/whm snapshot 1", "Heavy Hit", 60);
+        }
         srv(Act.CLEAR_EFFECTS);
         // death by void (absolute)
         clearChat();
