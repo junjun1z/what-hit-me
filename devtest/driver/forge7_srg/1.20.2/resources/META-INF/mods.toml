@@ -1,0 +1,10 @@
+modLoader = "javafml"
+loaderVersion = "[48,)"
+license = "MIT"
+
+[[mods]]
+modId = "whmdriver"
+version = "1"
+displayName = "WHM test driver (development only)"
+description = '''Drives a client WITHOUT What Hit Me? in the multiplayer self-test.'''
+displayTest = "IGNORE_ALL_VERSION"
