@@ -123,9 +123,22 @@ All commands are `/whm` (alias `/whathitme`) and Tab-complete.
 | `/whm server <subcommand>` | From a modded client: run the subcommand on the server (server-wide settings) | Needs the mod on the server |
 | `/whm help` | Command list | Everyone |
 
-## Languages
+## Supported languages
 
-English, Japanese, Simplified Chinese, Traditional Chinese, Korean, Russian, German, French, Spanish, Brazilian Portuguese.
+The mod follows your Minecraft language setting. 10 languages are included:
+
+| Language | In game |
+|---|---|
+| English (default) | English |
+| Japanese | 日本語 |
+| Simplified Chinese | 简体中文 |
+| Traditional Chinese | 繁體中文 |
+| Korean | 한국어 |
+| Russian | Русский |
+| German | Deutsch |
+| French | Français |
+| Spanish | Español |
+| Brazilian Portuguese | Português (Brasil) |
 
 Players without the mod see English text sent by the server.
 
