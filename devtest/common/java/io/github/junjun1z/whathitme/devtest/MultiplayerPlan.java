@@ -192,7 +192,7 @@ final class MultiplayerPlan {
         t.cmd("/whm test minecraft:lava", "Chat preview", 60);
         t.act(() -> p.say("/deop " + p.playerName()));
         t.sleep(40);
-        t.cmd("/whm rename minecraft:fall x", "operator permission", 40);
+        if (p.clientKnowsOp()) t.cmd("/whm rename minecraft:fall x", "operator permission", 40);
         t.cmd("/whm server reload", "operator permission", 60);
         t.cmd("/whm test minecraft:lava", "operator permission", 40);
         t.cmd("/whm stats", "Death Statistics", 60);

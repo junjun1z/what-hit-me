@@ -127,6 +127,11 @@ public interface DevPort {
         return false;
     }
 
+    /** The client knows its op level (vanilla tells it since 1.9); before, client-only commands leave the check to the server */
+    default boolean clientKnowsOp() {
+        return true;
+    }
+
     /** The What Hit Me? config screen is open */
     default boolean configScreenOpen() {
         return false;

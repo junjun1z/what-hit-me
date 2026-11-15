@@ -68,7 +68,12 @@ final class ClientPort17 implements ClientPort {
 
     @Override
     public boolean hasOpPermission() {
-        return mc().thePlayer != null && mc().thePlayer.canCommandSenderUseCommand(2, "whm");
+        if (mc().thePlayer == null) return false;
+        // a client before 1.9 is not told its op level: single player asks the integrated server, on a server the server decides
+        net.minecraft.server.integrated.IntegratedServer s = mc().getIntegratedServer();
+        if (s == null) return true;
+        net.minecraft.entity.player.EntityPlayerMP p = s.getConfigurationManager().func_152612_a(mc().thePlayer.getCommandSenderName());
+        return p != null && p.canCommandSenderUseCommand(2, "whm");
     }
 
     @Override

@@ -190,6 +190,11 @@ final class DevPort17 implements DevPort {
     }
 
     @Override
+    public boolean clientKnowsOp() {
+        return false;
+    }
+
+    @Override
     public boolean configScreenOpen() {
         return mc().currentScreen instanceof GuiConfig && "whathitme".equals(((GuiConfig) mc().currentScreen).modID);
     }
