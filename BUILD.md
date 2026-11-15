@@ -208,3 +208,13 @@ Pitfalls seen so far:
 - Self-test world creation: 1.18.2 `Minecraft#createLevel` + the flat `WorldPreset` (found by reflection),
   1.19.2 `createFreshLevel(..., RegistryAccess, WorldGenSettings)`, 1.20.2 - 1.20.4 `WorldOpenFlows` called by
   signature (the parameters differ between 1.20.2 and 1.20.4).
+- Forge 1.18.2 merges the server's command tree over the client commands (`ClientCommandHandler.mergeServerCommands`):
+  with the mod on both sides the client `/whm` would be sent to the server. `loaders/forge/1.18.2` therefore also runs
+  the client command from `ClientChatEvent` (the Brigadier registration stays for tab completion). Forge 1.19+ is fine.
+- The 1.18.2 jars are 1.18.2 only: Forge 38 (1.18) has no `RegisterClientCommandsEvent`, Forge 39 (1.18.1) other client
+  event names, and Minecraft 1.18.2 changed the registry API (`RegistryAccess.Frozen`), so the Fabric jar crashes on
+  1.18 / 1.18.1 (`NoSuchMethodError` in `ServerPortMc`). Supporting them would need a `versions/1.18` adapter.
+- Fabric API before 0.59 (1.18 - 1.19.1) has the mod id `fabric`, newer ones provide it: the 1.18.2 and 1.19.2 Fabric
+  jars depend on `"fabric": "*"` (publish.json still names the project `fabric-api`).
+- Dedicated server 1.18.2: `level-type=flat` (not `minecraft\:flat`, which silently gives a normal world and makes the
+  mp self-test miss the mob hits).
