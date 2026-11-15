@@ -76,9 +76,51 @@ public class DevPort118 implements DevPort {
         }
         GameRules rules = new GameRules();
         LevelSettings ls = new LevelSettings(folder, GameType.SURVIVAL, false, Difficulty.NORMAL, true, rules, DataPackConfig.DEFAULT);
-        RegistryAccess.Frozen access = RegistryAccess.BUILTIN.get();
-        WorldGenSettings gen = flatPreset().create(access, 4242L, false, false);
-        mc().createLevel(folder, ls, access, gen);
+        // By signature: 1.18.2 has RegistryAccess.BUILTIN (a Supplier of RegistryAccess.Frozen), 1.18 / 1.18.1 have
+        // RegistryAccess.builtin() (RegistryHolder); WorldPreset#create and Minecraft#createLevel take that type.
+        try {
+            Object access = null;
+            for (Field f : RegistryAccess.class.getDeclaredFields()) {
+                if (java.lang.reflect.Modifier.isStatic(f.getModifiers()) && java.util.function.Supplier.class.isAssignableFrom(f.getType())) {
+                    f.setAccessible(true);
+                    Object v = ((java.util.function.Supplier<?>) f.get(null)).get();
+                    if (v instanceof RegistryAccess) access = v;
+                }
+            }
+            if (access == null) {
+                for (java.lang.reflect.Method m : RegistryAccess.class.getDeclaredMethods()) {
+                    if (java.lang.reflect.Modifier.isStatic(m.getModifiers()) && m.getParameterCount() == 0
+                        && RegistryAccess.class.isAssignableFrom(m.getReturnType()) && m.getReturnType() != RegistryAccess.class) {
+                        m.setAccessible(true);
+                        access = m.invoke(null);
+                        break;
+                    }
+                }
+            }
+            Object gen = null;
+            for (java.lang.reflect.Method m : WorldPreset.class.getDeclaredMethods()) {
+                Class<?>[] pt = m.getParameterTypes();
+                if (m.getReturnType() == WorldGenSettings.class && pt.length == 4 && pt[1] == long.class && pt[2] == boolean.class
+                    && pt[3] == boolean.class && pt[0].isInstance(access)) {
+                    m.setAccessible(true);
+                    gen = m.invoke(flatPreset(), access, 4242L, false, false);
+                    break;
+                }
+            }
+            for (java.lang.reflect.Method m : Minecraft.class.getDeclaredMethods()) {
+                Class<?>[] pt = m.getParameterTypes();
+                if (pt.length == 4 && pt[0] == String.class && pt[1] == LevelSettings.class && pt[3] == WorldGenSettings.class && pt[2].isInstance(access)) {
+                    m.setAccessible(true);
+                    m.invoke(mc(), folder, ls, access, gen);
+                    return;
+                }
+            }
+            throw new IllegalStateException("no createLevel method");
+        } catch (RuntimeException e) {
+            throw e;
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
     }
 
     /** The "Superflat" preset (a private constant of WorldPreset in 1.18.2) */
