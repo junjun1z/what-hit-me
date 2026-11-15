@@ -240,7 +240,8 @@ public final class Facts {
         ResourceLocation id = Registry.BLOCK.getKey(b);
         String name;
         try {
-            name = b.getName().getString();
+            // Block#getName is client-only on this version
+            name = new TranslatableComponent(b.getDescriptionId()).getString();
         } catch (Throwable t) {
             name = "";
         }
