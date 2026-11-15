@@ -1,17 +1,22 @@
 package io.github.junjun1z.whathitme.forge;
 
+import io.github.junjun1z.whathitme.core.Safe;
+import io.github.junjun1z.whathitme.core.data.CatalogCache;
 import io.github.junjun1z.whathitme.core.server.ServerCore;
 import io.github.junjun1z.whathitme.mc.Brig;
 import io.github.junjun1z.whathitme.mc.Facts;
 import io.github.junjun1z.whathitme.mc.McText;
 import io.github.junjun1z.whathitme.mc.ServerPortMc;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraftforge.common.util.FakePlayer;
-import net.minecraftforge.event.TickEvent;
 import net.minecraftforge.event.entity.living.LivingDamageEvent;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
 import net.minecraftforge.event.entity.player.PlayerEvent;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.event.server.FMLServerStartingEvent;
 import net.minecraftforge.fml.event.server.FMLServerStoppedEvent;
 import net.minecraftforge.eventbus.api.EventPriority;
@@ -19,7 +24,7 @@ import net.minecraftforge.eventbus.api.SubscribeEvent;
 
 /**
  * Forge 1.15.2 events of the logical server, forwarded to {@link ServerCore}. Every handler returns on its first line
- * for anything that is not a player.
+ * for anything that is not a player; there is no tick handler.
  */
 public final class ForgeServerEvents {
 
@@ -37,6 +42,8 @@ public final class ForgeServerEvents {
     public void onServerStarting(FMLServerStartingEvent event) {
         port = new ServerPortMc(event.getServer(), ForgePlayer::new);
         ServerCore.serverStarted(port);
+        Safe.run("catalog cache", () -> CatalogCache.init(port.registries()));
+        WhatHitMeForge.LOG.info("What Hit Me? catalog cache: " + CatalogCache.status + " in " + CatalogCache.initMillis + " ms, damage id scan: " + CatalogCache.scanStatus);
         // no RegisterCommandsEvent on this Forge: commands are registered when the server starts
         Brig.register(event.getCommandDispatcher(), (s, args) -> {
             if (port != null) ServerCore.execute(port.source(s), args);
@@ -55,7 +62,7 @@ public final class ForgeServerEvents {
         ServerPlayer p = tracked(event.getEntityLiving());
         if (p == null || event.getAmount() <= 0) return;
         // a fresh hit has just reset invulnerableTime to its maximum
-        ServerCore.onHurt(p.getUUID(), p.level.getGameTime(), event.getSource(), event.getAmount(), p.getAbsorptionAmount(), p.getHealth(), p.isBlocking(),
+        ServerCore.onHurt(new ForgePlayer(p), p.level.getGameTime(), event.getSource(), event.getAmount(), p.getAbsorptionAmount(), p.getHealth(), p.isBlocking(),
             p.invulnerableTime >= MAX_INVUL, MAX_INVUL);
     }
 
@@ -76,11 +83,15 @@ public final class ForgeServerEvents {
             () -> Facts.hit(p, event.getSource()));
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
     public void onDeath(LivingDeathEvent event) {
         if (!(event.getEntityLiving() instanceof ServerPlayer)) return;
         ServerPlayer p = tracked(event.getEntityLiving());
         if (p == null) return;
+        if (event.isCanceled()) {
+            ServerCore.onDeathCancelled(new ForgePlayer(p), () -> Facts.hit(p, event.getSource()));
+            return;
+        }
         String msg = "";
         try {
             msg = McText.toJson(p.getCombatTracker().getDeathMessage());
@@ -97,8 +108,28 @@ public final class ForgeServerEvents {
     }
 
     @SubscribeEvent
-    public void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) ServerCore.onTickEnd();
+    public void onAttack(AttackEntityEvent event) {
+        if (!(event.getPlayer() instanceof ServerPlayer)) return;
+        ServerPlayer p = tracked(event.getPlayer());
+        if (p == null || event.getTarget() == null) return;
+        ServerCore.onPlayerAttack(p.getUUID(), event.getTarget().getUUID().toString());
+    }
+
+    @SubscribeEvent
+    public void onItemBroken(PlayerDestroyItemEvent event) {
+        if (!(event.getPlayer() instanceof ServerPlayer)) return;
+        ServerPlayer p = tracked(event.getPlayer());
+        if (p == null) return;
+        Safe.run("item break event", () -> {
+            int slot = Facts.armorSlot(event.getOriginal());
+            if (slot >= 0) ServerCore.onArmorBroken(new ForgePlayer(p), Facts.item(event.getOriginal()), slot);
+        });
+    }
+
+    @SubscribeEvent
+    public void onWorldSave(WorldEvent.Save event) {
+        if (!(event.getWorld() instanceof ServerLevel)) return;
+        if ("minecraft:overworld".equals(Facts.dimension((ServerLevel) event.getWorld()))) ServerCore.onWorldSave();
     }
 
     @SubscribeEvent

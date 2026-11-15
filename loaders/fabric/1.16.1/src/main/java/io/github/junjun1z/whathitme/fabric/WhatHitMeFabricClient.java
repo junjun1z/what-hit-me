@@ -5,7 +5,9 @@ import java.io.File;
 import com.mojang.blaze3d.vertex.PoseStack;
 
 import io.github.junjun1z.whathitme.core.Platform;
+import io.github.junjun1z.whathitme.core.Safe;
 import io.github.junjun1z.whathitme.core.client.ClientCore;
+import io.github.junjun1z.whathitme.core.data.CatalogCache;
 import io.github.junjun1z.whathitme.core.client.DeathPanel;
 import io.github.junjun1z.whathitme.core.cmd.Completion;
 import io.github.junjun1z.whathitme.core.net.Packets;
@@ -14,6 +16,7 @@ import io.github.junjun1z.whathitme.mc.FallbackEnv116;
 import io.github.junjun1z.whathitme.mc.Gfx116;
 import io.github.junjun1z.whathitme.mc.McText;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.event.client.ClientTickCallback;
 import net.fabricmc.fabric.api.network.ClientSidePacketRegistry;
 import net.minecraft.client.Minecraft;
@@ -41,12 +44,21 @@ public final class WhatHitMeFabricClient implements ClientModInitializer {
 
     /** The death screen the panel was opened for (screens are re-initialized on resize) */
     private static Screen deathScreen;
+    /** The catalog cache was loaded once (connected to a server without the integrated one) */
+    private static boolean catalogTried;
     private static boolean inWorld;
 
     @Override
     public void onInitializeClient() {
         Platform.clientLang = McText.LANG;
         PORT.install();
+        if (FabricLoader.getInstance().isModLoaded("modmenu")) {
+            try {
+                ClientPortMc.configScreen = WhmModMenu::open;
+            } catch (Throwable t) {
+                WhatHitMeFabric.LOG.warn("Mod Menu integration not available: " + t);
+            }
+        }
         ClientSidePacketRegistry.INSTANCE.register(FabricNet.ID, (ctx, buf) -> {
             Packets.Packet p = FabricNet.read(buf);
             if (p != null && !Packets.serverbound(p.type())) ctx.getTaskQueue().execute(() -> ClientCore.onPacket(p));
@@ -62,6 +74,11 @@ public final class WhatHitMeFabricClient implements ClientModInitializer {
             }
             inWorld = true;
             ClientCore.tick(new FallbackEnv116(mc));
+            ClientPortMc.tickConfigScreen();
+            if (!catalogTried) {
+                catalogTried = true;
+                if (!CatalogCache.loaded()) Safe.run("catalog cache", () -> CatalogCache.init(PORT.registries()));
+            }
         });
         startDevTest();
     }

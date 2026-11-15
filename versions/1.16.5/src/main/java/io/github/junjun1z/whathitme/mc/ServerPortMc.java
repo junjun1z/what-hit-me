@@ -80,4 +80,16 @@ public final class ServerPortMc implements ServerPort {
             }
         };
     }
+
+    /** Queued for the next tick (execute would run it at once on the server thread) */
+    @Override
+    public boolean schedule(Runnable task) {
+        server.tell(new net.minecraft.server.TickTask(server.getTickCount(), task));
+        return true;
+    }
+
+    @Override
+    public boolean runCommand(String command) {
+        return server.getCommands().performCommand(server.createCommandSourceStack(), command) > 0;
+    }
 }

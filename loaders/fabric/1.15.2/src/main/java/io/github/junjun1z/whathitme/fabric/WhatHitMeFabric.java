@@ -12,6 +12,8 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import io.github.junjun1z.whathitme.core.Platform;
+import io.github.junjun1z.whathitme.core.Safe;
+import io.github.junjun1z.whathitme.core.data.CatalogCache;
 import io.github.junjun1z.whathitme.core.config.CfgFile;
 import io.github.junjun1z.whathitme.core.config.WhmConfig;
 import io.github.junjun1z.whathitme.core.net.Packets;
@@ -19,13 +21,13 @@ import io.github.junjun1z.whathitme.core.server.ServerCore;
 import io.github.junjun1z.whathitme.mc.Brig;
 import io.github.junjun1z.whathitme.mc.Facts;
 import io.github.junjun1z.whathitme.mc.McText;
+import io.github.junjun1z.whathitme.mc.Registries115;
 import io.github.junjun1z.whathitme.mc.ServerPortMc;
 import net.fabricmc.api.EnvType;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.registry.CommandRegistry;
 import net.fabricmc.fabric.api.event.server.ServerStartCallback;
 import net.fabricmc.fabric.api.event.server.ServerStopCallback;
-import net.fabricmc.fabric.api.event.server.ServerTickCallback;
 import net.fabricmc.fabric.api.network.ServerSidePacketRegistry;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
@@ -36,7 +38,7 @@ import net.minecraft.world.entity.player.Player;
 /**
  * What Hit Me? on Fabric 1.15.2. Optional on both sides (works on the client only, the server only or both). This Fabric
  * API has no living-entity damage, respawn or disconnect events: tiny mixins on Player#actuallyHurt (before armor / after
- * the damage), ServerPlayer#die and PlayerList#respawn / #remove forward to {@link #onHurt}, {@link #afterHurt},
+ * the damage), Player#attack, ServerPlayer#die and PlayerList#respawn / #remove forward to {@link #onHurt}, {@link #afterHurt},
  * {@link #onDie}, {@link #onRespawn} and {@link #onLogout}; everything else uses Fabric API.
  */
 public final class WhatHitMeFabric implements ModInitializer {
@@ -71,8 +73,14 @@ public final class WhatHitMeFabric implements ModInitializer {
                 for (ModContainer c : FabricLoader.getInstance().getAllMods()) out.add(c.getMetadata().getId());
                 return out;
             }
+
+            @Override
+            public String version(String modId) {
+                return FabricLoader.getInstance().getModContainer(modId).map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("");
+            }
         };
         Facts.modOfSource = WhatHitMeFabric::modOfSource;
+        Registries115.modFiles = WhatHitMeFabric::modFiles;
         Platform.serverLang = McText.LANG;
         Platform.configDir = FabricLoader.getInstance().getConfigDir().toFile();
         WhmConfig.init(Platform.configDir, FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT, CfgFile::new);
@@ -87,6 +95,8 @@ public final class WhatHitMeFabric implements ModInitializer {
         ServerStartCallback.EVENT.register(server -> {
             port = new ServerPortMc(server, FabricPlayer::new);
             ServerCore.serverStarted(port);
+            Safe.run("catalog cache", () -> CatalogCache.init(port.registries()));
+            LOG.info("What Hit Me? catalog cache: " + CatalogCache.status + " in " + CatalogCache.initMillis + " ms, damage id scan: " + CatalogCache.scanStatus);
         });
         ServerStopCallback.EVENT.register(server -> {
             ServerCore.serverStopped();
@@ -95,18 +105,24 @@ public final class WhatHitMeFabric implements ModInitializer {
         CommandRegistry.INSTANCE.register(false, dispatcher -> Brig.register(dispatcher, (s, args) -> {
             if (port != null) ServerCore.execute(port.source(s), args);
         }, (s, args) -> port == null ? java.util.Collections.<String>emptyList() : ServerCore.complete(port.source(s), args)));
-        ServerTickCallback.EVENT.register(server -> ServerCore.onTickEnd());
     }
 
     private static ServerPlayer tracked(Player e) {
         return e instanceof ServerPlayer && !e.level.isClientSide ? (ServerPlayer) e : null;
     }
 
+    /** Player#attack, first line (reflected damage) */
+    public static void onAttack(Player e, net.minecraft.world.entity.Entity target) {
+        ServerPlayer p = tracked(e);
+        if (p == null || target == null) return;
+        ServerCore.onPlayerAttack(p.getUUID(), target.getUUID().toString());
+    }
+
     /** Player#actuallyHurt, first line: damage before armor (a fresh hit has just set invulnerableTime to its maximum) */
     public static void onHurt(Player e, DamageSource source, float amount) {
         ServerPlayer p = tracked(e);
         if (p == null || amount <= 0) return;
-        ServerCore.onHurt(p.getUUID(), p.level.getGameTime(), source, amount, p.getAbsorptionAmount(), p.getHealth(), p.isBlocking(),
+        ServerCore.onHurt(new FabricPlayer(p), p.level.getGameTime(), source, amount, p.getAbsorptionAmount(), p.getHealth(), p.isBlocking(),
             p.invulnerableTime >= MAX_INVUL, MAX_INVUL);
     }
 
@@ -143,8 +159,8 @@ public final class WhatHitMeFabric implements ModInitializer {
 
     private static volatile Map<File, String> sources;
 
-    /** Mod id of a jar / directory (for damage types of mods) */
-    static String modOfSource(File f) {
+    /** Mod jars / directories with their mod id (without minecraft, the loader, Fabric API) */
+    private static Map<File, String> sources() {
         Map<File, String> map = sources;
         if (map == null) {
             map = new HashMap<>();
@@ -159,6 +175,18 @@ public final class WhatHitMeFabric implements ModInitializer {
             }
             sources = map;
         }
-        return map.get(f);
+        return map;
+    }
+
+    /** Mod id of a jar / directory (for damage types of mods) */
+    static String modOfSource(File f) {
+        return sources().get(f);
+    }
+
+    /** Mod files for the damage id scanner (without What Hit Me? itself) */
+    static Map<File, String> modFiles() {
+        Map<File, String> out = new java.util.LinkedHashMap<>(sources());
+        out.values().removeIf(Platform.MODID::equals);
+        return out;
     }
 }

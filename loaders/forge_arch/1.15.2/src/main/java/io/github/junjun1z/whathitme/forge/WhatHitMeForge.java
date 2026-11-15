@@ -61,8 +61,14 @@ public class WhatHitMeForge {
                 for (IModInfo i : ModList.get().getMods()) out.add(i.getModId());
                 return out;
             }
+
+            @Override
+            public String version(String modId) {
+                return ModList.get().getModContainerById(modId).map(c -> c.getModInfo().getVersion().toString()).orElse("");
+            }
         };
         Facts.modOfSource = WhatHitMeForge::modOfSource;
+        Registries115.modFiles = WhatHitMeForge::modFiles;
         Platform.serverLang = McText.LANG;
         Platform.configDir = FMLPaths.CONFIGDIR.get().toFile();
         // Forge's curative items (milk does not cure every modded effect)
@@ -88,8 +94,8 @@ public class WhatHitMeForge {
 
     private static volatile java.util.Map<java.io.File, String> sources;
 
-    /** Mod id of a jar / directory (for damage types of mods) */
-    static String modOfSource(java.io.File f) {
+    /** Mod jars / directories with their mod id (without minecraft, forge) */
+    private static java.util.Map<java.io.File, String> sources() {
         java.util.Map<java.io.File, String> map = sources;
         if (map == null) {
             map = new java.util.HashMap<>();
@@ -105,6 +111,18 @@ public class WhatHitMeForge {
             }
             sources = map;
         }
-        return map.get(f);
+        return map;
+    }
+
+    /** Mod id of a jar / directory (for damage types of mods) */
+    static String modOfSource(java.io.File f) {
+        return sources().get(f);
+    }
+
+    /** Mod files for the damage id scanner (without What Hit Me? itself) */
+    static java.util.Map<java.io.File, String> modFiles() {
+        java.util.Map<java.io.File, String> out = new java.util.LinkedHashMap<>(sources());
+        out.values().removeIf(Platform.MODID::equals);
+        return out;
     }
 }

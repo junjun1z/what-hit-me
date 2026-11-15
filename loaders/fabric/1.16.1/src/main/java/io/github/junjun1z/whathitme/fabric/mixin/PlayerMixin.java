@@ -16,6 +16,11 @@ import net.minecraft.world.entity.player.Player;
 @Mixin(Player.class)
 public abstract class PlayerMixin {
 
+    @Inject(method = "attack", at = @At("HEAD"))
+    private void whathitme$attack(net.minecraft.world.entity.Entity target, CallbackInfo ci) {
+        WhatHitMeFabric.onAttack((Player) (Object) this, target);
+    }
+
     @Inject(method = "actuallyHurt", at = @At("HEAD"))
     private void whathitme$hurt(DamageSource source, float amount, CallbackInfo ci) {
         WhatHitMeFabric.onHurt((Player) (Object) this, source, amount);

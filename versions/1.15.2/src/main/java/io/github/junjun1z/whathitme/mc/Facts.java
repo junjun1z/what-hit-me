@@ -6,10 +6,13 @@ import java.util.UUID;
 import java.util.function.Function;
 
 import io.github.junjun1z.whathitme.core.Platform;
+import io.github.junjun1z.whathitme.core.data.Context;
 import io.github.junjun1z.whathitme.core.data.DamageRecord;
 import io.github.junjun1z.whathitme.core.data.EntityFacts;
+import io.github.junjun1z.whathitme.core.data.Gear;
 import io.github.junjun1z.whathitme.core.data.HitFacts;
 import io.github.junjun1z.whathitme.core.data.TypeModResolver;
+import net.minecraft.core.BlockPos;
 import net.minecraft.core.Registry;
 import net.minecraft.locale.Language;
 import net.minecraft.network.chat.Component;
@@ -17,7 +20,9 @@ import net.minecraft.network.chat.TranslatableComponent;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
+import net.minecraft.world.entity.EquipmentSlot;
 import net.minecraft.world.entity.LivingEntity;
+import net.minecraft.world.entity.Mob;
 import net.minecraft.world.entity.TamableAnimal;
 import net.minecraft.world.entity.animal.horse.AbstractHorse;
 import net.minecraft.world.entity.player.Player;
@@ -25,6 +30,9 @@ import net.minecraft.world.entity.projectile.AbstractArrow;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.enchantment.Enchantment;
 import net.minecraft.world.item.enchantment.EnchantmentHelper;
+import net.minecraft.world.level.Level;
+import net.minecraft.world.level.block.Block;
+import net.minecraft.world.level.block.state.BlockState;
 
 /**
  * Minecraft 1.15.2 damage sources (msgId, no DamageType registry) and entities to plain facts (core {@link HitFacts} /
@@ -162,6 +170,7 @@ public final class Facts {
                 f.weaponName = w.getHoverName().getString();
                 f.weaponKey = itemKey(w);
                 f.weaponEnchants = enchantments(w);
+                f.weaponId = itemId(w);
             }
         }
         return f;
@@ -181,5 +190,87 @@ public final class Facts {
         else if (atk == victim && h.melee) h.typeId = "mob:minecraft:player";
         h.directName = direct != null && direct != atk && direct != victim ? entityName(direct) : "";
         return h;
+    }
+
+    public static String itemId(ItemStack s) {
+        try {
+            if (s == null || s.isEmpty()) return "";
+            ResourceLocation id = Registry.ITEM.getKey(s.getItem());
+            return id == null ? "" : id.toString();
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** An item stack as plain strings (null for an empty stack) */
+    public static Gear.Item item(ItemStack s) {
+        if (s == null || s.isEmpty()) return null;
+        String id = itemId(s);
+        int c = id.indexOf(':');
+        String name;
+        try {
+            name = s.getHoverName().getString();
+        } catch (Throwable t) {
+            name = id;
+        }
+        return new Gear.Item(id, itemKey(s), name, c > 0 ? id.substring(0, c) : "minecraft", enchantments(s), false);
+    }
+
+    private static final EquipmentSlot[] ARMOR = {EquipmentSlot.HEAD, EquipmentSlot.CHEST, EquipmentSlot.LEGS, EquipmentSlot.FEET};
+
+    /** Armor: head, chest, legs, feet */
+    public static Gear.Item[] armor(Player p) {
+        Gear.Item[] out = new Gear.Item[4];
+        for (int i = 0; i < 4; i++) out[i] = item(p.getItemBySlot(ARMOR[i]));
+        return out;
+    }
+
+    /** 0 head ... 3 feet, -1 = not armor */
+    public static int armorSlot(ItemStack s) {
+        if (s == null || s.isEmpty()) return -1;
+        EquipmentSlot slot = Mob.getEquipmentSlotForItem(s);
+        for (int i = 0; i < 4; i++) if (ARMOR[i] == slot) return i;
+        return -1;
+    }
+
+    private static void block(Context c, String slot, Level w, BlockPos pos) {
+        BlockState st = w.getBlockState(pos);
+        if (st.isAir()) return;
+        Block b = st.getBlock();
+        ResourceLocation id = Registry.BLOCK.getKey(b);
+        String name;
+        try {
+            name = b.getName().getString();
+        } catch (Throwable t) {
+            name = "";
+        }
+        if (name == null || name.isEmpty() || name.startsWith("block.")) name = id == null ? b.getClass().getSimpleName() : id.toString();
+        c.add(slot, b.getDescriptionId(), name, id == null ? "" : id.getNamespace());
+    }
+
+    /** Block / fluid at the feet (or the block stood on) and at the body centre, and the held items */
+    public static String environment(Player p) {
+        Context c = new Context();
+        Level w = p.level;
+        BlockPos feet = new BlockPos(p.getX(), p.getY(), p.getZ());
+        if (w.isEmptyBlock(feet)) block(c, Context.FEET, w, feet.below());
+        else block(c, Context.FEET, w, feet);
+        BlockPos body = new BlockPos(p.getX(), p.getY() + p.getBbHeight() / 2.0, p.getZ());
+        if (!body.equals(feet)) block(c, Context.BODY, w, body);
+        Gear.Item main = item(p.getMainHandItem());
+        Gear.Item off = item(p.getOffhandItem());
+        if (main != null) c.add(Context.MAIN, main.key, main.name, main.modId);
+        if (off != null) c.add(Context.OFF, off.key, off.name, off.modId);
+        return c.toString();
+    }
+
+    /** "minecraft:overworld", "minecraft:the_nether", ... (mod dimensions: their registry id) */
+    public static String dimension(Level w) {
+        try {
+            ResourceLocation id = Registry.DIMENSION_TYPE.getKey(w.getDimension().getType());
+            return id == null ? "" : id.toString();
+        } catch (Throwable t) {
+            return "";
+        }
     }
 }
