@@ -13,6 +13,7 @@ import net.minecraft.core.RegistryAccess;
 import net.minecraft.core.Registry;
 import net.minecraft.locale.Language;
 import net.minecraft.resources.ResourceLocation;
+import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.effect.MobEffect;
 import net.minecraft.world.effect.MobEffectCategory;
 import net.minecraft.world.effect.MobEffectInstance;
@@ -126,5 +127,66 @@ public final class Registries118 implements Registries {
                 Platform.modName(mod), p.getCategory() == MobEffectCategory.HARMFUL ? 1 : 0, 0, pe.getAmplifier(), pe.getDuration(), c.milk, c.items));
         }
         return out;
+    }
+
+    /** Mod jars / directories with their mod id (set by the loader; without What Hit Me? itself) */
+    public static volatile java.util.function.Supplier<java.util.Map<java.io.File, String>> modFiles = java.util.HashMap::new;
+
+    /** Every static DamageSource field of DamageSource (vanilla) with its exact properties, plus the other vanilla type names */
+    @Override
+    public List<Entry> damageTypeEntries() {
+        List<Entry> out = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (java.lang.reflect.Field f : DamageSource.class.getDeclaredFields()) {
+            try {
+                if (!java.lang.reflect.Modifier.isStatic(f.getModifiers()) || f.getType() != DamageSource.class) continue;
+                f.setAccessible(true);
+                DamageSource src = (DamageSource) f.get(null);
+                if (src == null) continue;
+                String type = src.getMsgId();
+                String id = Facts.TYPES.typeId(type, src.getClass(), true);
+                if (!seen.add(id)) continue;
+                int c = id.indexOf(':');
+                String mod = c > 0 ? id.substring(0, c) : "minecraft";
+                out.add(new Entry(Entry.DAMAGE, id, type, "", mod, Platform.modName(mod), Facts.sourceFlags(src), 0, 0, 0, false, ""));
+            } catch (Throwable ignored) {
+                // skip odd fields
+            }
+        }
+        for (Entry e : Registries.super.damageTypeEntries()) if (seen.add(e.id)) out.add(e);
+        return out;
+    }
+
+    private static volatile java.util.Map<String, Integer> setters;
+
+    /** Setters of DamageSource by their runtime name, found by calling each on a fresh instance and comparing the flags */
+    static java.util.Map<String, Integer> setters() {
+        java.util.Map<String, Integer> m = setters;
+        if (m != null) return m;
+        m = new java.util.HashMap<>();
+        for (java.lang.reflect.Method me : DamageSource.class.getDeclaredMethods()) {
+            if (java.lang.reflect.Modifier.isStatic(me.getModifiers()) || me.getParameterCount() != 0 || me.getReturnType() != DamageSource.class) continue;
+            try {
+                DamageSource d = new DamageSource("whathitme_probe") {
+                };
+                int before = Facts.sourceFlags(d);
+                me.setAccessible(true);
+                if (me.invoke(d) != d) continue;
+                m.put(me.getName(), Facts.sourceFlags(d) & ~before);
+            } catch (Throwable ignored) {
+                // not a setter
+            }
+        }
+        setters = m;
+        return m;
+    }
+
+    /** DamageSource and its vanilla subclasses by their runtime names, and every mod file */
+    @Override
+    public io.github.junjun1z.whathitme.core.data.DamageIdScanner.Input scanInput() {
+        List<String> base = new ArrayList<>();
+        for (Class<?> c : new Class<?>[] {DamageSource.class, net.minecraft.world.damagesource.EntityDamageSource.class,
+            net.minecraft.world.damagesource.IndirectEntityDamageSource.class}) base.add(c.getName().replace('.', '/'));
+        return new io.github.junjun1z.whathitme.core.data.DamageIdScanner.Input(base, modFiles.get(), Platform.mods.modIds(), setters());
     }
 }
