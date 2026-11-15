@@ -86,7 +86,7 @@ public class WhatHitMeMod {
     @Mod.EventHandler
     public void postInit(FMLPostInitializationEvent event) {
         Safe.run("catalog cache", () -> CatalogCache.init(Registries111.INSTANCE));
-        LOG.info("What Hit Me? catalog cache: " + CatalogCache.status);
+        LOG.info("What Hit Me? catalog cache: " + CatalogCache.status + " in " + CatalogCache.initMillis + " ms, damage id scan: " + CatalogCache.scanStatus);
     }
 
     @Mod.EventHandler

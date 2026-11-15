@@ -132,4 +132,27 @@ public final class Registries110 implements Registries {
         }
         return out;
     }
+
+    /** DamageSource and its vanilla subclasses as mods reference them, and every mod file */
+    @Override
+    public io.github.junjun1z.whathitme.core.data.DamageIdScanner.Input scanInput() {
+        List<String> base = new ArrayList<>();
+        for (Class<?> c : new Class<?>[] {net.minecraft.util.DamageSource.class, net.minecraft.util.EntityDamageSource.class,
+            net.minecraft.util.EntityDamageSourceIndirect.class}) base.add(c.getName().replace('.', '/'));
+        java.util.Map<java.io.File, String> files = new java.util.LinkedHashMap<>();
+        for (net.minecraftforge.fml.common.ModContainer mc : net.minecraftforge.fml.common.Loader.instance().getActiveModList()) {
+            String id = mc.getModId();
+            if ("minecraft".equalsIgnoreCase(id) || "mcp".equalsIgnoreCase(id) || "FML".equalsIgnoreCase(id) || "forge".equalsIgnoreCase(id)
+                || Platform.MODID.equals(id)) continue;
+            java.io.File f = mc.getSource();
+            if (f == null || !f.exists()) continue;
+            try {
+                files.putIfAbsent(f.getCanonicalFile(), id);
+            } catch (Exception ignored) {
+                // skip
+            }
+        }
+        return new io.github.junjun1z.whathitme.core.data.DamageIdScanner.Input(base, files, net.minecraftforge.fml.common.Loader.instance().getIndexedModList().keySet(),
+            io.github.junjun1z.whathitme.core.data.DamageIdScanner.OLD_FORGE_SETTERS);
+    }
 }
