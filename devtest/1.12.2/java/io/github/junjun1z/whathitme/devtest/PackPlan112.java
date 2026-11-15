@@ -106,6 +106,19 @@ final class PackPlan112 {
             for (Entity e : new ArrayList<>(p.world.loadedEntityList)) if (e instanceof EntityLiving) e.setDead();
         });
         t.cmd("/whm last", "Death Recap", 60);
+        t.act(() -> {
+            io.github.junjun1z.whathitme.core.data.DamageRecord k = ClientCore.currentDeath == null ? null : ClientCore.currentDeath.key();
+            t.info("1.2: killing blow vital=" + (k != null && k.has(io.github.junjun1z.whathitme.core.data.DamageRecord.VITAL)) + " hpLeft="
+                + (k == null ? -1 : k.healthAfter) + " maxHealth=" + (k == null ? -1 : k.maxHealth) + " context=" + (k == null ? "" : k.context)
+                + " gear=" + (ClientCore.currentDeath != null && ClientCore.currentDeath.gear != null));
+            t.info("1.2: catalog cache " + io.github.junjun1z.whathitme.core.data.CatalogCache.status + ", damage types "
+                + io.github.junjun1z.whathitme.core.data.CatalogCache.damageTypeEntries().size() + ", pack errors " + io.github.junjun1z.whathitme.core.config.WhmConfig.pack.errors);
+        });
+        t.check("1.2: catalog cache loaded in the pack", io.github.junjun1z.whathitme.core.data.CatalogCache::loaded, null);
+        t.cmd("/whm stats", "Death Statistics", 60);
+        t.cmd("/whm test mob:lycanitesmobs:ventoraptor", "Chat preview", 60);
+        t.cmd("/whm copyrecap", "Death recap copied", 40);
+        t.waitFor("copy recap has the equipment block", () -> t.port.clipboard().contains("## Equipment"), 40);
         t.cmd("/whm dump", "Wrote", 80);
         t.sleep(20);
     }

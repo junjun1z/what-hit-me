@@ -190,7 +190,7 @@ final class MultiplayerPlan {
         t.check("death recap from the server carries the equipment", () -> ClientCore.currentDeath != null && ClientCore.currentDeath.gear != null, null);
         t.cmd("/whm stats", "Death Statistics", 60);
         t.cmd("/whm test minecraft:lava", "Chat preview", 60);
-        say("/deop " + p.playerName());
+        t.act(() -> p.say("/deop " + p.playerName()));
         t.sleep(40);
         t.cmd("/whm rename minecraft:fall x", "operator permission", 40);
         t.cmd("/whm server reload", "operator permission", 60);
