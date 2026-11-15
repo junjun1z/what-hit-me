@@ -233,3 +233,16 @@ Pitfalls seen so far:
 - Prism's `--server` crashes 1.14 - 1.17 clients (they join before the models are loaded): the self-test and the driver join the server
   written in `.minecraft/whm_connect.txt` from the title screen instead.
 - Helper scripts for instances, launches and test servers: `devtest/scripts/` (paths at the top of each script).
+- 1.21.x / 26.x: one code version can serve several targets (`code_version` 1.21.3 builds 1.21.3 and
+  1.21.4; `26.3` is one source compiled against 26.1.2, 26.2 and 26.3 - the differences are looked up by reflection in `mc/Compat26`).
+- NeoForge 21.8+ / 26.x: `playBidirectional` needs the client handler as its fourth argument (missing in 21.6 betas, so the 1.21.8 jar starts
+  at 1.21.7). NeoForge 26.x fires `LivingDamageEvent.Post` after the totem check and the death: lethal hits are recorded from
+  `LivingUseTotemEvent` / `LivingDeathEvent`.
+- 26.2+: the current screen is `Minecraft.gui.screen()`, the chat `Minecraft.gui.hud.getChat()`; 26.3: the damage cooldown is
+  `LivingEntity.damageCooldownTime` (`Entity.invulnerableTime` is something else there).
+- Forge 1.21+: server messages reach the client through `SystemMessageReceivedEvent`, not `ClientChatReceivedEvent` (driver).
+- Fabric: use the fabric-api built for the running patch version (0.136.1+1.21.8 refuses 1.21.6, 0.138.4+1.21.10 refuses 1.21.9); the jar
+  itself runs on all of them. On 1.21 fabric-api must be 0.116.18+1.21.1 or newer (0.102.0+1.21 has no `AFTER_DAMAGE`).
+- Test instances for versions without an InvTodo instance: `devtest/scripts/mkder.sh` (copy + change the component versions in
+  `mmc-pack.json`; 26.1.x and 26.2 need LWJGL 3.4.1). Every instance: `soundCategory_master:0.0` in `options.txt`.
+- The armor mitigation check of the self-test can fail once (attribute not applied yet): run it again.
