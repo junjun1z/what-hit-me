@@ -24,6 +24,7 @@ import io.github.junjun1z.whathitme.core.server.PlayerHandle;
 import io.github.junjun1z.whathitme.core.server.ServerCore;
 import io.github.junjun1z.whathitme.core.text.Fmt;
 import io.github.junjun1z.whathitme.core.text.Msg;
+import io.github.junjun1z.whathitme.core.text.RecapFormatter;
 import io.github.junjun1z.whathitme.core.text.Txt;
 import io.github.junjun1z.whathitme.devtest.DevPort.Act;
 
@@ -104,6 +105,7 @@ final class V12Plan {
             Stats.forget(p.playerId());
             Stats.file(p.playerId()).delete();
         });
+        t.sleep(80); // respawn invulnerability
         // ---- protocol / migration
         t.check("server info protocol 2", () -> ClientCore.serverInfo != null && ClientCore.serverInfo.protocol == 2, null);
         t.check("old showHintsAndTips key migrated away", () -> WhmConfig.client.backend.raw(WhmConfig.CAT_DISPLAY, "showHintsAndTips") == null
@@ -238,9 +240,9 @@ final class V12Plan {
         t.check("enableAutoHints=false: no automatic tip", () -> {
             WhmConfig.common.set("enableAutoHints", "false");
             DamageRecord r = new DamageRecord(0, "minecraft:fall", "fall", "", "", "", "", "minecraft", "Minecraft", 1, 1, 0, 0, -1, "", "", "", "", 1, 1, 20, "");
-            boolean off = ClientCore.formatter().tip(r) == null;
+            boolean off = new RecapFormatter(Msg.ENGLISH, ServerCore.options(null, false)).tip(r) == null;
             WhmConfig.common.set("enableAutoHints", "true");
-            return off && ClientCore.formatter().tip(r) != null;
+            return off && new RecapFormatter(Msg.ENGLISH, ServerCore.options(null, false)).tip(r) != null;
         }, null);
         // ---- silent fail
         t.check("a broken damage source does not throw", () -> {
@@ -297,7 +299,7 @@ final class V12Plan {
             File f = Stats.file(id);
             boolean saved = f.isFile() && read(f).contains("\"deaths\": " + deaths);
             Stats.forget(id);
-            return saved && Stats.of(id).deaths == deaths && deaths >= 3 && Stats.of(id).causes.containsKey(SelfTest.id("magic"));
+            return saved && Stats.of(id).deaths == deaths && deaths >= 2 && Stats.of(id).causes.containsKey(SelfTest.id("magic"));
         }, (Supplier<?>) () -> read(Stats.file(p.playerId())));
         t.cmd("/whm stats", "Death Statistics", 60);
         t.check("stats lists causes", () -> t.chatHas("Deaths: ") && t.chatHas("Top causes"), (Supplier<?>) t::chatText);

@@ -174,7 +174,7 @@ public final class RecapFormatter {
 
     /** "(30% Max HP)" or null */
     public Txt maxHp(DamageRecord r) {
-        if (!o.on(Flag.MAX_HP_PERCENT) || r.maxHealth <= 0f || r.has(DamageRecord.ARMOR_BREAK)) return null;
+        if (!o.on(Flag.MAX_HP_PERCENT) || r.maxHealth <= 0f || r.taken() <= 0f || r.has(DamageRecord.ARMOR_BREAK)) return null;
         float pct = r.maxHpPercent();
         String v = pct >= 10f ? String.valueOf(Math.round(pct)) : oneDecimal(pct);
         return m.tr("whathitme.line.maxhp", v);
