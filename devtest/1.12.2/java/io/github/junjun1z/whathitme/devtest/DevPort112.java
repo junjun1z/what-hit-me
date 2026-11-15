@@ -17,6 +17,7 @@ import net.minecraft.entity.monster.EntitySkeleton;
 import net.minecraft.entity.monster.EntityZombie;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.entity.projectile.EntityTippedArrow;
+import net.minecraft.init.Blocks;
 import net.minecraft.init.Enchantments;
 import net.minecraft.init.Items;
 import net.minecraft.init.MobEffects;
@@ -26,12 +27,16 @@ import net.minecraft.potion.PotionEffect;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.util.DamageSource;
 import net.minecraft.util.ScreenShotHelper;
+import net.minecraft.util.math.BlockPos;
 import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.GameType;
 import net.minecraft.world.WorldSettings;
 import net.minecraft.world.WorldType;
 import net.minecraftforge.client.ClientCommandHandler;
+import net.minecraftforge.fml.client.config.GuiConfig;
+import net.minecraftforge.fml.client.config.IConfigElement;
 import net.minecraftforge.fml.common.FMLCommonHandler;
+import io.github.junjun1z.whathitme.forge.WhmGuiFactory;
 
 /** {@link DevPort} for Minecraft 1.12.2 (Forge). */
 final class DevPort112 implements DevPort {
@@ -175,6 +180,37 @@ final class DevPort112 implements DevPort {
     }
 
     @Override
+    public boolean v12() {
+        return true;
+    }
+
+    @Override
+    public boolean configScreenOpen() {
+        return mc().currentScreen instanceof GuiConfig && "whathitme".equals(((GuiConfig) mc().currentScreen).modID);
+    }
+
+    @Override
+    public void closeScreen() {
+        mc().displayGuiScreen(null);
+    }
+
+    @Override
+    public boolean configGuiLocked(String key) {
+        return locked(WhmGuiFactory.elements(), key);
+    }
+
+    private static boolean locked(List<IConfigElement> list, String key) {
+        for (IConfigElement e : list) {
+            if (e.isProperty()) {
+                if (key.equals(e.getName()) && e.getConfigEntryClass() != null && e.getConfigEntryClass().getSimpleName().startsWith("Locked")) return true;
+            } else if (e.getChildElements() != null && locked(e.getChildElements(), key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public void server(Act act, float amount) {
         server().addScheduledTask(() -> run(server().getPlayerList().getPlayers().get(0), act, amount));
     }
@@ -265,6 +301,50 @@ final class DevPort112 implements DevPort {
                 break;
             case CLEAR_EFFECTS:
                 p.clearActivePotions();
+                break;
+            case THORNS:
+                p.attackEntityFrom(DamageSource.causeThornsDamage(zombie), amount);
+                break;
+            case REFLECT:
+                p.attackTargetEntityWithCurrentItem(zombie);
+                p.attackEntityFrom(DamageSource.causeMobDamage(zombie), amount);
+                break;
+            case BRITTLE_HELMET: {
+                ItemStack h = new ItemStack(Items.DIAMOND_HELMET);
+                h.setItemDamage(h.getMaxDamage());
+                p.setItemStackToSlot(EntityEquipmentSlot.HEAD, h);
+                p.setHealth(p.getMaxHealth());
+                break;
+            }
+            case ENV_SETUP:
+                p.world.setBlockState(new BlockPos(p), Blocks.WEB.getDefaultState());
+                p.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Items.STICK));
+                break;
+            case CACTUS:
+                p.attackEntityFrom(DamageSource.CACTUS, amount);
+                break;
+            case ENV_CLEAR:
+                p.world.setBlockToAir(new BlockPos(p));
+                p.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, ItemStack.EMPTY);
+                p.setHealth(p.getMaxHealth());
+                break;
+            case GEAR: {
+                ItemStack chest = new ItemStack(Items.IRON_CHESTPLATE);
+                chest.addEnchantment(Enchantments.PROTECTION, 2);
+                p.setItemStackToSlot(EntityEquipmentSlot.CHEST, chest);
+                p.setItemStackToSlot(EntityEquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
+                p.addPotionEffect(new PotionEffect(MobEffects.SLOWNESS, 600, 0));
+                p.setHealth(p.getMaxHealth());
+                break;
+            }
+            case VITAL_DEATH:
+                p.setHealth(10f);
+                p.onDeath(DamageSource.GENERIC);
+                p.setHealth(0f);
+                break;
+            case SETHEALTH_DEATH:
+                p.setHealth(0f);
+                p.onDeath(DamageSource.MAGIC);
                 break;
             default:
                 break;

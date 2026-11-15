@@ -39,7 +39,25 @@ public interface DevPort {
         TOTEM,
         /** Poison II and Slowness for 20 s */
         POISON,
-        CLEAR_EFFECTS
+        CLEAR_EFFECTS,
+        // ---- 1.2 (only used when v12() is true)
+        /** Thorns damage caused by the zombie */
+        THORNS,
+        /** The player punches the zombie, which hurts the player in the same tick */
+        REFLECT,
+        /** Diamond helmet that breaks on the next armor damage */
+        BRITTLE_HELMET,
+        /** Cobweb at the feet and a stick in the main hand */
+        ENV_SETUP,
+        CACTUS,
+        /** Removes the cobweb and the held item */
+        ENV_CLEAR,
+        /** Iron armor + poison: equipment for [Copy Recap] */
+        GEAR,
+        /** Death while health is 10 (health-overhaul part death), then health 0 so the player can respawn */
+        VITAL_DEATH,
+        /** Health set to 0 and a death without any hurt event before (magic source) */
+        SETHEALTH_DEATH
     }
 
     /** "1.12.2", "1.20.1", ... */
@@ -100,5 +118,24 @@ public interface DevPort {
     /** The version has the Totem of Undying (1.11+); the totem steps are skipped otherwise */
     default boolean hasTotem() {
         return true;
+    }
+
+    // ---- 1.2
+
+    /** The 1.2 features are implemented by this version (enables the extra checks) */
+    default boolean v12() {
+        return false;
+    }
+
+    /** The What Hit Me? config screen is open */
+    default boolean configScreenOpen() {
+        return false;
+    }
+
+    default void closeScreen() {}
+
+    /** The entry of a config key is shown greyed out in the config screen */
+    default boolean configGuiLocked(String key) {
+        return false;
     }
 }

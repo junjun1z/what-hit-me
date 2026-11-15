@@ -398,7 +398,7 @@ public final class SelfTest {
         cmd("/whm config showTimestamp true", "Saved: showTimestamp = true", 40);
         cmd("/whm config anchorPoint", "anchorPoint = ", 40);
         cmd("/whm config scale 9", "Invalid value", 40);
-        cmd("/whm config", "Settings:", 40);
+        if (!port.v12()) cmd("/whm config", "Settings:", 40);
         cmd("/whm togglechat", "OFF", 40);
         cmd("/whm togglechat", "ON", 40);
         cmd("/whm inspect @self", "Player not found", 60);
@@ -427,7 +427,7 @@ public final class SelfTest {
         check("client /whm history respects chatHistoryLines", () -> countLines("[Copy ID]") == 3, (Supplier<?>) () -> "lines=" + countLines("[Copy ID]"));
         cmd("/whm config chatHistoryLines 15", "Saved: chatHistoryLines = 15", 40);
         cmd("/whm dump", "hintMap / renameMap template", 80);
-        check("dump csv written", () -> new File(port.gameDir(), "whathitme_dump.csv").length() > 1000, null);
+        check("dump csv written", () -> new File(port.gameDir(), "config/whathitme/.cache/whathitme_dump.csv").length() > 1000, null);
         check("hint template lists vanilla + mobs", () -> {
             String t;
             try {
@@ -455,5 +455,6 @@ public final class SelfTest {
         }, null);
         check("logout clears the buffer (no leak)", () -> ServerCore.tracker().peek(java.util.UUID.randomUUID()) == null, null);
         act(() -> info("server records: " + ids()));
+        if (port.v12()) new V12Plan(this).plan();
     }
 }
