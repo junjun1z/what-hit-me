@@ -29,7 +29,7 @@ public final class ServerCommandWhm extends CommandBase {
 
     @Override
     public String getUsage(ICommandSender sender) {
-        return "/whm [history|last|effects|togglechat|ignore|rename|sethint|config|search|inspect|dump|reload|snapshot|help]";
+        return "/whm [history|last|effects|stats|togglechat|ignore|rename|sethint|config|search|inspect|test|dump|reload|snapshot|help]";
     }
 
     @Override
