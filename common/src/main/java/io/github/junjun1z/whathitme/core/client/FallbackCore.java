@@ -66,6 +66,7 @@ public final class FallbackCore {
             ClientCore.FALLBACK.resize(WhmConfig.common.historySize);
             DamageRecord stored = ClientCore.FALLBACK.add(r, (long) (c.mergeWindowSeconds * 1000f));
             ClientCore.CATALOG.register(r);
+            io.github.junjun1z.whathitme.core.data.Stats.of(ClientCore.LOCAL_ID).addDamage(taken);
             boolean totemPop = tot < prevTotems && hp > 0f && p.hasRegeneration();
             if (totemPop) {
                 snapshot(Snapshot.TOTEM, stored, DamageRecord.TOTEM, now);
@@ -120,6 +121,11 @@ public final class FallbackCore {
             key = recs.size() - 1;
         }
         Snapshot s = refine(new Snapshot(Snapshot.DEATH, now, recs, key, deathMessage));
+        io.github.junjun1z.whathitme.core.data.Gear g = io.github.junjun1z.whathitme.core.Safe.get("local equipment", ClientCore.port::localGear, null);
+        if (g != null) s = s.withGear(g);
+        io.github.junjun1z.whathitme.core.data.Stats st = io.github.junjun1z.whathitme.core.data.Stats.of(ClientCore.LOCAL_ID);
+        st.addDeath(s.key());
+        st.save();
         ClientCore.FALLBACK.setLastDeath(s);
         ClientCore.onDeath(s);
     }
@@ -167,7 +173,7 @@ public final class FallbackCore {
             recs.set(s.keyIndex, nk);
             ClientCore.FALLBACK.replace(k, nk);
             ClientCore.CATALOG.register(nk);
-            return new Snapshot(s.kind, s.time, recs, s.keyIndex, s.deathMessage);
+            return new Snapshot(s.kind, s.time, recs, s.keyIndex, s.deathMessage, s.gear);
         } catch (Throwable e) {
             return s;
         }

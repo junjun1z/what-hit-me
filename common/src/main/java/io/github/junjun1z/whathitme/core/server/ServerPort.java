@@ -20,4 +20,20 @@ public interface ServerPort {
     File gameDir();
 
     Registries registries();
+
+    // ---- 1.2: optional
+
+    /**
+     * Runs a task once on the server thread after the current one (next tick), never immediately. Used instead of a
+     * tick handler to check the outcome of a lethal / heavy hit. false = not supported: the loader still calls
+     * {@code ServerCore.onTickEnd()}.
+     */
+    default boolean schedule(Runnable task) {
+        return false;
+    }
+
+    /** Runs a command with server console permission (death triggers); false = not supported */
+    default boolean runCommand(String command) {
+        return false;
+    }
 }

@@ -179,6 +179,19 @@ public final class CfgFile implements ConfigBackend {
     }
 
     @Override
+    public synchronized String raw(String category, String key) {
+        Map<String, Object> c = values.get(category);
+        Object v = c == null ? null : c.get(key);
+        return v instanceof String ? (String) v : null;
+    }
+
+    @Override
+    public synchronized void remove(String category, String key) {
+        Map<String, Object> c = values.get(category);
+        if (c != null && c.remove(key) != null) changed = true;
+    }
+
+    @Override
     public synchronized void categoryComment(String category, String comment) {
         catComments.put(category, comment);
     }

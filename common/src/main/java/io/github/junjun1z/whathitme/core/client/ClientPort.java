@@ -47,4 +47,16 @@ public interface ClientPort {
 
     /** Parses a vanilla death message: {translation key, plain text of argument 2 (the attacker)}, or null */
     String[] parseDeathMessage(String json);
+
+    // ---- 1.2: optional
+
+    /** Position and equipment of the own player (client estimates, [Copy Recap]); null = unknown */
+    default io.github.junjun1z.whathitme.core.data.Gear localGear() {
+        return null;
+    }
+
+    /** Opens the config screen on the next client tick (/whm config without arguments); false = no config screen */
+    default boolean openConfigScreen() {
+        return false;
+    }
 }

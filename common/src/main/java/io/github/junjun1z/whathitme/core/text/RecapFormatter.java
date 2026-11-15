@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Locale;
 
 import io.github.junjun1z.whathitme.core.config.WhmConfig.Flag;
+import io.github.junjun1z.whathitme.core.data.Context;
 import io.github.junjun1z.whathitme.core.data.DamageRecord;
 import io.github.junjun1z.whathitme.core.data.Entry;
+import io.github.junjun1z.whathitme.core.data.Gear;
 import io.github.junjun1z.whathitme.core.data.Snapshot;
 
 /** Builds every chat / tooltip text of the mod. Shared by the client (localized) and the server (English for vanilla clients). */
@@ -82,9 +84,25 @@ public final class RecapFormatter {
         return m.name(r.attackerKey, r.attackerName);
     }
 
+    /** Name of a context part (block, fluid, item) */
+    public Txt partName(Context.Part p) {
+        return m.name(p.key, p.name);
+    }
+
+    /** "Lava (Minecraft)" */
+    public Txt partWithMod(Context.Part p) {
+        Txt c = Txt.empty().append(partName(p));
+        if (!p.modId.isEmpty()) c.append(Msg.str(Fmt.BLUE, " (" + io.github.junjun1z.whathitme.core.Platform.modName(p.modId) + ")"));
+        return c;
+    }
+
     /** Main name of a damage line: custom name > attacker > damage type */
     public Txt displayName(DamageRecord r) {
-        String ren = o.rename(r.damageId);
+        if (r.has(DamageRecord.ARMOR_BREAK)) {
+            Context.Part p = Context.find(r.context, Context.ARMOR);
+            return m.tr(Fmt.GOLD, "whathitme.line.broken", p == null ? Msg.str("?") : partName(p));
+        }
+        String ren = o.rename(r);
         if (ren != null) return custom(ren);
         if (o.on(Flag.ATTACKER_NAME) && !r.attackerName.isEmpty()) {
             Txt c = Txt.empty().append(attacker(r));
@@ -143,10 +161,47 @@ public final class RecapFormatter {
 
     // ---------------------------------------------------------------- tips
 
+    /** Custom tip (enableCustomHints) or automatic tip (enableAutoHints); null = none */
     public Txt tip(DamageRecord r) {
-        String custom = o.hint(r.damageId);
-        if (custom != null) return custom(custom);
-        return m.tr("whathitme.hint." + Hints.autoKey(r));
+        if (r.has(DamageRecord.ARMOR_BREAK)) return null;
+        if (o.on(Flag.CUSTOM_HINTS)) {
+            String custom = o.hint(r);
+            if (custom != null) return custom(custom);
+        }
+        if (o.on(Flag.AUTO_HINTS)) return m.tr("whathitme.hint." + Hints.autoKey(r));
+        return null;
+    }
+
+    /** "(30% Max HP)" or null */
+    public Txt maxHp(DamageRecord r) {
+        if (!o.on(Flag.MAX_HP_PERCENT) || r.maxHealth <= 0f || r.has(DamageRecord.ARMOR_BREAK)) return null;
+        float pct = r.maxHpPercent();
+        String v = pct >= 10f ? String.valueOf(Math.round(pct)) : oneDecimal(pct);
+        return m.tr("whathitme.line.maxhp", v);
+    }
+
+    /** Environment lines (feet, body, hands) for the hover / recap; empty when off or unknown */
+    public List<Txt> environment(DamageRecord r) {
+        List<Txt> out = new ArrayList<>();
+        if (!o.on(Flag.ENVIRONMENT) || r.context.isEmpty() || r.has(DamageRecord.ARMOR_BREAK)) return out;
+        Txt hands = null;
+        for (Context.Part p : Context.parse(r.context)) {
+            if (Context.FEET.equals(p.slot)) out.add(m.tr(Fmt.GRAY, "whathitme.hover.env.feet", partWithMod(p)));
+            else if (Context.BODY.equals(p.slot)) out.add(m.tr(Fmt.GRAY, "whathitme.hover.env.body", partWithMod(p)));
+            else if (Context.MAIN.equals(p.slot) || Context.OFF.equals(p.slot)) {
+                if (hands == null) hands = Txt.empty();
+                else hands.append(", ");
+                hands.append(partWithMod(p));
+            }
+        }
+        if (hands != null) out.add(m.tr(Fmt.GRAY, "whathitme.hover.env.hands", hands));
+        return out;
+    }
+
+    /** "[Localized / Vital Hit (Died with 5 ❤ total HP left)]" or null */
+    public Txt vital(DamageRecord r) {
+        if (r == null || !r.has(DamageRecord.VITAL)) return null;
+        return m.tr(Fmt.LIGHT_PURPLE, "whathitme.vital", heartsText(r.healthAfter));
     }
 
     // ---------------------------------------------------------------- weapon
@@ -180,6 +235,12 @@ public final class RecapFormatter {
 
     public List<Txt> hoverLines(DamageRecord r) {
         List<Txt> l = new ArrayList<>();
+        if (r.has(DamageRecord.ARMOR_BREAK)) {
+            l.add(displayName(r));
+            Context.Part p = Context.find(r.context, Context.ARMOR);
+            if (p != null && !p.modId.isEmpty() && o.on(Flag.SOURCE_MOD_NAME)) l.add(m.tr(Fmt.BLUE, "whathitme.hover.mod", io.github.junjun1z.whathitme.core.Platform.modName(p.modId)));
+            return l;
+        }
         l.add(displayName(r).restyle(null).bold(true));
         if (r.has(DamageRecord.ESTIMATED)) l.add(m.tr(Fmt.GOLD, "whathitme.hover.estimated"));
         if (o.on(Flag.INTERNAL_DAMAGE_ID)) l.add(m.tr(Fmt.DARK_GRAY, "whathitme.hover.id", r.damageId));
@@ -205,7 +266,12 @@ public final class RecapFormatter {
         if (o.on(Flag.SOURCE_MOD_NAME) && !r.modName.isEmpty()) l.add(m.tr(Fmt.BLUE, "whathitme.hover.mod", r.modName));
         if (r.has(DamageRecord.TOTEM)) l.add(m.tr(Fmt.GOLD, "whathitme.badge.totem"));
         if (r.has(DamageRecord.HEAVY)) l.add(m.tr(Fmt.RED, "whathitme.badge.heavy"));
-        if (o.on(Flag.HINTS_AND_TIPS)) l.add(m.tr(Fmt.GREEN, "whathitme.hover.tip", tip(r)));
+        if (o.on(Flag.REFLECTED_BADGE) && r.has(DamageRecord.REFLECTED)) l.add(m.tr(Fmt.YELLOW, "whathitme.badge.reflected"));
+        Txt v = vital(r);
+        if (v != null) l.add(v);
+        l.addAll(environment(r));
+        Txt tip = o.on(Flag.HINTS_AND_TIPS) ? tip(r) : null;
+        if (tip != null) l.add(m.tr(Fmt.GREEN, "whathitme.hover.tip", tip));
         return l;
     }
 
@@ -261,11 +327,19 @@ public final class RecapFormatter {
     public Txt line(DamageRecord r, long now) {
         Txt root = Txt.empty();
         root.hover(hover(r));
+        if (r.has(DamageRecord.ARMOR_BREAK)) {
+            if (o.on(Flag.TIMESTAMP)) root.append(Msg.str(Fmt.DARK_GRAY, age(now - r.time) + " "));
+            return root.append(displayName(r));
+        }
         if (r.has(DamageRecord.ESTIMATED)) root.append(m.tr(Fmt.GOLD, "whathitme.badge.estimated")).append(" ");
         if (r.has(DamageRecord.KILLING)) root.append(Msg.str(Fmt.DARK_RED, "☠ "));
         if (o.on(Flag.TIMESTAMP)) root.append(Msg.str(Fmt.DARK_GRAY, age(now - r.time) + " "));
         root.append(displayName(r).restyle(Fmt.WHITE));
-        if (o.on(Flag.DAMAGE_AMOUNT)) root.append(" ").append(Msg.str(Fmt.RED, "-")).append(heartsText(r.taken()).restyle(Fmt.RED));
+        if (o.on(Flag.DAMAGE_AMOUNT)) {
+            root.append(" ").append(Msg.str(Fmt.RED, "-")).append(heartsText(r.taken()).restyle(Fmt.RED));
+            Txt hp = maxHp(r);
+            if (hp != null) root.append(" ").append(hp.color(Fmt.RED));
+        }
         if (o.on(Flag.MITIGATION_DETAILS)) {
             List<Txt> parts = new ArrayList<>();
             if (r.raw >= 0 && r.raw > r.taken() + 0.01f) {
@@ -294,6 +368,7 @@ public final class RecapFormatter {
         if (o.on(Flag.ENTITY_OWNER) && !r.ownerName.isEmpty()) root.append(" ").append(m.tr(Fmt.GRAY, "whathitme.line.owner", r.ownerName));
         if (r.has(DamageRecord.TOTEM)) root.append(" ").append(m.tr(Fmt.GOLD, "whathitme.badge.totem"));
         if (r.has(DamageRecord.HEAVY)) root.append(" ").append(m.tr(Fmt.RED, "whathitme.badge.heavy"));
+        if (o.on(Flag.REFLECTED_BADGE) && r.has(DamageRecord.REFLECTED)) root.append(" ").append(m.tr(Fmt.YELLOW, "whathitme.badge.reflected"));
         if (o.on(Flag.ACTION_BUTTONS)) root.append(" ").append(copyIdButton(r.damageId)).append(" ").append(muteButton(r.damageId));
         return root;
     }
@@ -303,7 +378,8 @@ public final class RecapFormatter {
         List<DamageRecord> out = new ArrayList<>();
         for (int i = oldestFirst.size() - 1; i >= 0 && out.size() < max; i--) {
             DamageRecord r = oldestFirst.get(i);
-            if (r.has(DamageRecord.KILLING) || !o.ignored(r.damageId)) out.add(r);
+            if (r.has(DamageRecord.ARMOR_BREAK) && !o.on(Flag.ARMOR_BREAK)) continue;
+            if (r.has(DamageRecord.KILLING) || !o.ignored(r)) out.add(r);
         }
         return out;
     }
@@ -334,6 +410,7 @@ public final class RecapFormatter {
         float sum = 0;
         int hits = 0;
         for (DamageRecord r : records) {
+            if (r.has(DamageRecord.ARMOR_BREAK)) continue;
             if (end - r.time <= window && end >= r.time - 50) {
                 sum += r.taken();
                 hits += Math.max(1, r.hits);
@@ -351,17 +428,44 @@ public final class RecapFormatter {
             return c;
         }
         Txt name = Txt.empty().append(displayName(k).restyle(Fmt.WHITE));
-        if (o.on(Flag.DAMAGE_AMOUNT)) name.append(Msg.str(Fmt.RED, " [")).append(heartsText(k.taken()).restyle(Fmt.RED))
-            .append(Msg.str(Fmt.RED, "]"));
+        if (o.on(Flag.DAMAGE_AMOUNT)) {
+            name.append(Msg.str(Fmt.RED, " [")).append(heartsText(k.taken()).restyle(Fmt.RED));
+            Txt hp = maxHp(k);
+            if (hp != null) name.append(" ").append(hp.color(Fmt.RED));
+            name.append(Msg.str(Fmt.RED, "]"));
+        }
         if (o.on(Flag.SOURCE_MOD_NAME) && !k.modName.isEmpty()) name.append(Msg.str(Fmt.BLUE, " (" + k.modName + ")"));
         if (o.on(Flag.ATTACKER_INVISIBILITY) && k.has(DamageRecord.INVISIBLE)) name.append(" ").append(m.tr(Fmt.LIGHT_PURPLE, "whathitme.badge.invisible"));
         if (o.on(Flag.ENTITY_OWNER) && !k.ownerName.isEmpty()) name.append(" ").append(m.tr(Fmt.GRAY, "whathitme.line.owner", k.ownerName));
+        if (o.on(Flag.REFLECTED_BADGE) && k.has(DamageRecord.REFLECTED)) name.append(" ").append(m.tr(Fmt.YELLOW, "whathitme.badge.reflected"));
         Txt line = m.tr(Fmt.RED, key, name);
         line.hover(hover(k));
         c.append(line);
         if (k.has(DamageRecord.ESTIMATED)) c.append(" ").append(m.tr(Fmt.GOLD, "whathitme.badge.estimated"));
         if (o.on(Flag.ACTION_BUTTONS)) c.append(" ").append(copyIdButton(k.damageId)).append(" ").append(muteButton(k.damageId));
         return c;
+    }
+
+    /** Vital hit and surroundings of the killing blow */
+    private void extraKeyLines(DamageRecord k, List<Txt> out) {
+        if (k == null) return;
+        Txt v = vital(k);
+        if (v != null) out.add(v);
+        List<Txt> env = environment(k);
+        if (!env.isEmpty()) {
+            Txt c = Txt.empty();
+            for (int i = 0; i < env.size(); i++) {
+                if (i > 0) c.append(Msg.str(Fmt.GRAY, " | "));
+                c.append(env.get(i));
+            }
+            out.add(m.tr(Fmt.GRAY, "whathitme.summary.env", c));
+        }
+    }
+
+    private void tipLine(DamageRecord k, List<Txt> out) {
+        if (k == null || !o.on(Flag.HINTS_AND_TIPS)) return;
+        Txt tip = tip(k);
+        if (tip != null) out.add(m.tr(Fmt.GREEN, "whathitme.summary.tip", tip));
     }
 
     public Txt deathMessage(Snapshot s) {
@@ -376,8 +480,9 @@ public final class RecapFormatter {
         out.add(killingLine(s, "whathitme.summary.killing"));
         DamageRecord k = s.key();
         if (k != null && o.on(Flag.DAMAGE_PROPERTIES)) out.add(m.tr(Fmt.DARK_AQUA, "whathitme.summary.properties", properties(k.flags)));
+        extraKeyLines(k, out);
         out.add(total(s.records, s.time));
-        if (k != null && o.on(Flag.HINTS_AND_TIPS)) out.add(m.tr(Fmt.GREEN, "whathitme.summary.tip", tip(k)));
+        tipLine(k, out);
         Txt recap = m.tr(Fmt.AQUA, "whathitme.summary.recap.link");
         recap.underline(true).click(Txt.Click.RUN_COMMAND, "/whm last").hover(m.tr("whathitme.button.run", "/whm last"));
         out.add(m.tr(Fmt.AQUA, "whathitme.summary.recap", recap, "/whm last"));
@@ -416,11 +521,12 @@ public final class RecapFormatter {
         out.add(killingLine(s, s.kind == Snapshot.DEATH ? "whathitme.summary.killing" : "whathitme.snapshot.trigger"));
         DamageRecord k = s.key();
         if (k != null && o.on(Flag.DAMAGE_PROPERTIES)) out.add(m.tr(Fmt.DARK_AQUA, "whathitme.summary.properties", properties(k.flags)));
+        extraKeyLines(k, out);
         List<DamageRecord> vis = visible(s.records, 40);
         for (DamageRecord r : vis) out.add(line(r, s.time).append(Msg.str(Fmt.DARK_GRAY, "")));
         if (vis.isEmpty()) out.add(m.tr(Fmt.GRAY, "whathitme.history.empty"));
         out.add(total(s.records, s.time));
-        if (k != null && o.on(Flag.HINTS_AND_TIPS)) out.add(m.tr(Fmt.GREEN, "whathitme.summary.tip", tip(k)));
+        tipLine(k, out);
         if (o.on(Flag.ACTION_BUTTONS) && o.clientActions && who == null && s.kind == Snapshot.DEATH) out.add(copyRecapButton());
         return out;
     }
@@ -438,6 +544,63 @@ public final class RecapFormatter {
     }
 
     // ---------------------------------------------------------------- effects / search
+
+    // ---------------------------------------------------------------- copy
+
+    /** [Copy Recap]: the plain recap, plus the equipment block as Markdown (includeEquipmentInCopy) */
+    public String copyText(Snapshot s, long now, Lang lang) {
+        StringBuilder sb = new StringBuilder(plain(fullRecap(s, now, null), lang));
+        Gear g = s.gear;
+        if (g == null || !o.on(Flag.EQUIPMENT_IN_COPY)) return sb.toString();
+        g = g.withBroken(s.records);
+        sb.append('\n').append("## ").append(m.text("whathitme.copy.gear")).append('\n');
+        if (!g.dimension.isEmpty()) sb.append("- ").append(m.text("whathitme.copy.dimension", g.dimension)).append('\n');
+        if (o.on(Flag.COORDS_IN_COPY) && g.hasPosition()) {
+            sb.append("- ").append(m.text("whathitme.copy.position", String.format(Locale.ROOT, "%.1f / %.1f / %.1f", g.x, g.y, g.z))).append('\n');
+        }
+        if (g.maxHealth > 0f) sb.append("- ").append(m.text("whathitme.copy.maxhp", oneDecimal(g.maxHealth) + " (" + hearts(g.maxHealth) + " ❤)")).append('\n');
+        sb.append("- ").append(m.text("whathitme.copy.armor")).append('\n');
+        for (int i = 0; i < 4; i++) {
+            Gear.Item it = g.armor[i];
+            sb.append("  - ").append(m.text("whathitme.copy.slot." + Gear.SLOTS[i])).append(": ");
+            if (it == null) {
+                sb.append(m.text("whathitme.copy.empty"));
+            } else {
+                sb.append(Fmt.strip(m.name(it.key, it.name).toPlain(lang)));
+                String ench = enchantList(it.enchants);
+                if (!ench.isEmpty()) sb.append(" [").append(ench).append(']');
+                if (!it.modId.isEmpty() && !"minecraft".equals(it.modId)) sb.append(" (").append(io.github.junjun1z.whathitme.core.Platform.modName(it.modId)).append(')');
+                if (it.broken) sb.append(' ').append(m.text("whathitme.copy.broken"));
+            }
+            sb.append('\n');
+        }
+        sb.append("- ").append(m.text("whathitme.copy.effects")).append('\n');
+        if (g.effects.isEmpty()) sb.append("  - ").append(m.text("whathitme.copy.noeffects")).append('\n');
+        for (Entry e : g.effects) {
+            sb.append("  - ").append(Fmt.strip(entryName(e).toPlain(lang)));
+            if (e.amplifier > 0) sb.append(' ').append(e.amplifier + 1);
+            sb.append(" (").append(duration(e.duration)).append(")\n");
+        }
+        return sb.toString();
+    }
+
+    private String enchantList(String enchants) {
+        if (enchants.isEmpty()) return "";
+        StringBuilder sb = new StringBuilder();
+        for (String part : enchants.split(";")) {
+            String[] p = part.split("\\|", 3);
+            if (p.length < 3) continue;
+            if (sb.length() > 0) sb.append(", ");
+            if (m.localized && m.has(p[0])) {
+                sb.append(m.lang().translate(p[0]));
+                String lk = "enchantment.level." + p[1];
+                sb.append(' ').append(m.has(lk) ? m.lang().translate(lk) : p[1]);
+            } else {
+                sb.append(p[2]);
+            }
+        }
+        return sb.toString();
+    }
 
     public Txt entryName(Entry e) {
         if (e.type == Entry.DAMAGE) {

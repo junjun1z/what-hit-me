@@ -11,6 +11,7 @@ public final class Hints {
     private Hints() {}
 
     public static String autoKey(DamageRecord r) {
+        if (r.has(DamageRecord.REFLECTED) && !"thorns".equals(r.damageType)) return "reflected";
         switch (r.damageType) {
             case "fall":
                 return "fall";

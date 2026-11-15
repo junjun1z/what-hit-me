@@ -5,9 +5,15 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.function.Function;
 
 import io.github.junjun1z.whathitme.core.Platform;
+import io.github.junjun1z.whathitme.core.Safe;
+import io.github.junjun1z.whathitme.core.cmd.TestPreview;
+import io.github.junjun1z.whathitme.core.config.PackConfig;
+import io.github.junjun1z.whathitme.core.data.CatalogCache;
+import io.github.junjun1z.whathitme.core.data.Stats;
 import io.github.junjun1z.whathitme.core.cmd.CommandText;
 import io.github.junjun1z.whathitme.core.cmd.Completion;
 import io.github.junjun1z.whathitme.core.cmd.Sink;
@@ -86,16 +92,37 @@ public final class ClientCore {
         FallbackCore.INSTANCE.reset();
     }
 
+    /** Stats of the own player when the server does not have the mod */
+    public static final java.util.UUID LOCAL_ID = new java.util.UUID(0L, 0L);
+
+    /** Config keys locked by the modpack: the server's when it has the mod, otherwise the local pack folder */
+    public static boolean locked(String key) {
+        Packets.ServerInfo i = serverHasMod ? serverInfo : null;
+        if (i != null && i.extended) {
+            for (String k : i.locked) if (k.equalsIgnoreCase(key)) return true;
+            return false;
+        }
+        return WhmConfig.isLocked(key);
+    }
+
+    private static Map<String, String> map(List<String> lines) {
+        return WhmConfig.parseMap(lines.toArray(new String[0]));
+    }
+
     public static DisplayOptions options() {
         WhmConfig.Common c = WhmConfig.common;
         WhmConfig.Client cl = WhmConfig.client;
         Packets.ServerInfo i = serverHasMod ? serverInfo : null;
-        int mask = (i != null ? i.mask : c.mask) & cl.mask;
-        DisplayOptions o = new DisplayOptions(mask, true, i != null ? i.summarySeconds : c.summarySeconds);
+        int common = i != null ? i.mask : c.mask;
+        if (i != null && i.protocol < 2) common |= ~WhmConfig.LEGACY_FLAGS;
+        int personal = cl.mask;
+        for (Flag f : Flag.values()) if (locked(f.key)) personal |= f.bit();
+        DisplayOptions o = new DisplayOptions(common & personal, true, i != null ? i.summarySeconds : c.summarySeconds);
         if (i != null) {
-            o.ignore(i.ignored).renames(WhmConfig.parseMap(i.renames.toArray(new String[0]))).hints(WhmConfig.parseMap(i.hints.toArray(new String[0])));
+            o.ignore(i.ignored).renames(map(i.packRenames)).renames(map(i.renames)).hints(map(i.packHints)).hints(map(i.hints));
         } else {
-            o.ignore(c.ignoredDamageIds).renames(c.renameMap).hints(c.hintMap);
+            PackConfig pack = WhmConfig.pack;
+            o.ignore(c.ignoredDamageIds).ignore(pack.ignored).renames(pack.renameMap).renames(c.renameMap).hints(pack.hintMap).hints(c.hintMap);
         }
         return o.ignore(cl.ignoredDamageIds).renames(cl.renameMap).hints(cl.hintMap);
     }
@@ -129,6 +156,10 @@ public final class ClientCore {
      * @param env the own player for the client fallback (only read when the server does not have the mod)
      */
     public static void tick(FallbackEnv env) {
+        Safe.run("client tick", () -> tickImpl(env));
+    }
+
+    private static void tickImpl(FallbackEnv env) {
         if (!helloSent && port.connected()) {
             helloSent = true;
             try {
@@ -158,13 +189,19 @@ public final class ClientCore {
 
     /** The death screen opened (deathMessageJson: its message as JSON, "" when unknown) */
     public static void onDeathScreen(String deathMessageJson) {
-        DeathPanel.INSTANCE.onOpen();
-        FallbackCore.INSTANCE.onDeathScreen(deathMessageJson);
+        Safe.run("death screen", () -> {
+            DeathPanel.INSTANCE.onOpen();
+            FallbackCore.INSTANCE.onDeathScreen(deathMessageJson);
+        });
     }
 
     // ------------------------------------------------------------ packets (call on the client thread)
 
     public static void onPacket(Packets.Packet p) {
+        Safe.run("client packet", () -> packet(p));
+    }
+
+    private static void packet(Packets.Packet p) {
         if (p instanceof Packets.ServerInfo) onServerInfo((Packets.ServerInfo) p);
         else if (p instanceof Packets.Recap) onRecap((Packets.Recap) p);
         else if (p instanceof Packets.Entries) onEntries((Packets.Entries) p);
@@ -259,13 +296,15 @@ public final class ClientCore {
     /** Damage entries (from the server or the local catalog) + local mobs / effects + settings */
     static void writeDump(List<Entry> damage) {
         List<Entry> all = new ArrayList<>(damage);
-        all.addAll(SearchEngine.all(new DamageCatalog(), port.registries()));
-        File file = new File(port.gameDir(), "whathitme_dump.csv");
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (Entry e : damage) seen.add(e.type + "|" + e.id);
+        for (Entry e : SearchEngine.all(new DamageCatalog(), port.registries())) if (seen.add(e.type + "|" + e.id)) all.add(e);
+        File file = new File(WhmConfig.cacheDir(), "whathitme_dump.csv");
         try {
             int n = DumpWriter.write(file, all, WhmConfig.common, WhmConfig.client);
             print(Msg.LOCAL.tr(Fmt.GREEN, "whathitme.dump.done", n, file.getAbsolutePath()));
             File tpl = new File(Platform.whmConfigDir(), "hint_template.cfg");
-            int ids = DumpWriter.writeTemplate(tpl, all, port.registries());
+            int ids = DumpWriter.writeTemplate(tpl, all, CatalogCache.view(port.registries()));
             print(Msg.LOCAL.tr(Fmt.GREEN, "whathitme.dump.template", ids, tpl.getAbsolutePath()));
         } catch (Exception e) {
             print(Msg.LOCAL.tr(Fmt.RED, "whathitme.dump.failed", String.valueOf(e.getMessage())));
@@ -276,7 +315,12 @@ public final class ClientCore {
     public static boolean copyRecap() {
         Snapshot s = currentDeath;
         if (s == null) return false;
-        port.setClipboard(RecapFormatter.plain(new RecapFormatter(Msg.LOCAL, options()).fullRecap(s, System.currentTimeMillis(), null), Msg.LOCAL.lang()));
+        Snapshot withGear = s;
+        if (s.gear == null && !serverHasMod) {
+            io.github.junjun1z.whathitme.core.data.Gear g = Safe.get("local equipment", port::localGear, null);
+            if (g != null) withGear = s.withGear(g);
+        }
+        port.setClipboard(new RecapFormatter(Msg.LOCAL, options()).copyText(withGear, System.currentTimeMillis(), Msg.LOCAL.lang()));
         return true;
     }
 
@@ -295,7 +339,44 @@ public final class ClientCore {
             run(args);
         } catch (CommandText.Failure f) {
             print(f.text);
+        } catch (Throwable t) {
+            Safe.warn("client command", t);
+            print(Msg.LOCAL.tr(Fmt.RED, "whathitme.error.internal"));
         }
+    }
+
+    /** Operator (level 2) on the server, or single player with cheats */
+    static boolean op() {
+        return Safe.get("permission", port::hasOpPermission, false);
+    }
+
+    private static void requireOp(Msg m) {
+        if (!op()) throw CommandText.err(m, "whathitme.error.noperm");
+    }
+
+    /** /whm config [key [value]]: personal keys for everyone, server / modpack keys for operators */
+    private static void config(Msg m, String[] args) {
+        WhmConfig.Client cfg = WhmConfig.client;
+        if (args.length == 1) {
+            if (Safe.get("config screen", port::openConfigScreen, false)) return;
+            CommandText.config(CHAT, m, cfg, args);
+            return;
+        }
+        boolean personal = cfg.byKey().containsKey(args[1]);
+        if (personal) {
+            if (args.length > 2 && locked(args[1])) throw CommandText.err(m, "whathitme.config.locked", args[1]);
+            CommandText.config(CHAT, m, cfg, args);
+            return;
+        }
+        if (!WhmConfig.common.byKey().containsKey(args[1])) throw CommandText.err(m, "whathitme.config.unknown", args[1]);
+        if (args.length == 2) {
+            CommandText.config(CHAT, m, WhmConfig.common, args);
+            return;
+        }
+        requireOp(m);
+        if (locked(args[1])) throw CommandText.err(m, "whathitme.config.locked", args[1]);
+        if (serverHasMod) port.sendServerCommand("whm " + Completion.join(args, 0));
+        else CommandText.config(CHAT, m, WhmConfig.common, args);
     }
 
     private static void run(String[] args) {
@@ -355,6 +436,7 @@ public final class ClientCore {
             }
             case "rename":
             case "sethint": {
+                requireOp(m);
                 if (args.length < 2) throw CommandText.usage(m, "/whm " + sub + " <damage_id> <text...>");
                 boolean rn = sub.equals("rename");
                 cfg.putMapEntry(rn ? "renameMap" : "hintMap", args[1], rest);
@@ -363,8 +445,20 @@ public final class ClientCore {
                 break;
             }
             case "config":
-                CommandText.config(CHAT, m, cfg, args);
+                config(m, args);
                 break;
+            case "stats": {
+                if (server) port.sendServerCommand("whm stats");
+                else print(CommandText.stats(m, f, Stats.of(LOCAL_ID), m.text("whathitme.stats.you")));
+                break;
+            }
+            case "test": {
+                requireOp(m);
+                if (args.length < 2) throw CommandText.usage(m, "/whm test <damage_id> [entity_id] [item_id] [dim_id]");
+                if (server) port.sendServerCommand("whm " + Completion.join(args, 0));
+                else print(TestPreview.lines(m, f, args, null, "", null, "", 20f));
+                break;
+            }
             case "search": {
                 if (args.length < 2) throw CommandText.usage(m, "/whm search <query | #tag | @modid>");
                 String q = Completion.join(args, 1);
@@ -383,13 +477,16 @@ public final class ClientCore {
                 break;
             }
             case "dump": {
+                requireOp(m);
                 if (server) request(Packets.Request.DUMP, "");
                 else writeDump(CATALOG.entries());
                 break;
             }
             case "reload": {
+                requireOp(m);
                 WhmConfig.reloadCommon();
                 WhmConfig.reloadClient();
+                if (!server) CatalogCache.rescan(port.registries());
                 print(m.tr(Fmt.GREEN, "whathitme.reload.done"));
                 if (server && (port.isSingleplayer() || port.hasOpPermission())) request(Packets.Request.RELOAD, "");
                 break;
@@ -425,6 +522,15 @@ public final class ClientCore {
 
     /** Tab completion of the client command */
     public static List<String> complete(String[] args) {
+        try {
+            return completeImpl(args);
+        } catch (Throwable t) {
+            Safe.warn("client tab completion", t);
+            return Collections.emptyList();
+        }
+    }
+
+    private static List<String> completeImpl(String[] args) {
         if (args.length <= 1) return Completion.matching(args, CommandText.CLIENT_SUBS);
         String sub = args[0].toLowerCase(Locale.ROOT);
         if (args.length == 2) {
@@ -432,14 +538,20 @@ public final class ClientCore {
                 case "ignore":
                 case "rename":
                 case "sethint":
+                case "test":
                 case "copy": {
                     List<String> ids = new ArrayList<>(CATALOG.ids());
                     ids.addAll(WhmConfig.client.ignoredDamageIds);
                     ids.addAll(WhmConfig.client.renameMap.keySet());
+                    if (sub.equals("test")) for (Entry e : CatalogCache.view(port.registries()).damageTypes()) ids.add(e.id);
                     return Completion.matching(args, ids);
                 }
-                case "config":
-                    return Completion.matching(args, WhmConfig.client.keys());
+                case "config": {
+                    java.util.Set<String> keys = new java.util.TreeSet<>(String.CASE_INSENSITIVE_ORDER);
+                    keys.addAll(WhmConfig.client.keys());
+                    if (op()) keys.addAll(WhmConfig.common.keys());
+                    return Completion.matching(args, keys);
+                }
                 case "inspect":
                     return Completion.matching(args, port.onlinePlayerNames());
                 case "snapshot":
@@ -450,8 +562,12 @@ public final class ClientCore {
                     break;
             }
         }
+        if (sub.equals("test")) return Completion.testArgs(args, CatalogCache.view(port.registries()));
         if (sub.equals("search")) return Completion.matching(args, Completion.searchSuggestions(CATALOG.ids()));
-        if (sub.equals("config") && args.length == 3) return Completion.matching(args, WhmConfig.client.values(args[1]));
+        if (sub.equals("config") && args.length == 3) {
+            WhmConfig.Base b = WhmConfig.client.byKey().containsKey(args[1]) ? WhmConfig.client : WhmConfig.common;
+            return Completion.matching(args, b.values(args[1]));
+        }
         return Collections.emptyList();
     }
 }

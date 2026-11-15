@@ -21,6 +21,11 @@ public final class Platform {
         /** Ids of every loaded mod (for @modid tab completion) */
         Collection<String> modIds();
 
+        /** Version of a loaded mod ("" = unknown); part of the catalog cache hash */
+        default String version(String modId) {
+            return "";
+        }
+
         default boolean isLoaded(String modId) {
             return modIds().contains(modId);
         }

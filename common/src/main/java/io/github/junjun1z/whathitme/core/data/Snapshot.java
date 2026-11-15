@@ -25,8 +25,15 @@ public final class Snapshot {
     public final int keyIndex;
     /** Vanilla death message as JSON ("" = none) */
     public final String deathMessage;
+    /** Position and equipment at a death (null = unknown) */
+    public final Gear gear;
 
     public Snapshot(int kind, long time, List<DamageRecord> records, int keyIndex, String deathMessage) {
+        this(kind, time, records, keyIndex, deathMessage, null);
+    }
+
+    public Snapshot(int kind, long time, List<DamageRecord> records, int keyIndex, String deathMessage, Gear gear) {
+        this.gear = gear;
         this.kind = kind;
         this.time = time;
         this.records = Collections.unmodifiableList(new ArrayList<>(records));
@@ -39,16 +46,60 @@ public final class Snapshot {
     }
 
     public Snapshot withDeathMessage(String json) {
-        return new Snapshot(kind, time, records, keyIndex, json);
+        return new Snapshot(kind, time, records, keyIndex, json, gear);
     }
 
+    public Snapshot withGear(Gear g) {
+        return new Snapshot(kind, time, records, keyIndex, deathMessage, g);
+    }
+
+    public Snapshot withRecords(List<DamageRecord> list, int key) {
+        return new Snapshot(kind, time, list, key, deathMessage, gear);
+    }
+
+    /** Protocol 1 (What Hit Me? 1.0 / 1.1 clients): no armor break lines, no extra fields */
     public void write(WireOut buf, long now) {
+        List<DamageRecord> list = new ArrayList<>();
+        int key = -1;
+        for (int i = 0; i < records.size(); i++) {
+            DamageRecord r = records.get(i);
+            if (r.has(DamageRecord.ARMOR_BREAK)) continue;
+            if (i == keyIndex) key = list.size();
+            list.add(r);
+        }
+        buf.writeByte(kind);
+        buf.writeLong(Math.max(0, now - time));
+        buf.writeShort(list.size());
+        for (DamageRecord r : list) r.write(buf, now);
+        buf.writeShort(key);
+        buf.writeString(deathMessage.length() > 8000 ? "" : deathMessage);
+    }
+
+    /** Protocol 2: everything */
+    public void write2(WireOut buf, long now) {
         buf.writeByte(kind);
         buf.writeLong(Math.max(0, now - time));
         buf.writeShort(records.size());
-        for (DamageRecord r : records) r.write(buf, now);
+        for (DamageRecord r : records) {
+            r.write(buf, now);
+            r.writeExtra(buf);
+        }
         buf.writeShort(keyIndex);
         buf.writeString(deathMessage.length() > 8000 ? "" : deathMessage);
+        buf.writeBoolean(gear != null);
+        if (gear != null) gear.write(buf);
+    }
+
+    public static Snapshot read2(WireIn buf, long now) {
+        int kind = buf.readByte();
+        long time = now - buf.readLong();
+        int n = buf.readShort();
+        List<DamageRecord> list = new ArrayList<>(Math.max(0, n));
+        for (int i = 0; i < n; i++) list.add(DamageRecord.read(buf, now).readExtra(buf));
+        int key = buf.readShort();
+        String dm = buf.readString();
+        Gear g = buf.readBoolean() ? Gear.read(buf) : null;
+        return new Snapshot(kind, time, list, key, dm, g);
     }
 
     public static Snapshot read(WireIn buf, long now) {

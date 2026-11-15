@@ -50,4 +50,29 @@ public interface PlayerHandle {
 
     /** Active effects as {@link Entry#ACTIVE_EFFECT} */
     List<Entry> effects();
+
+    // ---- 1.2: optional, the defaults keep versions that do not implement them working (features stay empty)
+
+    /**
+     * Block / fluid at the feet and at the body centre (non-air) and the main / off hand items, as a
+     * {@link io.github.junjun1z.whathitme.core.data.Context} string ("" = unknown). Read only for damage without an attacker.
+     */
+    default String environment() {
+        return "";
+    }
+
+    /** Armor pieces: head, chest, legs, feet (null entries = empty slot); null = unknown */
+    default io.github.junjun1z.whathitme.core.data.Gear.Item[] armor() {
+        return null;
+    }
+
+    /** Dimension id, e.g. minecraft:the_nether ("" = unknown) */
+    default String dimension() {
+        return "";
+    }
+
+    /** x, y, z of the player, null = unknown */
+    default double[] position() {
+        return null;
+    }
 }

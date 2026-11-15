@@ -25,4 +25,12 @@ public interface ConfigBackend {
 
     /** Translation key of a category for the config screen */
     default void categoryLangKey(String category, String key) {}
+
+    /** Stored value of a key that is not (or no longer) declared, null when absent (migrations) */
+    default String raw(String category, String key) {
+        return null;
+    }
+
+    /** Removes a key that is no longer used */
+    default void remove(String category, String key) {}
 }

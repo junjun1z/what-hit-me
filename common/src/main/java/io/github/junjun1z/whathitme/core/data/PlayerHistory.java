@@ -25,6 +25,11 @@ public final class PlayerHistory {
     public boolean pendingBlocking;
     public boolean pendingIFrameBypass;
     public long lastHurtTick = Long.MIN_VALUE;
+    /** Armor when the pending hit started (to see pieces that broke), null = unknown */
+    public Gear.Item[] pendingArmor;
+    /** UUID of the entity this player last attacked and when (reflected damage) */
+    public String lastAttackUuid = "";
+    public long lastAttackTime;
 
     /** The last death has not been summarized in chat yet */
     public boolean summaryPending;
@@ -56,6 +61,15 @@ public final class PlayerHistory {
     /** Newest record or null */
     public DamageRecord last() {
         return size == 0 ? null : ring[(head - 1 + ring.length) % ring.length];
+    }
+
+    /** Newest real damage record (no armor break line) or null */
+    public DamageRecord lastDamage() {
+        for (int i = 1; i <= size; i++) {
+            DamageRecord r = ring[(head - i + ring.length * 2) % ring.length];
+            if (r != null && !r.has(DamageRecord.ARMOR_BREAK)) return r;
+        }
+        return null;
     }
 
     /**

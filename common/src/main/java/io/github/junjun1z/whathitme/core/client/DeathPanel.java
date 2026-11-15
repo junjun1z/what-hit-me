@@ -81,6 +81,14 @@ public final class DeathPanel {
     }
 
     public void render(Gfx g, int screenW, int screenH, int mouseX, int mouseY) {
+        try {
+            renderImpl(g, screenW, screenH, mouseX, mouseY);
+        } catch (Throwable t) {
+            io.github.junjun1z.whathitme.core.Safe.warn("death panel", t);
+        }
+    }
+
+    private void renderImpl(Gfx g, int screenW, int screenH, int mouseX, int mouseY) {
         RecapFormatter f = ClientCore.formatter();
         if (!f.o.on(Flag.DEATH_SCREEN_PANEL)) return;
         WhmConfig.Client cfg = WhmConfig.client;
@@ -114,8 +122,11 @@ public final class DeathPanel {
             }
             shown.addAll(f.visible(s.records, 100));
             footer.add(f.total(s.records, s.time).toLegacy(lang));
-            if (key != null && f.o.on(Flag.HINTS_AND_TIPS)) {
-                for (String l : LegacyText.wrap(g, Fmt.GREEN + "✎ " + f.tip(key).toPlain(lang), inner, 3)) footer.add(Fmt.GREEN + l);
+            Txt vital = f.vital(key);
+            if (vital != null) top.addAll(LegacyText.wrap(g, Fmt.LIGHT_PURPLE + vital.toPlain(lang), inner, 2));
+            Txt tip = key != null && f.o.on(Flag.HINTS_AND_TIPS) ? f.tip(key) : null;
+            if (tip != null) {
+                for (String l : LegacyText.wrap(g, Fmt.GREEN + "✎ " + tip.toPlain(lang), inner, 3)) footer.add(Fmt.GREEN + l);
             }
             if (key != null && key.has(DamageRecord.ESTIMATED)) {
                 footer.add(Fmt.GOLD + tr("whathitme.badge.estimated") + " " + Fmt.GRAY + tr("whathitme.panel.estimated"));
@@ -234,7 +245,9 @@ public final class DeathPanel {
         if (r.has(DamageRecord.KILLING)) sb.append(Fmt.DARK_RED).append("☠ ");
         if (f.o.on(Flag.TIMESTAMP)) sb.append(Fmt.DARK_GRAY).append('-').append(RecapFormatter.age(ref - r.time)).append(' ');
         sb.append(Fmt.WHITE).append(f.displayName(r).toLegacy(lang));
+        if (r.has(DamageRecord.ARMOR_BREAK)) return sb.toString();
         if (f.o.on(Flag.DAMAGE_AMOUNT)) sb.append(Fmt.RED).append(" -").append(tr("whathitme.hearts", RecapFormatter.hearts(r.taken())));
+        if (f.o.on(Flag.REFLECTED_BADGE) && r.has(DamageRecord.REFLECTED)) sb.append(Fmt.YELLOW).append(" ⚡");
         if (f.o.on(Flag.HIT_COUNT) && r.hits > 1) sb.append(Fmt.YELLOW).append(" x").append(r.hits);
         if (r.has(DamageRecord.TOTEM)) sb.append(Fmt.GOLD).append(" ★");
         if (f.o.on(Flag.ATTACKER_INVISIBILITY) && r.has(DamageRecord.INVISIBLE)) sb.append(Fmt.LIGHT_PURPLE).append(" ✦");
@@ -297,6 +310,15 @@ public final class DeathPanel {
 
     /** Mouse button pressed on the death screen. @return true when the panel used it (cancel the event) */
     public boolean mouseDown(int button, double mx, double my) {
+        try {
+            return mouseDownImpl(button, mx, my);
+        } catch (Throwable t) {
+            io.github.junjun1z.whathitme.core.Safe.warn("death panel", t);
+            return false;
+        }
+    }
+
+    private boolean mouseDownImpl(int button, double mx, double my) {
         if (!ClientCore.on(Flag.DEATH_SCREEN_PANEL)) return false;
         if (!inside(mx, my)) return false;
         if (button != 0) return true; // do not click through the panel
@@ -324,6 +346,15 @@ public final class DeathPanel {
 
     /** Mouse button released. @return true when the panel used it */
     public boolean mouseUp(int button, double mx, double my, int screenW, int screenH) {
+        try {
+            return mouseUpImpl(button, mx, my, screenW, screenH);
+        } catch (Throwable t) {
+            io.github.junjun1z.whathitme.core.Safe.warn("death panel", t);
+            return false;
+        }
+    }
+
+    private boolean mouseUpImpl(int button, double mx, double my, int screenW, int screenH) {
         if (button == 0 && dragging) {
             px = Math.max(0, Math.min(screenW - Math.round(W * sc), (int) mx - dragDX));
             py = Math.max(0, Math.min(screenH - ph, (int) my - dragDY));
@@ -335,6 +366,15 @@ public final class DeathPanel {
 
     /** Mouse moved while a button is held (optional: the drag also follows the mouse while rendering) */
     public boolean mouseDrag(double mx, double my) {
+        try {
+            return mouseDragImpl(mx, my);
+        } catch (Throwable t) {
+            io.github.junjun1z.whathitme.core.Safe.warn("death panel", t);
+            return false;
+        }
+    }
+
+    private boolean mouseDragImpl(double mx, double my) {
         if (!dragging) return false;
         lastDragEvent = System.currentTimeMillis();
         dragX = (int) mx - dragDX;
@@ -344,6 +384,15 @@ public final class DeathPanel {
 
     /** Mouse wheel. @return true when the panel used it */
     public boolean scroll(double mx, double my, double delta) {
+        try {
+            return scrollImpl(mx, my, delta);
+        } catch (Throwable t) {
+            io.github.junjun1z.whathitme.core.Safe.warn("death panel", t);
+            return false;
+        }
+    }
+
+    private boolean scrollImpl(double mx, double my, double delta) {
         if (!ClientCore.on(Flag.DEATH_SCREEN_PANEL) || !inside(mx, my) || delta == 0) return false;
         scroll += delta > 0 ? -1 : 1;
         return true;

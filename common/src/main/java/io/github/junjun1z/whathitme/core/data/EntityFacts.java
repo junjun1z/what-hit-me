@@ -22,6 +22,8 @@ public final class EntityFacts {
     /** Held weapon ("" = none) */
     public String weaponName = "";
     public String weaponKey = "";
+    /** Registry id of the held weapon ("" = none / unknown) */
+    public String weaponId = "";
     /** "translationKey|level|English name" separated by ';' */
     public String weaponEnchants = "";
 

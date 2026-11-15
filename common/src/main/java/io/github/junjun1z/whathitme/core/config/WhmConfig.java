@@ -12,6 +12,8 @@ import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.regex.Pattern;
 
+import io.github.junjun1z.whathitme.core.Platform;
+
 /**
  * Two configuration files in config/whathitme/: whathitme-common.cfg (modpack / server limits) and whathitme-client.cfg
  * (personal). A display element is shown only when it is enabled in both. Every key, default, range and comment is
@@ -19,6 +21,10 @@ import java.util.regex.Pattern;
  */
 public final class WhmConfig {
 
+    /** Which file(s) a display switch lives in */
+    public enum Scope { BOTH, COMMON, CLIENT }
+
+    /** Display switches. The ordinal is the bit sent to clients: never reorder, only append. */
     public enum Flag {
         DEATH_SCREEN_PANEL("enableDeathScreenPanel", "Show the damage recap panel on the death screen."),
         RESPAWN_CHAT_SUMMARY("enableRespawnChatSummary", "Show the death summary in chat after respawning (/whm togglechat)."),
@@ -36,17 +42,32 @@ public final class WhmConfig {
         ATTACKER_DISTANCE("showAttackerDistance", "Distance to the attacker."),
         ATTACKER_INVISIBILITY("showAttackerInvisibility", "Badge when the attacker was invisible."),
         ENTITY_OWNER("showEntityOwner", "Owner of turrets, pets, summons and projectiles."),
-        HINTS_AND_TIPS("showHintsAndTips", "Automatic counter-measure tips and custom tips (hintMap)."),
+        /** showHintsAndTips (both files) up to 1.1; in the common file its bit is enableAutoHints || enableCustomHints */
+        HINTS_AND_TIPS("showHints", "Show counter-measure tips (automatic tips and the modpack's hintMap).", Scope.CLIENT),
         ACTION_BUTTONS("showActionButtons", "Clickable [Copy ID], [Mute] and [Copy Recap] buttons."),
-        TOGGLE_CHAT_NOTICE("showToggleChatNotice", "The '/whm togglechat' notice at the end of the summary.");
+        TOGGLE_CHAT_NOTICE("showToggleChatNotice", "The '/whm togglechat' notice at the end of the summary."),
+        AUTO_HINTS("enableAutoHints", "Automatic tips from the damage type and properties.", Scope.COMMON),
+        CUSTOM_HINTS("enableCustomHints", "Custom tips from hintMap (config files and the pack folder).", Scope.COMMON),
+        MAX_HP_PERCENT("showMaxHpPercentage", "Damage as a percentage of max health, e.g. (30% Max HP)."),
+        ENVIRONMENT("showEnvironmentContext", "For damage without an attacker: the block / fluid at your feet and body and the items in your hands."),
+        REFLECTED_BADGE("showReflectedBadge", "[Reflected / Thorns] badge for thorns and damage reflected by an entity you just hit."),
+        ARMOR_BREAK("showArmorBreakEvents", "Timeline line when an armor piece breaks."),
+        EQUIPMENT_IN_COPY("includeEquipmentInCopy", "[Copy Recap] adds dimension, max health, armor and effects."),
+        COORDS_IN_COPY("includeCoordsInCopy", "[Copy Recap] adds the death coordinates (needs includeEquipmentInCopy).");
 
         public final String key;
         public final String comment;
         public final Setting setting;
+        public final Scope scope;
 
         Flag(String key, String comment) {
+            this(key, comment, Scope.BOTH);
+        }
+
+        Flag(String key, String comment, Scope scope) {
             this.key = key;
             this.comment = comment;
+            this.scope = scope;
             this.setting = Setting.bool(CAT_DISPLAY, key, true, comment);
         }
 
@@ -59,6 +80,9 @@ public final class WhmConfig {
             return null;
         }
     }
+
+    /** Bits known by What Hit Me? 1.0 / 1.1 servers; clients treat newer bits of such servers as on */
+    public static final int LEGACY_FLAGS = (1 << 19) - 1;
 
     public static final int ALL_FLAGS = (1 << Flag.values().length) - 1;
 
@@ -115,10 +139,13 @@ public final class WhmConfig {
             this.backend = backend;
         }
 
+        /** Does this file have the display switch? */
+        public abstract boolean has(Flag f);
+
         /** Every setting of this file */
         public List<Setting> settings() {
             List<Setting> out = new ArrayList<>();
-            for (Flag f : Flag.values()) out.add(f.setting);
+            for (Flag f : Flag.values()) if (has(f)) out.add(f.setting);
             out.addAll(Arrays.asList(MIN_DAMAGE, HEAVY_HIT, IGNORED, RENAME, HINT));
             return out;
         }
@@ -149,9 +176,20 @@ public final class WhmConfig {
             }
         }
 
+        /** showHintsAndTips (1.0 / 1.1) became showHints / enableAutoHints / enableCustomHints */
+        private void migrate() {
+            String old = backend.raw(CAT_DISPLAY, "showHintsAndTips");
+            if (old == null) return;
+            if (!bool(old)) {
+                for (Flag f : new Flag[] {Flag.HINTS_AND_TIPS, Flag.AUTO_HINTS, Flag.CUSTOM_HINTS}) if (has(f)) backend.set(f.setting, "false");
+            }
+            backend.remove(CAT_DISPLAY, "showHintsAndTips");
+        }
+
         void read() {
+            migrate();
             int m = 0;
-            for (Flag f : Flag.values()) if (bool(backend.get(f.setting))) m |= f.bit();
+            for (Flag f : Flag.values()) if (!has(f) || bool(backend.get(f.setting))) m |= f.bit();
             mask = m;
             backend.categoryLangKey(CAT_DISPLAY, "whathitme.config.cat.display");
             backend.categoryLangKey(CAT_FILTERS, "whathitme.config.cat.filters");
@@ -237,6 +275,7 @@ public final class WhmConfig {
         public synchronized String set(String key, String value) {
             Setting s = byKey().get(key);
             if (s == null) return "unknown";
+            if (isLocked(s.key)) return "locked";
             switch (s.type) {
                 case LIST:
                     backend.setList(s, value.isEmpty() ? new String[0] : value.split("\\s*,\\s*"));
@@ -314,6 +353,11 @@ public final class WhmConfig {
         }
 
         @Override
+        public boolean has(Flag f) {
+            return f.scope != Scope.CLIENT;
+        }
+
+        @Override
         public List<Setting> settings() {
             List<Setting> out = super.settings();
             out.addAll(Arrays.asList(HISTORY_SIZE, MERGE_WINDOW, SUMMARY_SECONDS, RECAP_SECONDS, MAX_SNAPSHOTS));
@@ -328,6 +372,7 @@ public final class WhmConfig {
             summarySeconds = integer(backend.get(SUMMARY_SECONDS), SUMMARY_SECONDS);
             recapSeconds = integer(backend.get(RECAP_SECONDS), RECAP_SECONDS);
             maxSnapshots = integer(backend.get(MAX_SNAPSHOTS), MAX_SNAPSHOTS);
+            if ((mask & (Flag.AUTO_HINTS.bit() | Flag.CUSTOM_HINTS.bit())) == 0) mask &= ~Flag.HINTS_AND_TIPS.bit();
             backend.categoryLangKey(CAT_TRACKING, "whathitme.config.cat.tracking");
             backend.categoryComment(CAT_TRACKING, COMMENT_TRACKING);
         }
@@ -345,6 +390,11 @@ public final class WhmConfig {
 
         public Client(ConfigBackend b) {
             super(b);
+        }
+
+        @Override
+        public boolean has(Flag f) {
+            return f.scope != Scope.COMMON;
         }
 
         @Override
@@ -381,6 +431,8 @@ public final class WhmConfig {
     }
 
     public static volatile Common common;
+    /** config/whathitme/pack/ (merged), never null */
+    public static volatile PackConfig pack = PackConfig.EMPTY;
     /** null on a dedicated server */
     public static volatile Client client;
 
@@ -394,6 +446,7 @@ public final class WhmConfig {
     public static void init(File configDir, boolean clientSide, Function<File, ConfigBackend> backends) {
         File dir = new File(configDir, "whathitme");
         if (!dir.isDirectory()) dir.mkdirs();
+        pack = PackConfig.load(dir);
         Common c = new Common(backends.apply(new File(dir, "whathitme-common.cfg")));
         c.load();
         common = c;
@@ -404,8 +457,22 @@ public final class WhmConfig {
         }
     }
 
+    /** Re-reads whathitme-common.cfg and the pack folder */
     public static void reloadCommon() {
+        pack = PackConfig.load(Platform.whmConfigDir());
         common.load();
+    }
+
+    /** A key locked by the modpack (lockedFeatures) */
+    public static boolean isLocked(String key) {
+        return pack.isLocked(key);
+    }
+
+    /** config/whathitme/.cache/ */
+    public static File cacheDir() {
+        File d = new File(Platform.whmConfigDir(), ".cache");
+        if (!d.isDirectory()) d.mkdirs();
+        return d;
     }
 
     public static void reloadClient() {

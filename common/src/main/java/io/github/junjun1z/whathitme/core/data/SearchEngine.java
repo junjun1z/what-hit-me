@@ -15,9 +15,13 @@ public final class SearchEngine {
 
     /** Every mob and effect of the registries plus the damage catalog */
     public static List<Entry> all(DamageCatalog catalog, Registries reg) {
+        Registries cached = CatalogCache.view(reg);
         List<Entry> out = new ArrayList<>(catalog.entries());
-        out.addAll(reg.mobs());
-        out.addAll(reg.effects());
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (Entry e : out) seen.add(e.id);
+        for (Entry e : cached.damageTypes()) if (seen.add(e.id)) out.add(e);
+        out.addAll(cached.mobs());
+        out.addAll(cached.effects());
         return out;
     }
 
@@ -28,6 +32,7 @@ public final class SearchEngine {
     public static List<Entry> search(String query, DamageCatalog catalog, Registries reg) {
         String[] terms = query.trim().toLowerCase(Locale.ROOT).split("\\s+");
         List<Entry> out = new ArrayList<>();
+        reg = CatalogCache.view(reg);
         for (Entry e : all(catalog, reg)) {
             boolean ok = true;
             for (String t : terms) {

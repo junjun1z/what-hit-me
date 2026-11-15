@@ -24,6 +24,11 @@ public final class HitFacts {
     /** Name of the projectile / direct entity when it is not the attacker ("" = none) */
     public String directName = "";
 
+    /** "unknown" facts, used when reading a broken damage source failed */
+    public static HitFacts unknown() {
+        return new HitFacts();
+    }
+
     /** The normalized damage id: mob:&lt;entity&gt; for melee, otherwise the type id */
     public String damageId() {
         if (attacker != null && melee) return "mob:" + attacker.id;
@@ -31,6 +36,11 @@ public final class HitFacts {
     }
 
     public DamageRecord build(long time, float raw, float actual, float absorbed, int extraFlags, float healthAfter, float maxHealth) {
+        return build(time, raw, actual, absorbed, extraFlags, healthAfter, maxHealth, "", "");
+    }
+
+    public DamageRecord build(long time, float raw, float actual, float absorbed, int extraFlags, float healthAfter, float maxHealth, String dimension,
+                              String context) {
         String id = damageId();
         EntityFacts atk = attacker;
         String modId;
@@ -46,6 +56,7 @@ public final class HitFacts {
         String wName = "";
         String wKey = "";
         String ench = "";
+        String wId = "";
         float dist = -1f;
         if (atk != null) {
             atkName = atk.name;
@@ -58,8 +69,9 @@ public final class HitFacts {
             wName = atk.weaponName;
             wKey = atk.weaponKey;
             ench = atk.weaponEnchants;
+            wId = atk.weaponId;
         }
         return new DamageRecord(time, id, damageType, atkName, atkKey, atkId, directName, modId, io.github.junjun1z.whathitme.core.Platform.modName(modId), raw,
-            actual, absorbed, f, dist, wName, wKey, ench, owner, 1, healthAfter, maxHealth, tag);
+            actual, absorbed, f, dist, wName, wKey, ench, owner, 1, healthAfter, maxHealth, tag, wId, dimension, context);
     }
 }

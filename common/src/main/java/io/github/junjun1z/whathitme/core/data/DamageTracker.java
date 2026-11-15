@@ -15,6 +15,7 @@ public final class DamageTracker {
 
     private final Map<UUID, PlayerHistory> histories = new HashMap<>();
     private final Set<UUID> moddedClients = new HashSet<>();
+    private final Map<UUID, Integer> protocols = new HashMap<>();
     public final DamageCatalog catalog = new DamageCatalog();
 
     public synchronized PlayerHistory get(UUID id) {
@@ -36,10 +37,22 @@ public final class DamageTracker {
     public synchronized void remove(UUID id) {
         histories.remove(id);
         moddedClients.remove(id);
+        protocols.remove(id);
     }
 
     public synchronized void setModded(UUID id) {
+        setModded(id, 1);
+    }
+
+    public synchronized void setModded(UUID id, int protocol) {
         moddedClients.add(id);
+        protocols.put(id, protocol);
+    }
+
+    /** Protocol the client said hello with (1 = What Hit Me? 1.0 / 1.1) */
+    public synchronized int protocol(UUID id) {
+        Integer p = protocols.get(id);
+        return p == null ? 1 : p;
     }
 
     public synchronized boolean isModded(UUID id) {
@@ -54,6 +67,7 @@ public final class DamageTracker {
     public synchronized void clear() {
         histories.clear();
         moddedClients.clear();
+        protocols.clear();
         catalog.clear();
     }
 }

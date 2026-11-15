@@ -14,7 +14,8 @@ import io.github.junjun1z.whathitme.core.data.Snapshot;
  */
 public final class Packets {
 
-    public static final int PROTOCOL = 1;
+    /** 1 = What Hit Me? 1.0 / 1.1, 2 = 1.2 (extra record fields, armor break lines, equipment, pack data) */
+    public static final int PROTOCOL = 2;
     /** Channel name for loaders with namespaced channels ("whathitme:main") */
     public static final String CHANNEL_PATH = "main";
 
@@ -157,6 +158,15 @@ public final class Packets {
         public List<String> ignored = new ArrayList<>();
         public List<String> renames = new ArrayList<>();
         public List<String> hints = new ArrayList<>();
+        /** Protocol of the server (1 when it sent no extension) */
+        public int protocol = 1;
+        /** Write the protocol 2 extension (only for clients that said hello with protocol 2+) */
+        public boolean extended;
+        /** Config keys the modpack locked (lockedFeatures) */
+        public List<String> locked = new ArrayList<>();
+        /** renameMap / hintMap of the pack folder (lower priority than renames / hints) */
+        public List<String> packRenames = new ArrayList<>();
+        public List<String> packHints = new ArrayList<>();
 
         @Override
         public int type() {
@@ -183,6 +193,11 @@ public final class Packets {
             writeList(o, ignored);
             writeList(o, renames);
             writeList(o, hints);
+            if (!extended) return;
+            o.writeInt(PROTOCOL);
+            writeList(o, locked);
+            writeList(o, packRenames);
+            writeList(o, packHints);
         }
 
         static ServerInfo read(WireIn in) {
@@ -192,6 +207,13 @@ public final class Packets {
             i.ignored = readList(in);
             i.renames = readList(in);
             i.hints = readList(in);
+            if (in.remaining() >= 4) {
+                i.protocol = in.readInt();
+                i.extended = true;
+                i.locked = readList(in);
+                i.packRenames = readList(in);
+                i.packHints = readList(in);
+            }
             return i;
         }
     }
@@ -214,8 +236,15 @@ public final class Packets {
         public final int count;
         /** null = nothing */
         public final Snapshot snapshot;
+        /** Protocol of the receiver: 2+ gets the full snapshot */
+        public final int protocol;
 
         public Recap(int kind, String who, int index, int count, Snapshot snapshot) {
+            this(kind, who, index, count, snapshot, 1);
+        }
+
+        public Recap(int kind, String who, int index, int count, Snapshot snapshot, int protocol) {
+            this.protocol = protocol;
             this.kind = kind;
             this.who = who == null ? "" : who;
             this.index = index;
@@ -231,22 +260,31 @@ public final class Packets {
         @Override
         public void write(WireOut o) {
             long now = System.currentTimeMillis();
-            o.writeByte(kind);
+            boolean v2 = protocol >= 2;
+            o.writeByte(v2 ? kind | V2 : kind);
             o.writeString(who);
             o.writeInt(index);
             o.writeInt(count);
             o.writeBoolean(snapshot != null);
-            if (snapshot != null) snapshot.write(o, now);
+            if (snapshot != null) {
+                if (v2) snapshot.write2(o, now);
+                else snapshot.write(o, now);
+            }
         }
+
+        /** Marks the protocol 2 body in the kind byte (old clients never receive it) */
+        private static final int V2 = 0x40;
 
         static Recap read(WireIn in) {
             long now = System.currentTimeMillis();
-            int kind = in.readByte();
+            int raw = in.readByte();
+            boolean v2 = (raw & V2) != 0;
+            int kind = raw & ~V2;
             String who = in.readString();
             int index = in.readInt();
             int count = in.readInt();
-            Snapshot s = in.readBoolean() ? Snapshot.read(in, now) : null;
-            return new Recap(kind, who, index, count, s);
+            Snapshot s = in.readBoolean() ? (v2 ? Snapshot.read2(in, now) : Snapshot.read(in, now)) : null;
+            return new Recap(kind, who, index, count, s, v2 ? 2 : 1);
         }
     }
 

@@ -83,6 +83,23 @@ public final class Completion {
         return out;
     }
 
+    /** /whm test &lt;damage_id&gt; [entity_id] [item_id] [dim_id]: entity ids, "-" and dimensions */
+    public static List<String> testArgs(String[] args, io.github.junjun1z.whathitme.core.data.Registries reg) {
+        List<String> out = new ArrayList<>();
+        out.add("-");
+        if (args.length == 3) {
+            for (io.github.junjun1z.whathitme.core.data.Entry e : reg.mobs()) out.add(e.id);
+        } else if (args.length == 4) {
+            out.add("minecraft:diamond_sword");
+            out.add("minecraft:bow");
+        } else if (args.length == 5) {
+            out.add("minecraft:overworld");
+            out.add("minecraft:the_nether");
+            out.add("minecraft:the_end");
+        }
+        return matching(args, out);
+    }
+
     public static int parseInt(String s, int def) {
         try {
             return Integer.parseInt(s.trim());
