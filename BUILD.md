@@ -51,8 +51,7 @@ Each target's `gradle.properties`: `loader` (= `gradle/<loader>.gradle`), `loade
 for `forge_rfg`), `mc_version`, `code_version` (which `versions/` + `loaders/<loader>/` directories to compile),
 `java_version`, the loader version (`forge_version` / `neoforge_version` / `fabric_loader` + `fabric_api` /
 `mcp_mappings`) and `mc_range` / `loader_range` for the metadata. Toolchains, mappings and loader versions: reuse
-exactly what Inventory ToDo 1.2.0 uses for the same target (`..\inventory-todo\modern\targets`,
-`...\modern\legacy\targets`, `...\modern\oldforge\targets`); they are known to work.
+the versions already used by the neighbouring targets; they are known to work.
 
 ## Architecture
 
@@ -106,8 +105,8 @@ maps a msgId to the version's id for client estimates (set by `ClientPortMc.inst
 ## How to add a version (step by step)
 
 Work only in the directories of your target; the shared files you may need to touch are `publish.json` (add your
-entries) and, if a new Minecraft API generation really needs it, a new `versions/<v>` directory. Do not change
-`common/` or `gradle/*.gradle` : every target builds against them.
+entries) and, if a new Minecraft API generation really needs it, a new `versions/<v>` directory. Avoid changing
+`common/` or `gradle/*.gradle`: every target builds against them.
 
 1. **Pick the build.** Main build: Fabric (all), Forge 1.17 - 1.20.1 (`forge`, MDG legacy), NeoForge (`neoforge`).
    `legacy/`: Forge 1.12.2 (`forge_rfg`), 1.14.4 - 1.16.5 (`forge_arch`), 1.20.2 / 1.20.4 (`forge7_srg`),
@@ -149,13 +148,12 @@ Build with `-Pselftest`. Use only `build/devlibs/whathitme-selftest.jar` (the mo
 servers**) and `build/devlibs/whmdriver-dev.jar` (the driver, a separate mod for a client without What Hit Me?).
 The `libs/` jar of a `-Pselftest` build also contains the driver's `@Mod`; Forge refuses to start with it.
 
-Instances: copy `%APPDATA%\PrismLauncher\instances\InvTodoTest_<mc>_<Loader>` (only `instance.cfg`, `mmc-pack.json`
-and `.minecraft/options.txt`) to `WhmTest_<mc>_<Loader>` and `WhmTest_<mc>_<Loader>_NoMod`, set `name=` in
-`instance.cfg`, add `pauseOnLostFocus:false` and `skipMultiplayerWarning:true` to `options.txt`, put the jars in
-`.minecraft/mods/` (Fabric: also the fabric-api jar from the Gradle cache). Never modify the InvTodo instances. If
+Instances: create a Prism Launcher instance per version and loader (`WhmTest_<mc>_<Loader>` and
+`WhmTest_<mc>_<Loader>_NoMod`), add `pauseOnLostFocus:false` and `skipMultiplayerWarning:true` to `options.txt`, put the jars in
+`.minecraft/mods/` (Fabric: also the fabric-api jar). If
 Prism does not see a new instance ("resolves to nothing" in its log), rename the folder away and back. Launch:
 `"%LOCALAPPDATA%\Programs\PrismLauncher\prismlauncher.exe" --launch <instance> [--server localhost:<port>]`
-(the Microsoft account is Prism's default; never add accounts). Kill only processes you started.
+(Prism's default account is used).
 
 | Mode | How | Checks |
 | --- | --- | --- |
@@ -170,7 +168,7 @@ Results: `whathitme_selftest_result.txt` / `whmdriver_result.txt` in `.minecraft
 `N FAILED`), screenshots `whm_selftest_*.png`; the game quits by itself. Log lines start with `WHM-SELFTEST` /
 `WHMDRIVER`.
 
-Test servers (`..\whm-testenv\`, `online-mode=false`, flat world, the player `_junjun1z` is op):
+Test servers (a local folder of dedicated servers, `online-mode=false`, flat world, your player is op):
 `server-forge-1.12.2` (port 25612), `server-forge-1.20.1` (25620), `server-fabric-1.21.1` (25621, needs the
 fabric-api jar in `mods/`). Each has `start.sh`; run it with a command file as stdin to stop it later:
 `: > srv.cmd; (tail -f srv.cmd | ./server-x/start.sh > srv.log 2>&1 &)` ... `echo stop >> srv.cmd`. A new server: Forge
@@ -232,7 +230,6 @@ Pitfalls seen so far:
   Test the oldest Forge build of a range too.
 - Prism's `--server` crashes 1.14 - 1.17 clients (they join before the models are loaded): the self-test and the driver join the server
   written in `.minecraft/whm_connect.txt` from the title screen instead.
-- Helper scripts for instances, launches and test servers: `devtest/scripts/` (paths at the top of each script).
 - 1.21.x / 26.x: one code version can serve several targets (`code_version` 1.21.3 builds 1.21.3 and
   1.21.4; `26.3` is one source compiled against 26.1.2, 26.2 and 26.3 - the differences are looked up by reflection in `mc/Compat26`).
 - NeoForge 21.8+ / 26.x: `playBidirectional` needs the client handler as its fourth argument (missing in 21.6 betas, so the 1.21.8 jar starts
@@ -243,6 +240,6 @@ Pitfalls seen so far:
 - Forge 1.21+: server messages reach the client through `SystemMessageReceivedEvent`, not `ClientChatReceivedEvent` (driver).
 - Fabric: use the fabric-api built for the running patch version (0.136.1+1.21.8 refuses 1.21.6, 0.138.4+1.21.10 refuses 1.21.9); the jar
   itself runs on all of them. On 1.21 fabric-api must be 0.116.18+1.21.1 or newer (0.102.0+1.21 has no `AFTER_DAMAGE`).
-- Test instances for versions without an InvTodo instance: `devtest/scripts/mkder.sh` (copy + change the component versions in
-  `mmc-pack.json`; 26.1.x and 26.2 need LWJGL 3.4.1). Every instance: `soundCategory_master:0.0` in `options.txt`.
+- Test instances for patch versions: copy an instance and change the component versions in `mmc-pack.json` (26.1.x and 26.2 need
+  LWJGL 3.4.1). Every instance: `soundCategory_master:0.0` in `options.txt`.
 - The armor mitigation check of the self-test can fail once (attribute not applied yet): run it again.
