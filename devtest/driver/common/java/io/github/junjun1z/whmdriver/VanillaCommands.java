@@ -78,6 +78,11 @@ public final class VanillaCommands {
         return "/summon creeper " + pos + " {Fuse:0,ExplosionRadius:1b}";
     }
 
+    /** Kills the own player ("/kill" needs a target on 1.13 - 1.15) */
+    public String killSelf() {
+        return !legacy() && !atLeast(1, 16, 0) ? "/kill @s" : "/kill";
+    }
+
     public String killNonPlayers() {
         return "/kill @e[type=!player]";
     }

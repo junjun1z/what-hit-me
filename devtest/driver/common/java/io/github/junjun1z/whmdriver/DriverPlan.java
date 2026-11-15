@@ -162,7 +162,7 @@ public final class DriverPlan {
             autoRespawn = false;
             return true;
         });
-        say("/kill");
+        say(cmd.killSelf());
         steps.add(port::deathScreen);
         sleep(40);
         steps.add(() -> {
