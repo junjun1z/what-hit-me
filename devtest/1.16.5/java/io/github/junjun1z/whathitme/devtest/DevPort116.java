@@ -204,7 +204,25 @@ public class DevPort116 implements DevPort {
 
     @Override
     public boolean configScreenOpen() {
-        return mc().screen instanceof io.github.junjun1z.whathitme.mc.ConfigScreen116;
+        if (!(mc().screen instanceof io.github.junjun1z.whathitme.mc.ConfigScreen116)) return false;
+        String m = modMenuCheck();
+        System.out.println("WHM-SELFTEST [INFO] Mod Menu config screen: " + m);
+        return !m.startsWith("wrong") && !m.startsWith("error");
+    }
+
+    /** With Mod Menu installed, its own lookup (the config button of its mods list) must build our screen */
+    private static String modMenuCheck() {
+        for (String c : new String[] {"com.terraformersmc.modmenu.ModMenu", "io.github.prospector.modmenu.ModMenu"}) {
+            try {
+                Object s = Class.forName(c).getMethod("getConfigScreen", String.class, net.minecraft.client.gui.screens.Screen.class).invoke(null, "whathitme", null);
+                return s instanceof io.github.junjun1z.whathitme.mc.ConfigScreen116 ? "ok (" + c + ")" : "wrong: " + s;
+            } catch (ClassNotFoundException e) {
+                // next
+            } catch (Throwable t) {
+                return "error: " + t;
+            }
+        }
+        return "not installed";
     }
 
     @Override

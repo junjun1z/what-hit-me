@@ -6,7 +6,8 @@ import net.minecraft.world.damagesource.EntityDamageSource;
 /** Never loaded: damage ids the jar scanner check (V12Plan) must find in our own jar. */
 final class ScanProbe {
 
-    static final DamageSource PLAIN = new Named("whm_probe_plain").setIsFire().bypassArmor();
+    /** The setters are protected on this version: called by a subclass constructor */
+    static final DamageSource PLAIN = new Plain("whm_probe_plain");
 
     private ScanProbe() {}
 
@@ -32,21 +33,17 @@ final class ScanProbe {
         }
     }
 
+    static final class Plain extends DamageSource {
+        Plain(String id) {
+            super(id);
+            setIsFire();
+            bypassArmor();
+        }
+    }
+
     static class Named extends DamageSource {
         Named(String id) {
             super(id);
-        }
-
-        @Override
-        public Named setIsFire() {
-            super.setIsFire();
-            return this;
-        }
-
-        @Override
-        public Named bypassArmor() {
-            super.bypassArmor();
-            return this;
         }
     }
 
