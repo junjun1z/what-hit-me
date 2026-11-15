@@ -27,9 +27,11 @@
         "*-sources.jar"
       ],
       "loaders": [
-        "forge"
+        "forge",
+        "neoforge"
       ],
       "game_versions": [
+        "1.20",
         "1.20.1"
       ],
       "java": 17,

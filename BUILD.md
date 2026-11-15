@@ -43,7 +43,7 @@ CurseForge through `tools/publish.py` (one upload per `publish.json` entry; Modr
 | `loaders/<loader>/<code_version>/` | Loader entry point, events, network channel, command registration, per-player storage, metadata (`mcmod.info`, `META-INF/mods.toml`, `fabric.mod.json`). Package `io.github.junjun1z.whathitme.forge` / `.fabric` / `.neoforge`. |
 | `targets/<mc>-<loader>/gradle.properties` | One build target of the main build (Fabric Loom, ModDevGradle). |
 | `legacy/targets/<mc>-forge/gradle.properties` | Targets that need RetroFuturaGradle (1.12.2), ForgeGradle 7 or Architectury Loom. |
-| `oldforge/targets/<mc>-forge/gradle.properties` | Targets that need Unimined (Forge 1.7.10 / 1.8.9 - 1.11.2). Empty so far. |
+| `oldforge/targets/<mc>-forge/gradle.properties` | Forge 1.8.9 - 1.11.2 (Unimined). Forge 1.7.10 lives in `legacy/` (RetroFuturaGradle, like 1.12.2). |
 | `gradle/<loader>.gradle` | Build logic per loader: `fabric`, `forge` (MDG legacy, Forge 1.17 - 1.20.1), `neoforge`, `forge7`, `forge7_srg`, `forge_arch`, `forge_rfg`, `forge_uni`. `common.gradle` is shared by all. |
 | `devtest/` | In-game self-test and the "client without the mod" driver, compiled **only** with `-Pselftest`. |
 
@@ -111,7 +111,7 @@ entries) and, if a new Minecraft API generation really needs it, a new `versions
 
 1. **Pick the build.** Main build: Fabric (all), Forge 1.17 - 1.20.1 (`forge`, MDG legacy), NeoForge (`neoforge`).
    `legacy/`: Forge 1.12.2 (`forge_rfg`), 1.14.4 - 1.16.5 (`forge_arch`), 1.20.2 / 1.20.4 (`forge7_srg`),
-   1.20.6+ / 1.21.x / 26.x (`forge7`). `oldforge/`: Forge 1.8.9 - 1.11.2 (`forge_uni`; also a good place for 1.7.10).
+   1.20.6+ / 1.21.x / 26.x (`forge7`). `oldforge/`: Forge 1.8.9 - 1.11.2 (`forge_uni`). Forge 1.7.10 is built by `legacy/` with `forge_rfg`.
    Inventory ToDo 1.2.0 uses the same split - check where its target lives.
 2. **Target file.** Copy a neighbour's `gradle.properties` into `targets/<mc>-<loader>/` (or the nested build's
    `targets/`), set `mc_version`, `code_version`, `java_version`, loader versions and ranges (copy them from Inventory
