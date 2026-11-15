@@ -2,6 +2,18 @@
 
 The release workflow publishes the section whose heading matches the pushed tag (for example `## [1.0.0]` for tag `1.0.0`) as the release notes.
 
+## [1.1.0]
+
+Now available for every major Minecraft version and loader: **Forge 1.7.10 - 26.3, Fabric 1.14 - 26.3, NeoForge 1.20.1 - 26.3** (63 files). Same features, commands, config files and 10 languages everywhere. Every listed version was started and tested in game (single player; dedicated server with the mod, without the mod, and with a client without the mod for each loader family).
+
+- Fabric needs Fabric API (on 1.21 / 1.21.1: 0.116 or newer). Forge and NeoForge need nothing else.
+- Not included: Minecraft 1.13.x, 1.18 / 1.18.1, Forge 1.20.5 / 1.21.6 / 1.21.7 / 26.1 / 26.1.1, NeoForge 1.20.5 / 1.21.2 / 1.21.6.
+- The in-game settings screen is available on Forge 1.7.10 - 1.12.2; on other versions edit the files in `config/whathitme/` and run `/whm reload`.
+
+Fixes:
+
+- 1.12 / 1.12.1: the 1.12.2 file now also starts on these versions.
+
 ## [1.0.1]
 
 Bug fixes found by a full in-game test pass (single player, dedicated server with and without the mod, a client without the mod, two players, a 21-mod pack).

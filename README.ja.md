@@ -1,14 +1,14 @@
 # What Hit Me?
 
-「何にやられたのか」をはっきり見せる Minecraft 1.12.2 Forge 用の Mod です。**どんな Mod パックでも、どんな Mod の組み合わせでも動きます。必須の前提 Mod はありません。**
+「何にやられたのか」をはっきり見せる Minecraft 1.7.10〜26.3 の Forge・Fabric・NeoForge 用の Mod です。**どんな Mod パックでも、どんな Mod の組み合わせでも動きます。必須の前提 Mod はありません。**
 
 [English README](README.md)
 
 ![死亡画面のパネル](docs/screenshots/death-screen.png)
 
-- Minecraft 1.12.2、Forge 14.23.5.2847 以降、Java 8
+- Minecraft 1.7.10〜26.3：Forge、Fabric（Fabric API が必要）、NeoForge。対応表は [docs/description.md](docs/description.md#supported-versions) にあります。
 - Mod ID は `whathitme`
-- クライアントだけ、サーバーだけ、両方、どの入れ方でも動作。Mixin・コアMod・ブロックやアイテムの追加はなし
+- クライアントだけ、サーバーだけ、両方、どの入れ方でも動作。ブロックやアイテムの追加はなし。Forge / NeoForge は標準イベントのみ（Mixin・コアMod なし）。Fabric は Fabric API のイベントと、イベントが無い所だけ小さな Mixin を使います
 - ライセンス: MIT
 
 ## 機能
@@ -23,7 +23,7 @@
 - **自動ヒント**: ダメージの種類と属性に応じた対策を表示。ダメージIDごとに差し替え可能。
 - 10言語対応。
 
-1.12.2 では絵文字を表示できないため、ゲームのフォントにある記号（☠ ⚠ ❤ Σ）と文字のラベルを使っています。
+古い Minecraft のフォントは絵文字を表示できないため、ゲームのフォントにある記号（☠ ⚠ ❤ Σ）と文字のラベルを使っています。
 
 ## 導入パターン
 
@@ -45,7 +45,7 @@
 
 ### 設定ファイル
 
-場所は `config/whathitme/`。Forge の設定形式で、`/whm reload` で再起動なしに再読み込みできます。
+場所は `config/whathitme/`。Forge の設定形式（どのローダーでも同じファイル・同じキー）で、`/whm reload` で再起動なしに再読み込みできます。
 
 | ファイル | 対象 | 内容 |
 |---|---|---|

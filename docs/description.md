@@ -2,7 +2,7 @@
 
 See exactly what killed you. **Works in any modpack, with any combination of mods — no required dependencies.**
 
-What Hit Me? records the damage a player takes and explains a death in plain words: the killing blow, the attacker and its mod, how much armor helped, whether the damage ignored armor, and what to do about it next time. It runs on the client, on the server, or both, adds no blocks or items, uses no Mixins or coremods, and only does work for players.
+What Hit Me? records the damage a player takes and explains a death in plain words: the killing blow, the attacker and its mod, how much armor helped, whether the damage ignored armor, and what to do about it next time. It runs on the client, on the server, or both, adds no blocks or items, and only does work for players. Available for Forge, Fabric and NeoForge from Minecraft 1.7.10 to 26.3.
 
 ![Death screen panel](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/docs/screenshots/death-screen.png)
 
@@ -48,7 +48,7 @@ Single player counts as "client and server". Mixed servers work too: each player
 
 ### Config files
 
-Both files are in `config/whathitme/` and are re-read by `/whm reload` without a restart. You can also edit them in game: **Mods → What Hit Me? → Config** (Personal and Modpack / server groups).
+Both files are in `config/whathitme/` and are re-read by `/whm reload` without a restart. On Forge 1.7.10 - 1.12.2 you can also edit them in game: **Mods → What Hit Me? → Config** (Personal and Modpack / server groups).
 
 | File | Who it is for | Contents |
 |---|---|---|
@@ -123,6 +123,34 @@ All commands are `/whm` (alias `/whathitme`) and Tab-complete.
 | `/whm server <subcommand>` | From a modded client: run the subcommand on the server (server-wide settings) | Needs the mod on the server |
 | `/whm help` | Command list | Everyone |
 
+## Supported versions
+
+| Minecraft | Forge | Fabric | NeoForge |
+|---|---|---|---|
+| 1.7.10 | ✔ | | |
+| 1.8.9 | ✔ | | |
+| 1.9 / 1.9.4 | ✔ | | |
+| 1.10 / 1.10.2 | ✔ | | |
+| 1.11 / 1.11.2 | ✔ | | |
+| 1.12 / 1.12.1 / 1.12.2 | ✔ | | |
+| 1.14 - 1.14.4 | 1.14.4 | ✔ | |
+| 1.15 - 1.15.2 | 1.15.1 / 1.15.2 | ✔ | |
+| 1.16 - 1.16.5 | 1.16.3 - 1.16.5 | ✔ | |
+| 1.17 / 1.17.1 | 1.17.1 | ✔ | |
+| 1.18.2 | ✔ | ✔ | |
+| 1.19 - 1.19.4 | ✔ | ✔ | |
+| 1.20 / 1.20.1 | ✔ | ✔ | 1.20.1 |
+| 1.20.2 - 1.20.4 | ✔ | ✔ | 1.20.4 |
+| 1.20.5 / 1.20.6 | 1.20.6 | ✔ | 1.20.6 |
+| 1.21 / 1.21.1 | 1.21.1 | ✔ | ✔ |
+| 1.21.2 - 1.21.5 | 1.21.3 - 1.21.5 | ✔ | 1.21.3 - 1.21.5 |
+| 1.21.6 - 1.21.8 | 1.21.8 | ✔ | 1.21.7 / 1.21.8 |
+| 1.21.9 - 1.21.11 | ✔ | ✔ | ✔ |
+| 26.1 - 26.1.2 | 26.1.2 | ✔ | ✔ |
+| 26.2 / 26.3 | ✔ | ✔ | ✔ |
+
+Fabric needs [Fabric API](https://modrinth.com/mod/fabric-api) (on 1.21 / 1.21.1: Fabric API 0.116 or newer). Forge and NeoForge need nothing else. Every listed version was started and tested in game.
+
 ## Supported languages
 
 The mod follows your Minecraft language setting. 10 languages are included:
@@ -145,7 +173,7 @@ Players without the mod see English text sent by the server.
 ## FAQ
 
 **Does it need anything else?**
-No. Minecraft 1.12.2 and Forge 14.23.5.2847 or newer.
+On Forge and NeoForge, no. On Fabric, only Fabric API. See *Supported versions* above.
 
 **Do players have to install it?**
 No. On a server with the mod, players without it still get the chat summary and commands in English. Installing it on the client adds the death screen panel, translations and clipboard buttons.
@@ -154,7 +182,7 @@ No. On a server with the mod, players without it still get the chat summary and 
 Yes. The client estimates the damage from its own health and nearby entities. Those entries are marked `[Client Est.]` and are less detailed.
 
 **Will it conflict with other mods?**
-It uses only standard Forge events. No Mixins, no coremods, no replaced screens: the panel is drawn on top of the vanilla death screen.
+On Forge and NeoForge it uses only standard events: no Mixins, no coremods. On Fabric it uses Fabric API events and a few tiny Mixins only where no event exists. No screen is replaced: the panel is drawn on top of the vanilla death screen.
 
 **The chat summary is too much. How do I turn it off?**
 `/whm togglechat`, or set `enableRespawnChatSummary=false`. Pack makers can turn off any element for everyone in `whathitme-common.cfg`.
@@ -163,4 +191,4 @@ It uses only standard Forge events. No Mixins, no coremods, no replaced screens:
 Some mods create damage without a type the game can trace back to them. Use `renameMap` to give it a name.
 
 **Why are there no emoji?**
-Minecraft 1.12.2 cannot render them, so the mod uses symbols the game font has (☠ ⚠ ❤) and text labels.
+Older Minecraft fonts cannot render them, so every version uses the same symbols the game font has (☠ ⚠ ❤) and text labels.

@@ -1,14 +1,14 @@
 # What Hit Me?
 
-A Minecraft 1.12.2 Forge mod that shows exactly what killed you. **Works in any modpack, with any combination of mods — no required dependencies.**
+A Minecraft mod for Forge, Fabric and NeoForge (1.7.10 - 26.3) that shows exactly what killed you. **Works in any modpack, with any combination of mods — no required dependencies.**
 
 [日本語版 README](README.ja.md)
 
 ![Death screen panel](docs/screenshots/death-screen.png)
 
-- Minecraft 1.12.2, Forge 14.23.5.2847 or newer, Java 8
+- Minecraft 1.7.10 - 26.3: Forge, Fabric (needs Fabric API) and NeoForge. The full table is in [docs/description.md](docs/description.md#supported-versions).
 - Mod id `whathitme`
-- Client, server, or both. No Mixins, no coremods, no blocks or items.
+- Client, server, or both. No blocks or items. Forge / NeoForge: standard events only, no Mixins or coremods. Fabric: Fabric API events plus a few tiny Mixins where no event exists.
 - License: MIT
 
 ## Features
@@ -23,7 +23,7 @@ A Minecraft 1.12.2 Forge mod that shows exactly what killed you. **Works in any 
 - **Automatic tips** by damage type and properties, replaceable per damage id.
 - 10 languages.
 
-Minecraft 1.12.2 cannot render emoji, so the mod uses symbols the game font has (☠ ⚠ ❤ Σ) and text labels.
+Older Minecraft fonts cannot render emoji, so the mod uses symbols the game font has (☠ ⚠ ❤ Σ) and text labels.
 
 ## Install modes
 
@@ -45,7 +45,7 @@ Single player counts as "client and server". On mixed servers each player gets t
 
 ### Config files
 
-`config/whathitme/`, Forge configuration format, re-read by `/whm reload`.
+`config/whathitme/`, Forge configuration format (the same files and keys on every loader), re-read by `/whm reload`.
 
 | File | For | Contents |
 |---|---|---|
