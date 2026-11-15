@@ -277,10 +277,14 @@ public final class ServerCore {
         PlayerHistory h = tracker().get(uid);
         long now = System.currentTimeMillis();
         DamageRecord last = h.lastDamage();
-        float hpLeft = Safe.get("health", p::health, 0f);
+        final float healthAtDeath = Safe.get("health", p::health, 0f);
+        float hpLeft = healthAtDeath;
+        boolean recent = last != null && now - last.time <= 1500 && !last.has(DamageRecord.KILLING);
+        // health-overhaul mods (First Aid) kill through a body part: health left at death, or the last hit was not lethal
+        if (hpLeft <= 0.01f && recent && last.healthAfter > 0.01f && last.taken() > 0f) hpLeft = last.healthAfter;
         int vital = hpLeft > 0.01f ? DamageRecord.VITAL : 0;
         DamageRecord killing;
-        if (last != null && now - last.time <= 1500 && !last.has(DamageRecord.KILLING)) {
+        if (recent) {
             killing = last.withFlags(DamageRecord.KILLING | vital);
             if (vital != 0) killing = killing.withHealthAfter(hpLeft);
             h.replace(last, killing);
@@ -313,7 +317,7 @@ public final class ServerCore {
         if (tracker().isModded(uid)) send(p, Packets.Recap.DEATH, "", 0, 0, s);
         final Snapshot dead = s;
         ServerPort srv = port;
-        if (srv != null && hpLeft <= 0.01f) Safe.get("schedule", () -> srv.schedule(() -> Safe.run("revive check", () -> reviveCheck(uid, dead))), false);
+        if (srv != null && healthAtDeath <= 0.01f) Safe.get("schedule", () -> srv.schedule(() -> Safe.run("revive check", () -> reviveCheck(uid, dead))), false);
     }
 
     /** Health restored right after a death that was not cancelled: another mod revived the player */
