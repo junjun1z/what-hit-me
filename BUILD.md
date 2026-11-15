@@ -307,3 +307,19 @@ Pitfalls seen so far:
 - Test instances for patch versions: copy an instance and change the component versions in `mmc-pack.json` (26.1.x and 26.2 need
   LWJGL 3.4.1). Every instance: `soundCategory_master:0.0` in `options.txt`.
 - The armor mitigation check of the self-test can fail once (attribute not applied yet): run it again.
+
+### 1.2.0 on 1.14 - 1.17.1
+
+- `versions/<v>`: `ConfigScreen1xx` (paged list of both files, locked keys disabled) is the screen of every loader; the loader's client
+  tick calls `ClientPortMc.tickConfigScreen()`. Forge registers it as the mods list config factory (`ExtensionPoint.CONFIGGUIFACTORY`,
+  1.17: `ConfigGuiHandler.ConfigGuiFactory`).
+- Fabric: `WhmModMenu` is a `modmenu` entrypoint (`suggests`, compile only through `gradle/deps-fabric-<v>.gradle`). Mod Menu API per jar:
+  1.14.4 Mod Menu 1.7 (`io.github.prospector...ModMenuApi#getModId` + `getConfigScreenFactory`), 1.15.2 Mod Menu 1.8 - 1.10 (same, its
+  `getModConfigScreenFactory` wraps it), 1.16.1 / 1.16.5 the `io.github.prospector` `getModConfigScreenFactory` (Mod Menu 1.14 - 1.16
+  have it), 1.17.1 `com.terraformersmc.modmenu.api` (2.x).
+- `DamageSource` constructor and most setters are protected here: `Registries1xx.setters()` finds the setters by calling every no-argument
+  method returning `DamageSource` on a fresh instance and comparing the flags (runtime names: SRG on Forge 1.14 - 1.16, intermediary on
+  Fabric, official on Forge 1.17). Self-test probes: a covariant override (`Named setIsFire()`) is not remapped, use the subclass
+  constructor pattern instead.
+- Fabric attack events: AttackEntityCallback on 1.16.5 / 1.17.1, a `Player#attack` HEAD mixin on the v0-only loaders.
+- `ServerPortMc.schedule`: `server.tell(new TickTask(server.getTickCount(), task))`; `runCommand`: `getCommands().performCommand`.
