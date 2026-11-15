@@ -4,15 +4,19 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import io.github.junjun1z.whathitme.core.Platform;
+import io.github.junjun1z.whathitme.core.Safe;
+import io.github.junjun1z.whathitme.core.data.CatalogCache;
 import io.github.junjun1z.whathitme.core.config.WhmConfig;
 import io.github.junjun1z.whathitme.core.server.ServerCore;
 import io.github.junjun1z.whathitme.mc.McText;
+import io.github.junjun1z.whathitme.mc.Registries17;
 import net.minecraftforge.common.MinecraftForge;
 import cpw.mods.fml.common.Loader;
 import cpw.mods.fml.common.Mod;
 import cpw.mods.fml.common.ModContainer;
 import cpw.mods.fml.common.SidedProxy;
 import cpw.mods.fml.common.event.FMLInitializationEvent;
+import cpw.mods.fml.common.event.FMLPostInitializationEvent;
 import cpw.mods.fml.common.event.FMLPreInitializationEvent;
 import cpw.mods.fml.common.event.FMLServerStartingEvent;
 import cpw.mods.fml.common.event.FMLServerStoppedEvent;
@@ -53,6 +57,12 @@ public class WhatHitMeMod {
             }
 
             @Override
+            public String version(String modId) {
+                ModContainer c = Loader.instance().getIndexedModList().get(modId);
+                return c == null ? "" : c.getVersion();
+            }
+
+            @Override
             public java.util.Collection<String> modIds() {
                 java.util.List<String> out = new java.util.ArrayList<>();
                 for (ModContainer mc : Loader.instance().getActiveModList()) out.add(mc.getModId());
@@ -72,6 +82,13 @@ public class WhatHitMeMod {
         MinecraftForge.EVENT_BUS.register(ev);
         cpw.mods.fml.common.FMLCommonHandler.instance().bus().register(ev);
         proxy.init(event);
+    }
+
+    /** Every mod is loaded: load or build the catalog cache (damage types, entities, effects) */
+    @Mod.EventHandler
+    public void postInit(FMLPostInitializationEvent event) {
+        Safe.run("catalog cache", () -> CatalogCache.init(Registries17.INSTANCE));
+        LOG.info("What Hit Me? catalog cache: " + CatalogCache.status);
     }
 
     @Mod.EventHandler

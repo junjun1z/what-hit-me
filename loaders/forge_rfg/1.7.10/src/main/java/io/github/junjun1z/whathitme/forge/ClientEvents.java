@@ -12,6 +12,7 @@ import cpw.mods.fml.common.network.FMLNetworkEvent;
 import cpw.mods.fml.relauncher.Side;
 import cpw.mods.fml.relauncher.SideOnly;
 import io.github.junjun1z.whathitme.core.Platform;
+import io.github.junjun1z.whathitme.core.Safe;
 import io.github.junjun1z.whathitme.core.client.ClientCore;
 import io.github.junjun1z.whathitme.core.client.DeathPanel;
 import io.github.junjun1z.whathitme.core.config.WhmConfig;
@@ -44,8 +45,10 @@ public final class ClientEvents {
     @SubscribeEvent
     public void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent event) {
         if (!Platform.MODID.equals(event.modID)) return;
-        WhmConfig.client.saveAndReload();
-        WhmConfig.common.saveAndReload();
+        Safe.run("config screen save", () -> {
+            WhmConfig.client.saveAndReload();
+            WhmConfig.common.saveAndReload();
+        });
         // single player: the integrated server uses the same common file; tell the client side about it
         if (Minecraft.getMinecraft().getIntegratedServer() != null) ServerEvents.TASKS.add(ServerCore::broadcastInfo);
     }
@@ -63,6 +66,10 @@ public final class ClientEvents {
             while ((r = TASKS.poll()) != null) r.run();
         }
         Minecraft mc = Minecraft.getMinecraft();
+        if (ClientPort17.openConfig) {
+            ClientPort17.openConfig = false;
+            Safe.run("config screen", () -> mc.displayGuiScreen(new WhmGuiFactory.Screen(mc.currentScreen)));
+        }
         if (mc.thePlayer == null || mc.theWorld == null) return;
         ClientCore.tick(new FallbackEnv17(mc));
     }

@@ -5,7 +5,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import io.github.junjun1z.whathitme.core.data.Context;
 import io.github.junjun1z.whathitme.core.data.DamageRecord;
+import io.github.junjun1z.whathitme.core.data.Gear;
 import io.github.junjun1z.whathitme.core.data.EntityFacts;
 import io.github.junjun1z.whathitme.core.data.HitFacts;
 import io.github.junjun1z.whathitme.core.data.TypeModResolver;
@@ -192,8 +194,93 @@ public final class Facts {
             f.weaponName = w.getDisplayName();
             f.weaponKey = plainItemKey ? (w.hasDisplayName() ? "" : w.getUnlocalizedName() + ".name") : itemKey(w);
             f.weaponEnchants = enchantments(w);
+            f.weaponId = itemId(w);
         }
         return f;
+    }
+
+    public static String itemId(ItemStack s) {
+        try {
+            net.minecraft.util.ResourceLocation id = s == null || s.getItem() == null ? null : s.getItem().getRegistryName();
+            return id == null ? "" : id.toString();
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** An item stack as plain strings (null for an empty stack) */
+    public static Gear.Item item(ItemStack s) {
+        if (s == null || s.getItem() == null) return null;
+        String id = itemId(s);
+        int c = id.indexOf(':');
+        return new Gear.Item(id, itemKey(s), s.getDisplayName(), c > 0 ? id.substring(0, c) : "minecraft", enchantments(s), false);
+    }
+
+    private static final net.minecraft.inventory.EntityEquipmentSlot[] ARMOR_SLOTS = {net.minecraft.inventory.EntityEquipmentSlot.HEAD,
+        net.minecraft.inventory.EntityEquipmentSlot.CHEST, net.minecraft.inventory.EntityEquipmentSlot.LEGS, net.minecraft.inventory.EntityEquipmentSlot.FEET};
+
+    /** Armor: head, chest, legs, feet */
+    public static Gear.Item[] armor(EntityPlayer p) {
+        Gear.Item[] out = new Gear.Item[4];
+        for (int i = 0; i < 4; i++) out[i] = item(p.getItemStackFromSlot(ARMOR_SLOTS[i]));
+        return out;
+    }
+
+    /** 0 head ... 3 feet, -1 = not armor */
+    public static int armorSlot(ItemStack s) {
+        if (s == null || s.getItem() == null || !(s.getItem() instanceof net.minecraft.item.ItemArmor)) return -1;
+        net.minecraft.inventory.EntityEquipmentSlot slot = ((net.minecraft.item.ItemArmor) s.getItem()).armorType;
+        for (int i = 0; i < 4; i++) if (ARMOR_SLOTS[i] == slot) return i;
+        return -1;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static void block(Context c, String slot, net.minecraft.world.World w, net.minecraft.util.math.BlockPos pos) {
+        net.minecraft.block.state.IBlockState st = w.getBlockState(pos);
+        net.minecraft.block.Block b = st.getBlock();
+        if (b.isAir(st, w, pos)) return;
+        net.minecraft.util.ResourceLocation id = b.getRegistryName();
+        String name;
+        String key = "";
+        try {
+            ItemStack pick = new ItemStack(b, 1, b.damageDropped(st));
+            name = pick.getItem() == null ? b.getLocalizedName() : pick.getDisplayName();
+            if (!(pick.getItem() == null)) key = itemKey(pick);
+        } catch (Throwable t) {
+            name = b.getLocalizedName();
+        }
+        if (name == null || name.isEmpty() || name.startsWith("tile.")) name = id == null ? b.getClass().getSimpleName() : id.toString();
+        c.add(slot, key, name, id == null ? "" : id.getResourceDomain());
+    }
+
+    /** Block / fluid at the feet (or the block stood on) and at the body centre, and the held items */
+    public static String environment(EntityPlayer p) {
+        Context c = new Context();
+        net.minecraft.world.World w = p.worldObj;
+        net.minecraft.util.math.BlockPos feet = new net.minecraft.util.math.BlockPos(p.posX, p.posY, p.posZ);
+        if (w.isAirBlock(feet)) block(c, Context.FEET, w, feet.down());
+        else block(c, Context.FEET, w, feet);
+        net.minecraft.util.math.BlockPos body = new net.minecraft.util.math.BlockPos(p.posX, p.posY + p.height / 2.0, p.posZ);
+        if (!body.equals(feet)) block(c, Context.BODY, w, body);
+        Gear.Item main = item(p.getHeldItemMainhand());
+        Gear.Item off = item(p.getHeldItemOffhand());
+        if (main != null) c.add(Context.MAIN, main.key, main.name, main.modId);
+        if (off != null) c.add(Context.OFF, off.key, off.name, off.modId);
+        return c.toString();
+    }
+
+    /** "minecraft:overworld", "minecraft:the_nether", ... (mod dimensions: their DimensionType name) */
+    public static String dimension(net.minecraft.world.World w) {
+        try {
+            int id = w.provider.getDimension();
+            if (id == 0) return "minecraft:overworld";
+            if (id == -1) return "minecraft:the_nether";
+            if (id == 1) return "minecraft:the_end";
+            String n = w.provider.getDimensionType().getName();
+            return n.indexOf(':') >= 0 ? n : "dim:" + n.toLowerCase(java.util.Locale.ROOT).replace(' ', '_');
+        } catch (Throwable t) {
+            return "";
+        }
     }
 
     /** Facts of a hit on a player */

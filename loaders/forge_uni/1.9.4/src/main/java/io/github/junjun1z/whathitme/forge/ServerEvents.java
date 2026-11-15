@@ -1,12 +1,14 @@
 package io.github.junjun1z.whathitme.forge;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import io.github.junjun1z.whathitme.core.Safe;
+import io.github.junjun1z.whathitme.core.data.PlayerHistory;
 import io.github.junjun1z.whathitme.core.server.PlayerHandle;
 import io.github.junjun1z.whathitme.core.server.ServerCore;
+import io.github.junjun1z.whathitme.core.server.ServerPort;
 import io.github.junjun1z.whathitme.mc.Facts;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -15,20 +17,22 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
 
 /**
  * Forge 1.9 events of the logical server, forwarded to {@link ServerCore}. Every handler returns on its first line for
  * anything that is not a player, so mob fights cost nothing.
  * <p>
  * Forge before 1.12 has no LivingDamageEvent (damage after armor and absorption). The hit seen by LivingHurtEvent is
- * kept until the very next thing that happens to that player (its next hurt event, its death, its next tick or the end
- * of the server tick, whichever comes first); by then Minecraft has applied it, and the health / absorption lost are
- * read from the player ({@link ServerCore#onDamageAfter}). A Totem of Undying that saved the player is recognised by
- * the totem it used.
+ * kept until the very next thing that happens to that player (its next hurt event, its death, or a one-off task queued
+ * for the next server tick, whichever comes first); by then Minecraft has applied it, and the health / absorption lost
+ * are read from the player ({@link ServerCore#onDamageAfter}). A Totem of Undying that saved the player is recognised
+ * by the totem it used.
  */
 public final class ServerEvents {
 
@@ -37,6 +41,7 @@ public final class ServerEvents {
         final DamageSource src;
         final long tick;
         final int totems;
+        final long millis = System.currentTimeMillis();
 
         Hit(EntityPlayerMP p, DamageSource src, long tick, int totems) {
             this.p = p;
@@ -78,7 +83,15 @@ public final class ServerEvents {
                 }
             };
         }
-        ServerCore.onDamageAfter(handle, h.tick, h.src, health, absorption, () -> Facts.hit(p, h.src));
+        // the reflected damage window counts from the hurt event, not from this later read
+        PlayerHistory ph = ServerCore.tracker().peek(p.getUniqueID());
+        long delay = System.currentTimeMillis() - h.millis;
+        if (ph != null) ph.lastAttackTime += delay;
+        try {
+            ServerCore.onDamageAfter(handle, h.tick, h.src, health, absorption, () -> Facts.hit(p, h.src));
+        } finally {
+            if (ph != null) ph.lastAttackTime -= delay;
+        }
     }
 
     @SubscribeEvent(priority = EventPriority.HIGHEST)
@@ -89,7 +102,7 @@ public final class ServerEvents {
         flush(p.getUniqueID());
         if (event.getAmount() <= 0) return;
         // a fresh hit has just reset hurtResistantTime to its maximum
-        ServerCore.onHurt(p.getUniqueID(), p.worldObj.getTotalWorldTime(), event.getSource(), event.getAmount(), p.getAbsorptionAmount(), p.getHealth(),
+        ServerCore.onHurt(new PlayerHandle19(p), p.worldObj.getTotalWorldTime(), event.getSource(), event.getAmount(), p.getAbsorptionAmount(), p.getHealth(),
             p.isActiveItemStackBlocking(), p.hurtResistantTime >= p.maxHurtResistantTime, p.maxHurtResistantTime);
     }
 
@@ -102,15 +115,23 @@ public final class ServerEvents {
         if (event.isCanceled()) {
             ServerCore.onHurtCancelled(new PlayerHandle19(p), tick, event.getSource(), event.getAmount(), () -> Facts.hit(p, event.getSource()));
         } else if (event.getAmount() > 0) {
-            pending.put(p.getUniqueID(), new Hit(p, event.getSource(), tick, PlayerHandle19.totems(p)));
+            UUID id = p.getUniqueID();
+            boolean queued = pending.containsKey(id);
+            pending.put(id, new Hit(p, event.getSource(), tick, PlayerHandle19.totems(p)));
+            ServerPort srv = ServerCore.port;
+            if (!queued && srv != null) srv.schedule(() -> flush(id));
         }
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
     public void onDeath(LivingDeathEvent event) {
         if (!(event.getEntityLiving() instanceof EntityPlayer)) return;
         EntityPlayerMP p = tracked(event.getEntityLiving());
         if (p == null) return;
+        if (event.isCanceled()) {
+            ServerCore.onDeathCancelled(new PlayerHandle19(p), () -> Facts.hit(p, event.getSource()));
+            return;
+        }
         flush(p.getUniqueID());
         String msg = "";
         try {
@@ -122,25 +143,34 @@ public final class ServerEvents {
     }
 
     @SubscribeEvent
-    public void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (pending.isEmpty() || event.phase != TickEvent.Phase.START || event.player.worldObj.isRemote) return;
-        flush(event.player.getUniqueID());
+    public void onAttack(AttackEntityEvent event) {
+        if (!(event.getEntityPlayer() instanceof EntityPlayerMP)) return;
+        EntityPlayerMP p = tracked(event.getEntityPlayer());
+        if (p == null || event.getTarget() == null) return;
+        ServerCore.onPlayerAttack(p.getUniqueID(), event.getTarget().getUniqueID().toString());
+    }
+
+    @SubscribeEvent
+    public void onItemBroken(PlayerDestroyItemEvent event) {
+        if (!(event.getEntityPlayer() instanceof EntityPlayerMP)) return;
+        EntityPlayerMP p = tracked(event.getEntityPlayer());
+        if (p == null) return;
+        Safe.run("item break event", () -> {
+            int slot = Facts.armorSlot(event.getOriginal());
+            if (slot >= 0) ServerCore.onArmorBroken(new PlayerHandle19(p), Facts.item(event.getOriginal()), slot);
+        });
+    }
+
+    @SubscribeEvent
+    public void onWorldSave(WorldEvent.Save event) {
+        if (event.getWorld().isRemote || event.getWorld().provider.getDimension() != 0) return;
+        ServerCore.onWorldSave();
     }
 
     @SubscribeEvent
     public void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (!(event.player instanceof EntityPlayerMP)) return;
         ServerCore.onRespawn(new PlayerHandle19((EntityPlayerMP) event.player));
-    }
-
-    @SubscribeEvent
-    public void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END) return;
-        if (!pending.isEmpty()) {
-            for (Hit h : new ArrayList<>(pending.values())) apply(h);
-            pending.clear();
-        }
-        ServerCore.onTickEnd();
     }
 
     @SubscribeEvent

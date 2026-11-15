@@ -47,4 +47,36 @@ final class ServerPort110 implements ServerPort {
     public Registries registries() {
         return Registries110.INSTANCE;
     }
+
+    private static java.lang.reflect.Field taskQueue;
+
+    /** MinecraftServer#addScheduledTask runs at once on the server thread; the task queue itself runs at the next tick */
+    @SuppressWarnings("unchecked")
+    @Override
+    public boolean schedule(Runnable task) {
+        try {
+            if (taskQueue == null) {
+                for (java.lang.reflect.Field f : MinecraftServer.class.getDeclaredFields()) {
+                    if (f.getType() == java.util.Queue.class) {
+                        f.setAccessible(true);
+                        taskQueue = f;
+                        break;
+                    }
+                }
+            }
+            if (taskQueue == null) return false;
+            java.util.Queue<java.util.concurrent.FutureTask<?>> q = (java.util.Queue<java.util.concurrent.FutureTask<?>>) taskQueue.get(server);
+            synchronized (q) {
+                q.add(com.google.common.util.concurrent.ListenableFutureTask.create(java.util.concurrent.Executors.callable(task)));
+            }
+            return true;
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
+    @Override
+    public boolean runCommand(String command) {
+        return server.getCommandManager().executeCommand(server, command) > 0;
+    }
 }

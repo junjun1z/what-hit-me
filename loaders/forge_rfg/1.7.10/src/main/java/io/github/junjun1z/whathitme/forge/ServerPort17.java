@@ -50,4 +50,16 @@ final class ServerPort17 implements ServerPort {
     public Registries registries() {
         return Registries17.INSTANCE;
     }
+
+    /** 1.7.10 has no server task queue: {@link ServerEvents} runs these at the end of the next server tick */
+    @Override
+    public boolean schedule(Runnable task) {
+        ServerEvents.TASKS.add(task);
+        return true;
+    }
+
+    @Override
+    public boolean runCommand(String command) {
+        return server.getCommandManager().executeCommand(server, command) > 0;
+    }
 }

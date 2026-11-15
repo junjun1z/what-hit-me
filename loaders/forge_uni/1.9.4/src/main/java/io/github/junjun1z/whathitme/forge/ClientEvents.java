@@ -5,6 +5,7 @@ import java.lang.reflect.Field;
 import org.lwjgl.input.Mouse;
 
 import io.github.junjun1z.whathitme.core.Platform;
+import io.github.junjun1z.whathitme.core.Safe;
 import io.github.junjun1z.whathitme.core.client.ClientCore;
 import io.github.junjun1z.whathitme.core.client.DeathPanel;
 import io.github.junjun1z.whathitme.core.config.WhmConfig;
@@ -32,8 +33,10 @@ public final class ClientEvents {
     @SubscribeEvent
     public void onConfigChanged(ConfigChangedEvent.OnConfigChangedEvent event) {
         if (!Platform.MODID.equals(event.getModID())) return;
-        WhmConfig.client.saveAndReload();
-        WhmConfig.common.saveAndReload();
+        Safe.run("config screen save", () -> {
+            WhmConfig.client.saveAndReload();
+            WhmConfig.common.saveAndReload();
+        });
         // single player: the integrated server uses the same common file; tell the client side about it
         net.minecraft.server.integrated.IntegratedServer srv = Minecraft.getMinecraft().getIntegratedServer();
         if (srv != null) srv.addScheduledTask(ServerCore::broadcastInfo);
@@ -48,6 +51,10 @@ public final class ClientEvents {
     public void onTick(TickEvent.ClientTickEvent event) {
         if (event.phase != TickEvent.Phase.END) return;
         Minecraft mc = Minecraft.getMinecraft();
+        if (ClientPort19.openConfig) {
+            ClientPort19.openConfig = false;
+            Safe.run("config screen", () -> mc.displayGuiScreen(new WhmGuiFactory.Screen(mc.currentScreen)));
+        }
         if (mc.thePlayer == null || mc.theWorld == null) return;
         ClientCore.tick(new FallbackEnv19(mc));
     }

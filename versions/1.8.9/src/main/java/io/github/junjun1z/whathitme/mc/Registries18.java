@@ -94,6 +94,31 @@ public final class Registries18 implements Registries {
         return out;
     }
 
+    /** Every static DamageSource field of DamageSource (vanilla) with its exact properties, plus the other vanilla type names */
+    @Override
+    public List<Entry> damageTypeEntries() {
+        List<Entry> out = new ArrayList<>();
+        java.util.Set<String> seen = new java.util.HashSet<>();
+        for (java.lang.reflect.Field f : net.minecraft.util.DamageSource.class.getDeclaredFields()) {
+            try {
+                if (!java.lang.reflect.Modifier.isStatic(f.getModifiers()) || f.getType() != net.minecraft.util.DamageSource.class) continue;
+                f.setAccessible(true);
+                net.minecraft.util.DamageSource src = (net.minecraft.util.DamageSource) f.get(null);
+                if (src == null) continue;
+                String type = src.getDamageType();
+                String id = Facts.TYPES.typeId(type, src.getClass(), true);
+                if (!seen.add(id)) continue;
+                int c = id.indexOf(':');
+                String mod = c > 0 ? id.substring(0, c) : "minecraft";
+                out.add(new Entry(Entry.DAMAGE, id, type, "", mod, Platform.modName(mod), Facts.sourceFlags(src), 0, 0, 0, false, ""));
+            } catch (Throwable ignored) {
+                // skip odd fields
+            }
+        }
+        for (Entry e : Registries.super.damageTypeEntries()) if (seen.add(e.id)) out.add(e);
+        return out;
+    }
+
     @Override
     public List<String> vanillaDamageIds() {
         List<String> out = new ArrayList<>();

@@ -6,9 +6,11 @@ import java.util.List;
 
 import io.github.junjun1z.whathitme.core.client.ClientPort;
 import io.github.junjun1z.whathitme.core.data.Entry;
+import io.github.junjun1z.whathitme.core.data.Gear;
 import io.github.junjun1z.whathitme.core.data.Registries;
 import io.github.junjun1z.whathitme.core.net.Packets;
 import io.github.junjun1z.whathitme.core.text.Txt;
+import io.github.junjun1z.whathitme.mc.Facts;
 import io.github.junjun1z.whathitme.mc.McText;
 import io.github.junjun1z.whathitme.mc.Registries19;
 import net.minecraft.client.Minecraft;
@@ -96,6 +98,22 @@ final class ClientPort19 implements ClientPort {
     @Override
     public boolean playerDead() {
         return mc().thePlayer == null || mc().thePlayer.getHealth() <= 0f || mc().thePlayer.isDead || mc().currentScreen instanceof GuiGameOver;
+    }
+
+    /** Set by /whm config, opened by {@link ClientEvents} on the next client tick (the chat screen closes after the command) */
+    static volatile boolean openConfig;
+
+    @Override
+    public boolean openConfigScreen() {
+        openConfig = true;
+        return true;
+    }
+
+    @Override
+    public Gear localGear() {
+        net.minecraft.entity.player.EntityPlayer p = mc().thePlayer;
+        if (p == null) return null;
+        return new Gear(Facts.dimension(p.worldObj), p.posX, p.posY, p.posZ, p.getMaxHealth(), Facts.armor(p), Registries19.effects(p));
     }
 
     @Override

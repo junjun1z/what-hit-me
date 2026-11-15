@@ -30,6 +30,8 @@ import net.minecraft.world.EnumDifficulty;
 import net.minecraft.world.WorldSettings;
 import net.minecraft.world.WorldType;
 import net.minecraftforge.client.ClientCommandHandler;
+import net.minecraftforge.fml.client.config.GuiConfig;
+import net.minecraftforge.fml.client.config.IConfigElement;
 import net.minecraftforge.fml.common.FMLCommonHandler;
 
 /** {@link DevPort} for Minecraft 1.8.9 (Forge). */
@@ -179,6 +181,44 @@ final class DevPort18 implements DevPort {
     }
 
     @Override
+    public boolean v12() {
+        return true;
+    }
+
+    @Override
+    public boolean configScreenOpen() {
+        return mc().currentScreen instanceof GuiConfig && "whathitme".equals(((GuiConfig) mc().currentScreen).modID);
+    }
+
+    @Override
+    public void closeScreen() {
+        mc().displayGuiScreen(null);
+    }
+
+    @Override
+    public boolean configGuiLocked(String key) {
+        return locked(io.github.junjun1z.whathitme.forge.WhmGuiFactory.elements(), key);
+    }
+
+    @SuppressWarnings({"rawtypes", "unchecked"})
+    private static boolean locked(List list, String key) {
+        for (Object o : list) {
+            IConfigElement e = (IConfigElement) o;
+            if (e.isProperty()) {
+                if (key.equals(e.getName()) && e.getConfigEntryClass() != null && e.getConfigEntryClass().getSimpleName().startsWith("Locked")) {
+                    // build the real screen entry: it must exist and be disabled
+                    GuiConfig g = new GuiConfig(null, java.util.Collections.singletonList(e), "whathitme", false, false, "locked test");
+                    g.setWorldAndResolution(mc(), 427, 240);
+                    return !g.entryList.listEntries.isEmpty() && !g.entryList.listEntries.get(0).enabled();
+                }
+            } else if (e.getChildElements() != null && locked(e.getChildElements(), key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    @Override
     public void server(Act act, float amount) {
         server().addScheduledTask(() -> run(server().getConfigurationManager().playerEntityList.get(0), act, amount));
     }
@@ -267,6 +307,50 @@ final class DevPort18 implements DevPort {
                 break;
             case CLEAR_EFFECTS:
                 p.clearActivePotions();
+                break;
+            case THORNS:
+                p.attackEntityFrom(DamageSource.causeThornsDamage(zombie), amount);
+                break;
+            case REFLECT:
+                p.attackTargetEntityWithCurrentItem(zombie);
+                p.attackEntityFrom(DamageSource.causeMobDamage(zombie), amount);
+                break;
+            case BRITTLE_HELMET: {
+                ItemStack h = new ItemStack(Items.diamond_helmet);
+                h.setItemDamage(h.getMaxDamage());
+                p.setCurrentItemOrArmor(4, h);
+                p.setHealth(p.getMaxHealth());
+                break;
+            }
+            case ENV_SETUP:
+                p.worldObj.setBlockState(new net.minecraft.util.BlockPos(p), net.minecraft.init.Blocks.web.getDefaultState());
+                p.setCurrentItemOrArmor(0, new ItemStack(Items.stick));
+                break;
+            case CACTUS:
+                p.attackEntityFrom(DamageSource.cactus, amount);
+                break;
+            case ENV_CLEAR:
+                p.worldObj.setBlockToAir(new net.minecraft.util.BlockPos(p));
+                p.setCurrentItemOrArmor(0, null);
+                p.setHealth(p.getMaxHealth());
+                break;
+            case GEAR: {
+                ItemStack chest = new ItemStack(Items.iron_chestplate);
+                chest.addEnchantment(net.minecraft.enchantment.Enchantment.protection, 2);
+                p.setCurrentItemOrArmor(3, chest);
+                p.setCurrentItemOrArmor(1, new ItemStack(Items.iron_boots));
+                p.addPotionEffect(new PotionEffect(net.minecraft.potion.Potion.moveSlowdown.id, 600, 0));
+                p.setHealth(p.getMaxHealth());
+                break;
+            }
+            case VITAL_DEATH:
+                p.setHealth(10f);
+                p.onDeath(DamageSource.generic);
+                p.setHealth(0f);
+                break;
+            case SETHEALTH_DEATH:
+                p.setHealth(0f);
+                p.onDeath(DamageSource.magic);
                 break;
             default:
                 break;

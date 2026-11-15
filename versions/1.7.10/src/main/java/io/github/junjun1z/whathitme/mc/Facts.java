@@ -5,7 +5,9 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
+import io.github.junjun1z.whathitme.core.data.Context;
 import io.github.junjun1z.whathitme.core.data.DamageRecord;
+import io.github.junjun1z.whathitme.core.data.Gear;
 import io.github.junjun1z.whathitme.core.data.EntityFacts;
 import io.github.junjun1z.whathitme.core.data.HitFacts;
 import io.github.junjun1z.whathitme.core.data.TypeModResolver;
@@ -199,8 +201,90 @@ public final class Facts {
             f.weaponName = w.getDisplayName();
             f.weaponKey = plainItemKey ? (w.hasDisplayName() ? "" : w.getUnlocalizedName() + ".name") : itemKey(w);
             f.weaponEnchants = enchantments(w);
+            f.weaponId = itemId(w);
         }
         return f;
+    }
+
+    public static String itemId(ItemStack s) {
+        try {
+            Object id = s == null || s.getItem() == null ? null : net.minecraft.item.Item.itemRegistry.getNameForObject(s.getItem());
+            return id == null ? "" : id.toString();
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** An item stack as plain strings (null for an empty stack) */
+    public static Gear.Item item(ItemStack s) {
+        if (s == null || s.getItem() == null) return null;
+        String id = itemId(s);
+        int c = id.indexOf(':');
+        return new Gear.Item(id, itemKey(s), s.getDisplayName(), c > 0 ? id.substring(0, c) : "minecraft", enchantments(s), false);
+    }
+
+    /** Armor: head, chest, legs, feet */
+    public static Gear.Item[] armor(EntityPlayer p) {
+        Gear.Item[] out = new Gear.Item[4];
+        for (int i = 0; i < 4; i++) out[i] = item(p.getCurrentArmor(3 - i));
+        return out;
+    }
+
+    /** 0 head ... 3 feet, -1 = not armor */
+    public static int armorSlot(ItemStack s) {
+        if (s == null || !(s.getItem() instanceof net.minecraft.item.ItemArmor)) return -1;
+        int t = ((net.minecraft.item.ItemArmor) s.getItem()).armorType;
+        return t >= 0 && t < 4 ? t : -1;
+    }
+
+    private static void block(Context c, String slot, net.minecraft.world.World w, int x, int y, int z) {
+        net.minecraft.block.Block b = w.getBlock(x, y, z);
+        if (b == null || b.isAir(w, x, y, z)) return;
+        Object rid = net.minecraft.block.Block.blockRegistry.getNameForObject(b);
+        String id = rid == null ? "" : rid.toString();
+        String name;
+        String key = "";
+        try {
+            ItemStack pick = new ItemStack(b, 1, b.damageDropped(w.getBlockMetadata(x, y, z)));
+            name = pick.getItem() == null ? b.getLocalizedName() : pick.getDisplayName();
+            if (pick.getItem() != null) key = itemKey(pick);
+        } catch (Throwable t) {
+            name = b.getLocalizedName();
+        }
+        if (name == null || name.isEmpty() || name.startsWith("tile.")) name = id.isEmpty() ? b.getClass().getSimpleName() : id;
+        int i = id.indexOf(':');
+        c.add(slot, key, name, i > 0 ? id.substring(0, i) : id.isEmpty() ? "" : "minecraft");
+    }
+
+    /** Block / fluid at the feet (or the block stood on) and at the body centre, and the held item */
+    public static String environment(EntityPlayer p) {
+        Context c = new Context();
+        net.minecraft.world.World w = p.worldObj;
+        int x = net.minecraft.util.MathHelper.floor_double(p.posX);
+        int z = net.minecraft.util.MathHelper.floor_double(p.posZ);
+        // the player's posY is the feet on the server (on the client it is the eyes: only the server calls this)
+        int y = net.minecraft.util.MathHelper.floor_double(p.boundingBox.minY);
+        if (w.isAirBlock(x, y, z)) block(c, Context.FEET, w, x, y - 1, z);
+        else block(c, Context.FEET, w, x, y, z);
+        int by = net.minecraft.util.MathHelper.floor_double(p.boundingBox.minY + p.height / 2.0);
+        if (by != y) block(c, Context.BODY, w, x, by, z);
+        Gear.Item main = item(p.getHeldItem());
+        if (main != null) c.add(Context.MAIN, main.key, main.name, main.modId);
+        return c.toString();
+    }
+
+    /** "minecraft:overworld", "minecraft:the_nether", ... (mod dimensions: their provider name) */
+    public static String dimension(net.minecraft.world.World w) {
+        try {
+            int id = w.provider.dimensionId;
+            if (id == 0) return "minecraft:overworld";
+            if (id == -1) return "minecraft:the_nether";
+            if (id == 1) return "minecraft:the_end";
+            String n = w.provider.getDimensionName();
+            return n.indexOf(':') >= 0 ? n : "dim:" + n.toLowerCase(java.util.Locale.ROOT).replace(' ', '_');
+        } catch (Throwable t) {
+            return "";
+        }
     }
 
     /** Facts of a hit on a player */
