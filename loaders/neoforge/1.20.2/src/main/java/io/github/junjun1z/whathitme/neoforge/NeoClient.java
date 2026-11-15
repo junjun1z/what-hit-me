@@ -3,11 +3,14 @@ package io.github.junjun1z.whathitme.neoforge;
 import java.io.File;
 
 import io.github.junjun1z.whathitme.core.Platform;
+import io.github.junjun1z.whathitme.core.Safe;
 import io.github.junjun1z.whathitme.core.client.ClientCore;
+import io.github.junjun1z.whathitme.core.data.CatalogCache;
 import io.github.junjun1z.whathitme.core.client.DeathPanel;
 import io.github.junjun1z.whathitme.core.net.Packets;
 import io.github.junjun1z.whathitme.mc.Brig;
 import io.github.junjun1z.whathitme.mc.ClientPortMc;
+import io.github.junjun1z.whathitme.mc.ConfigScreen1202;
 import io.github.junjun1z.whathitme.mc.FallbackEnv1202;
 import io.github.junjun1z.whathitme.mc.Gfx1202;
 import io.github.junjun1z.whathitme.mc.McText;
@@ -37,13 +40,23 @@ public final class NeoClient {
         }
     };
 
+    /** The catalog cache was loaded once (connected to a server without the integrated one) */
+    private static boolean catalogTried;
+
     private NeoClient() {}
 
     static void init() {
         Platform.clientLang = McText.LANG;
         PORT.install();
+        registerConfigScreen();
         NeoForge.EVENT_BUS.register(new NeoClient());
         startDevTest();
+    }
+
+    /** Config button of the mods list (locked keys disabled) */
+    private static void registerConfigScreen() {
+        net.neoforged.fml.ModLoadingContext.get().registerExtensionPoint(net.neoforged.neoforge.client.ConfigScreenHandler.ConfigScreenFactory.class,
+            () -> new net.neoforged.neoforge.client.ConfigScreenHandler.ConfigScreenFactory((mc, parent) -> new ConfigScreen1202(parent)));
     }
 
     /** Server -> client packet (already on the client thread) */
@@ -67,6 +80,11 @@ public final class NeoClient {
         Minecraft mc = Minecraft.getInstance();
         if (mc.player == null || mc.level == null) return;
         ClientCore.tick(new FallbackEnv1202(mc));
+        ClientPortMc.tickConfigScreen();
+        if (!catalogTried) {
+            catalogTried = true;
+            if (!CatalogCache.loaded()) Safe.run("catalog cache", () -> CatalogCache.init(PORT.registries()));
+        }
     }
 
     @SubscribeEvent

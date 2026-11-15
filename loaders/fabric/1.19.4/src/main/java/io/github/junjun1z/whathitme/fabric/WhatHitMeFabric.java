@@ -8,6 +8,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import io.github.junjun1z.whathitme.core.Platform;
+import io.github.junjun1z.whathitme.core.Safe;
+import io.github.junjun1z.whathitme.core.data.CatalogCache;
 import io.github.junjun1z.whathitme.core.config.CfgFile;
 import io.github.junjun1z.whathitme.core.config.WhmConfig;
 import io.github.junjun1z.whathitme.core.net.Packets;
@@ -22,12 +24,13 @@ import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
 import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
-import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.player.AttackEntityCallback;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.loader.api.ModContainer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.InteractionResult;
 import net.minecraft.tags.DamageTypeTags;
 import net.minecraft.world.damagesource.DamageSource;
 
@@ -70,6 +73,11 @@ public final class WhatHitMeFabric implements ModInitializer {
                 for (ModContainer c : FabricLoader.getInstance().getAllMods()) out.add(c.getMetadata().getId());
                 return out;
             }
+
+            @Override
+            public String version(String modId) {
+                return FabricLoader.getInstance().getModContainer(modId).map(c -> c.getMetadata().getVersion().getFriendlyString()).orElse("");
+            }
         };
         Platform.serverLang = McText.LANG;
         Platform.configDir = FabricLoader.getInstance().getConfigDir().toFile();
@@ -82,6 +90,8 @@ public final class WhatHitMeFabric implements ModInitializer {
         ServerLifecycleEvents.SERVER_STARTED.register(server -> {
             port = new ServerPortMc(server, FabricPlayer::new);
             ServerCore.serverStarted(port);
+            Safe.run("catalog cache", () -> CatalogCache.init(port.registries()));
+            LOG.info("What Hit Me? catalog cache: " + CatalogCache.status + " in " + CatalogCache.initMillis + " ms, damage id scan: " + CatalogCache.scanStatus);
         });
         ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
             ServerCore.serverStopped();
@@ -97,7 +107,7 @@ public final class WhatHitMeFabric implements ModInitializer {
             if (amount > 0) {
                 // a hit during the invulnerability frames only deals the difference: not a fresh hit
                 boolean fresh = p.invulnerableTime <= 10 || source.is(DamageTypeTags.BYPASSES_COOLDOWN);
-                ServerCore.onHurt(p.getUUID(), p.level.getGameTime(), source, amount, p.getAbsorptionAmount(), p.getHealth(), p.isBlocking(), fresh, MAX_INVUL);
+                ServerCore.onHurt(new FabricPlayer(p), p.level.getGameTime(), source, amount, p.getAbsorptionAmount(), p.getHealth(), p.isBlocking(), fresh, MAX_INVUL);
             }
             return true;
         });
@@ -130,7 +140,10 @@ public final class WhatHitMeFabric implements ModInitializer {
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
             if (!alive) ServerCore.onRespawn(new FabricPlayer(newPlayer));
         });
-        ServerTickEvents.END_SERVER_TICK.register(server -> ServerCore.onTickEnd());
+        AttackEntityCallback.EVENT.register((player, world, hand, entity, hit) -> {
+            if (player instanceof ServerPlayer && !world.isClientSide() && entity != null) ServerCore.onPlayerAttack(player.getUUID(), entity.getUUID().toString());
+            return InteractionResult.PASS;
+        });
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> {
             DEATH_MSG.remove(handler.getPlayer().getUUID());
             ServerCore.onLogout(handler.getPlayer().getUUID());

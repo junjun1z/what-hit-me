@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import io.github.junjun1z.whathitme.core.Platform;
 import io.github.junjun1z.whathitme.core.config.CfgFile;
 import io.github.junjun1z.whathitme.core.config.WhmConfig;
+import io.github.junjun1z.whathitme.mc.Facts;
 import io.github.junjun1z.whathitme.mc.McText;
 import io.github.junjun1z.whathitme.mc.Registries1193;
 import net.minecraft.world.item.ItemStack;
@@ -57,7 +58,14 @@ public class WhatHitMeForge {
                 for (IModInfo i : ModList.get().getMods()) out.add(i.getModId());
                 return out;
             }
+
+            @Override
+            public String version(String modId) {
+                return ModList.get().getModContainerById(modId).map(c -> c.getModInfo().getVersion().toString()).orElse("");
+            }
         };
+        Facts.modOfSource = WhatHitMeForge::modOfSource;
+        Registries1193.modFiles = WhatHitMeForge::modFiles;
         Platform.serverLang = McText.LANG;
         Platform.configDir = FMLPaths.CONFIGDIR.get().toFile();
         // Forge's curative items (milk does not cure every modded effect)
@@ -80,5 +88,39 @@ public class WhatHitMeForge {
         ForgeNet.init();
         MinecraftForge.EVENT_BUS.register(new ForgeServerEvents());
         if (client) ForgeClient.init();
+    }
+
+    private static volatile java.util.Map<java.io.File, String> sources;
+
+    /** Mod jars / directories with their mod id (without minecraft, forge) */
+    private static java.util.Map<java.io.File, String> sources() {
+        java.util.Map<java.io.File, String> map = sources;
+        if (map == null) {
+            map = new java.util.HashMap<>();
+            for (net.minecraftforge.forgespi.language.IModFileInfo fi : ModList.get().getModFiles()) {
+                try {
+                    if (fi.getMods().isEmpty()) continue;
+                    String id = fi.getMods().get(0).getModId();
+                    if ("minecraft".equals(id) || "forge".equals(id)) continue;
+                    map.putIfAbsent(fi.getFile().getFilePath().toFile().getCanonicalFile(), id);
+                } catch (Throwable t) {
+                    // unknown
+                }
+            }
+            sources = map;
+        }
+        return map;
+    }
+
+    /** Mod id of a jar / directory (for damage types of mods) */
+    static String modOfSource(java.io.File f) {
+        return sources().get(f);
+    }
+
+    /** Mod files for the damage id scanner (without What Hit Me? itself) */
+    static java.util.Map<java.io.File, String> modFiles() {
+        java.util.Map<java.io.File, String> out = new java.util.LinkedHashMap<>(sources());
+        out.values().removeIf(Platform.MODID::equals);
+        return out;
     }
 }

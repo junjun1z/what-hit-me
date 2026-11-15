@@ -3,7 +3,9 @@ package io.github.junjun1z.whathitme.fabric;
 import java.io.File;
 
 import io.github.junjun1z.whathitme.core.Platform;
+import io.github.junjun1z.whathitme.core.Safe;
 import io.github.junjun1z.whathitme.core.client.ClientCore;
+import io.github.junjun1z.whathitme.core.data.CatalogCache;
 import io.github.junjun1z.whathitme.core.client.DeathPanel;
 import io.github.junjun1z.whathitme.core.net.Packets;
 import io.github.junjun1z.whathitme.mc.Brig;
@@ -12,6 +14,7 @@ import io.github.junjun1z.whathitme.mc.FallbackEnv1206;
 import io.github.junjun1z.whathitme.mc.Gfx1206;
 import io.github.junjun1z.whathitme.mc.McText;
 import net.fabricmc.api.ClientModInitializer;
+import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.client.command.v2.ClientCommandRegistrationCallback;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -40,11 +43,20 @@ public final class WhatHitMeFabricClient implements ClientModInitializer {
 
     /** The death screen the panel was opened for (screens are re-initialized on resize) */
     private static Screen deathScreen;
+    /** The catalog cache was loaded once (connected to a server without the integrated one) */
+    private static boolean catalogTried;
 
     @Override
     public void onInitializeClient() {
         Platform.clientLang = McText.LANG;
         PORT.install();
+        if (FabricLoader.getInstance().isModLoaded("modmenu")) {
+            try {
+                ClientPortMc.configScreen = WhmModMenu::open;
+            } catch (Throwable t) {
+                WhatHitMeFabric.LOG.warn("Mod Menu integration not available: " + t);
+            }
+        }
         java.util.function.Supplier<HolderLookup.Provider> server = McText.registries;
         McText.registries = () -> {
             Minecraft mc = Minecraft.getInstance();
@@ -67,6 +79,11 @@ public final class WhatHitMeFabricClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register(mc -> {
             if (mc.player == null || mc.level == null) return;
             ClientCore.tick(new FallbackEnv1206(mc));
+            ClientPortMc.tickConfigScreen();
+            if (!catalogTried) {
+                catalogTried = true;
+                if (!CatalogCache.loaded()) Safe.run("catalog cache", () -> CatalogCache.init(PORT.registries()));
+            }
         });
         ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> {
             if (!(screen instanceof DeathScreen)) return;
