@@ -50,7 +50,7 @@ public class DevPort120 implements DevPort {
 
     @Override
     public String mcVersion() {
-        return "1.20.1";
+        return net.minecraft.SharedConstants.getCurrentVersion().getName();
     }
 
     @Override

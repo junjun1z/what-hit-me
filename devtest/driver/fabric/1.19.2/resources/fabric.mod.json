@@ -1,0 +1,12 @@
+{
+  "schemaVersion": 1,
+  "id": "whmdriver",
+  "version": "1",
+  "name": "WHM test driver (development only)",
+  "description": "Drives a client WITHOUT What Hit Me? in the multiplayer self-test.",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["io.github.junjun1z.whmdriver.entry.WhmDriverFabric"]
+  },
+  "depends": { "fabricloader": ">=0.15", "fabric": "*", "minecraft": "*" }
+}

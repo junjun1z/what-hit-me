@@ -189,3 +189,32 @@ Pitfalls seen so far:
 - Client commands: Forge and Fabric run client commands from `ClientPacketListener.sendCommand`; `/whm server ...`
   therefore asks the server through the `COMMAND` request packet (1.13+) instead of sending a chat command.
 - The system clipboard can be busy for a moment on Windows; the self-test retries.
+
+### Notes from the 1.18.2 - 1.20.6 ports
+
+- Version adapters: `versions/1.18.2` (`TextComponent` / `TranslatableComponent`, `sendMessage(c, NIL_UUID)`),
+  `1.19.2`, `1.19.3` (msgId based, `TypeModResolver` through `Facts.modOfSource` set by the loader), `1.19.4`
+  (first DamageType version, PoseStack drawing: `Gfx<v>(poseStack, screen)` up to 1.19.4), `1.20.2` (shared by
+  1.20.2 - 1.20.4), `1.20.6` (item components, enchantments still objects).
+- Fabric API before 1.21 has no `AFTER_DAMAGE`: a tiny mixin at the end of `Player#actuallyHurt` reports the health
+  left. Fabric API for 1.18.2 and for 1.19 / 1.19.1 has no living entity events at all: `loaders/fabric/1.18.2` and
+  `1.19.2` use mixins at the start / end of `Player#actuallyHurt` and the start of `ServerPlayer#die` instead (one jar
+  for 1.19 - 1.19.2). Patch versions are tested with the newest fabric-api of that exact version.
+- Forge 1.20.2+ has no `FakePlayer` class: players that are not in the player list are ignored instead.
+- Forge 1.20.2+ networking: `ChannelBuilder ... .optional().simpleChannel()`; NeoForge 1.20.4 `RegisterPayloadHandlerEvent`
+  + `registrar(...).optional().play(...)`, 1.20.6 `RegisterPayloadHandlersEvent` + `playBidirectional`.
+- NeoForge 1.20.2 - 1.20.4 use `META-INF/mods.toml`, 1.20.5+ `META-INF/neoforge.mods.toml`.
+- The gradle-cache `fabric-api-0.77.0+1.18.2.jar` is an empty stub: take the real jar from Modrinth for test instances.
+- Self-test world creation: 1.18.2 `Minecraft#createLevel` + the flat `WorldPreset` (found by reflection),
+  1.19.2 `createFreshLevel(..., RegistryAccess, WorldGenSettings)`, 1.20.2 - 1.20.4 `WorldOpenFlows` called by
+  signature (the parameters differ between 1.20.2 and 1.20.4).
+- Forge 1.18.2 merges the server's command tree over the client commands (`ClientCommandHandler.mergeServerCommands`):
+  with the mod on both sides the client `/whm` would be sent to the server. `loaders/forge/1.18.2` therefore also runs
+  the client command from `ClientChatEvent` (the Brigadier registration stays for tab completion). Forge 1.19+ is fine.
+- The 1.18.2 jars are 1.18.2 only: Forge 38 (1.18) has no `RegisterClientCommandsEvent`, Forge 39 (1.18.1) other client
+  event names, and Minecraft 1.18.2 changed the registry API (`RegistryAccess.Frozen`), so the Fabric jar crashes on
+  1.18 / 1.18.1 (`NoSuchMethodError` in `ServerPortMc`). Supporting them would need a `versions/1.18` adapter.
+- Fabric API before 0.59 (1.18 - 1.19.1) has the mod id `fabric`, newer ones provide it: the 1.18.2 and 1.19.2 Fabric
+  jars depend on `"fabric": "*"` (publish.json still names the project `fabric-api`).
+- Dedicated server 1.18.2: `level-type=flat` (not `minecraft\:flat`, which silently gives a normal world and makes the
+  mp self-test miss the mob hits).
