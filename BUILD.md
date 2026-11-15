@@ -218,3 +218,18 @@ Pitfalls seen so far:
   jars depend on `"fabric": "*"` (publish.json still names the project `fabric-api`).
 - Dedicated server 1.18.2: `level-type=flat` (not `minecraft\:flat`, which silently gives a normal world and makes the
   mp self-test miss the mob hits).
+
+## Notes for 1.14 - 1.17.1 (no DamageType registry, Mojang names)
+
+- Fabric 1.16.2 - 1.17.1 (`loaders/fabric/1.16.5`, `1.17.1`) use Fabric API networking v1, command v1, entity events and the screen API.
+  Fabric 1.14 - 1.16.1 (`loaders/fabric/1.14.4`, `1.15.2`, `1.16.1`) use **only the v0 modules** (`ServerSidePacketRegistry`,
+  `ServerStartCallback`, `ClientTickCallback`, `CommandRegistry`), because 1.14 - 1.14.3, 1.15 - 1.15.1 and 1.16 only have old Fabric API
+  builds (0.2.7 - 0.13.1); respawn, logout, the death screen, the mouse and client `/whm` are small mixins there.
+- Networking v0 forgets a player's registered channels on respawn: the loader also remembers who sent a packet (`FabricNet.MOD_CLIENTS`).
+- Forge 1.14.4 - 1.16.5 (`loaders/forge_arch/<v>`, built in `legacy/`): old Forge builds of a range lack newer helpers
+  (`NetworkRegistry.acceptMissingOr`, `SimpleChannel#isRemotePresent`, `RegisterCommandsEvent`, `RegisterClientCommandsEvent`). The channel
+  accepts everything (`v -> true`), the server remembers which players sent a packet, and client `/whm` is taken from `ClientChatEvent`.
+  Test the oldest Forge build of a range too.
+- Prism's `--server` crashes 1.14 - 1.17 clients (they join before the models are loaded): the self-test and the driver join the server
+  written in `.minecraft/whm_connect.txt` from the title screen instead.
+- Helper scripts for instances, launches and test servers: `devtest/scripts/` (paths at the top of each script).

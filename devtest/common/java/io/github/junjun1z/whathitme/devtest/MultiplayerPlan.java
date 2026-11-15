@@ -134,7 +134,7 @@ final class MultiplayerPlan {
         // death
         t.act(() -> t.autoRespawn = false);
         t.clearChat();
-        say("/kill");
+        say(vc.killSelf());
         t.waitFor("death screen", p::deathScreen, 100);
         t.waitFor("death recap available", () -> ClientCore.currentDeath != null && ClientCore.currentDeath.key() != null, 100);
         if (serverMod) {

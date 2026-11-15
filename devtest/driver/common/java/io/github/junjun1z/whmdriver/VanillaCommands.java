@@ -137,6 +137,11 @@ public final class VanillaCommands {
     /** Peaceful removes every monster (the only way on 1.7.10, which has no @e) */
     private static final String PEACEFUL = "/difficulty peaceful\n/difficulty normal";
 
+    /** Kills the own player ("/kill" needs a target on 1.13 - 1.15) */
+    public String killSelf() {
+        return !legacy() && !atLeast(1, 16, 0) ? "/kill @s" : "/kill";
+    }
+
     public String killNonPlayers() {
         if (noEntitySelector()) return PEACEFUL;
         return "/kill @e[type=!" + mob("player") + "]";

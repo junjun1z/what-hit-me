@@ -1,0 +1,164 @@
+package io.github.junjun1z.whathitme.fabric;
+
+import java.io.File;
+import java.nio.file.Path;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+
+import io.github.junjun1z.whathitme.core.Platform;
+import io.github.junjun1z.whathitme.core.config.CfgFile;
+import io.github.junjun1z.whathitme.core.config.WhmConfig;
+import io.github.junjun1z.whathitme.core.net.Packets;
+import io.github.junjun1z.whathitme.core.server.ServerCore;
+import io.github.junjun1z.whathitme.mc.Brig;
+import io.github.junjun1z.whathitme.mc.Facts;
+import io.github.junjun1z.whathitme.mc.McText;
+import io.github.junjun1z.whathitme.mc.ServerPortMc;
+import net.fabricmc.api.EnvType;
+import net.fabricmc.api.ModInitializer;
+import net.fabricmc.fabric.api.registry.CommandRegistry;
+import net.fabricmc.fabric.api.event.server.ServerStartCallback;
+import net.fabricmc.fabric.api.event.server.ServerStopCallback;
+import net.fabricmc.fabric.api.event.server.ServerTickCallback;
+import net.fabricmc.fabric.api.network.ServerSidePacketRegistry;
+import net.fabricmc.loader.api.FabricLoader;
+import net.fabricmc.loader.api.ModContainer;
+import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.damagesource.DamageSource;
+import net.minecraft.world.entity.player.Player;
+
+/**
+ * What Hit Me? on Fabric 1.16.1. Optional on both sides (works on the client only, the server only or both). This Fabric
+ * API has no living-entity damage, respawn or disconnect events: tiny mixins on Player#actuallyHurt (before armor / after
+ * the damage), ServerPlayer#die and PlayerList#respawn / #remove forward to {@link #onHurt}, {@link #afterHurt},
+ * {@link #onDie}, {@link #onRespawn} and {@link #onLogout}; everything else uses Fabric API.
+ */
+public final class WhatHitMeFabric implements ModInitializer {
+
+    static final Logger LOG = LogManager.getLogger("WhatHitMe");
+    /** Vanilla invulnerability ticks of a fresh hit */
+    private static final int MAX_INVUL = 20;
+    private static ServerPortMc port;
+
+    @Override
+    public void onInitialize() {
+        Platform.log = new Platform.Log() {
+            @Override
+            public void info(String msg) {
+                LOG.info(msg);
+            }
+
+            @Override
+            public void warn(String msg, Throwable t) {
+                LOG.warn(msg, t);
+            }
+        };
+        Platform.mods = new Platform.Mods() {
+            @Override
+            public String modName(String modId) {
+                return FabricLoader.getInstance().getModContainer(modId).map(c -> c.getMetadata().getName()).orElse(modId);
+            }
+
+            @Override
+            public Collection<String> modIds() {
+                List<String> out = new ArrayList<>();
+                for (ModContainer c : FabricLoader.getInstance().getAllMods()) out.add(c.getMetadata().getId());
+                return out;
+            }
+        };
+        Facts.modOfSource = WhatHitMeFabric::modOfSource;
+        Platform.serverLang = McText.LANG;
+        Platform.configDir = FabricLoader.getInstance().getConfigDir().toFile();
+        WhmConfig.init(Platform.configDir, FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT, CfgFile::new);
+        ServerSidePacketRegistry.INSTANCE.register(FabricNet.ID, (ctx, buf) -> {
+            Packets.Packet p = FabricNet.read(buf);
+            if (p == null || !Packets.serverbound(p.type()) || !(ctx.getPlayer() instanceof ServerPlayer)) return;
+            ServerPlayer player = (ServerPlayer) ctx.getPlayer();
+            FabricNet.MOD_CLIENTS.add(player.getUUID());
+            ctx.getTaskQueue().execute(() -> ServerCore.onPacket(new FabricPlayer(player), p));
+        });
+
+        ServerStartCallback.EVENT.register(server -> {
+            port = new ServerPortMc(server, FabricPlayer::new);
+            ServerCore.serverStarted(port);
+        });
+        ServerStopCallback.EVENT.register(server -> {
+            ServerCore.serverStopped();
+            port = null;
+        });
+        CommandRegistry.INSTANCE.register(false, dispatcher -> Brig.register(dispatcher, (s, args) -> {
+            if (port != null) ServerCore.execute(port.source(s), args);
+        }, (s, args) -> port == null ? java.util.Collections.<String>emptyList() : ServerCore.complete(port.source(s), args)));
+        ServerTickCallback.EVENT.register(server -> ServerCore.onTickEnd());
+    }
+
+    private static ServerPlayer tracked(Player e) {
+        return e instanceof ServerPlayer && !e.level.isClientSide ? (ServerPlayer) e : null;
+    }
+
+    /** Player#actuallyHurt, first line: damage before armor (a fresh hit has just set invulnerableTime to its maximum) */
+    public static void onHurt(Player e, DamageSource source, float amount) {
+        ServerPlayer p = tracked(e);
+        if (p == null || amount <= 0) return;
+        ServerCore.onHurt(p.getUUID(), p.level.getGameTime(), source, amount, p.getAbsorptionAmount(), p.getHealth(), p.isBlocking(),
+            p.invulnerableTime >= MAX_INVUL, MAX_INVUL);
+    }
+
+    /** Player#actuallyHurt, last line: the damage after armor / absorption is applied (lethal hits too) */
+    public static void afterHurt(Player e, DamageSource source) {
+        ServerPlayer p = tracked(e);
+        if (p == null) return;
+        ServerCore.onDamageAfter(new FabricPlayer(p), p.level.getGameTime(), source, p.getHealth(), p.getAbsorptionAmount(), () -> Facts.hit(p, source));
+    }
+
+    /** ServerPlayer#die, first line (the combat tracker still has the death message) */
+    public static void onDie(ServerPlayer p, DamageSource source) {
+        if (p.level.isClientSide) return;
+        String msg = "";
+        try {
+            msg = McText.toJson(p.getCombatTracker().getDeathMessage());
+        } catch (Throwable ignored) {
+            // no message
+        }
+        ServerCore.onDeath(new FabricPlayer(p), () -> Facts.hit(p, source), msg);
+    }
+
+    /** PlayerList#respawn, on return (alive = coming back from the End) */
+    public static void onRespawn(ServerPlayer newPlayer, boolean alive) {
+        if (!alive && newPlayer != null) ServerCore.onRespawn(new FabricPlayer(newPlayer));
+    }
+
+    /** PlayerList#remove, first line */
+    public static void onLogout(ServerPlayer p) {
+        if (p == null) return;
+        FabricNet.MOD_CLIENTS.remove(p.getUUID());
+        ServerCore.onLogout(p.getUUID());
+    }
+
+    private static volatile Map<File, String> sources;
+
+    /** Mod id of a jar / directory (for damage types of mods) */
+    static String modOfSource(File f) {
+        Map<File, String> map = sources;
+        if (map == null) {
+            map = new HashMap<>();
+            for (ModContainer c : FabricLoader.getInstance().getAllMods()) {
+                String id = c.getMetadata().getId();
+                if ("minecraft".equals(id) || "java".equals(id) || "fabricloader".equals(id) || "fabric".equals(id) || id.startsWith("fabric-")) continue;
+                try {
+                    for (Path p : c.getOrigin().getPaths()) map.putIfAbsent(p.toFile().getCanonicalFile(), id);
+                } catch (Throwable t) {
+                    // old loader / nested jar: unknown
+                }
+            }
+            sources = map;
+        }
+        return map.get(f);
+    }
+}
