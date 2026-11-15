@@ -55,7 +55,9 @@ final class DevPort17 implements DevPort {
 
     @Override
     public boolean atMainMenu() {
-        return mc().currentScreen instanceof GuiMainMenu;
+        // modpacks (GTNH) replace the title screen with Custom Main Menu's own screen
+        return mc().currentScreen instanceof GuiMainMenu
+            || (mc().currentScreen != null && mc().theWorld == null && mc().currentScreen.getClass().getName().contains("custommainmenu"));
     }
 
     @Override
@@ -186,6 +188,17 @@ final class DevPort17 implements DevPort {
     }
 
     private void run(EntityPlayerMP p, Act act, float amount) {
+        float health = p.getHealth();
+        float absorption = p.getAbsorptionAmount();
+        int resistant = p.hurtResistantTime;
+        run0(p, act, amount);
+        // one line per server action: shows what a modpack did to the test hits
+        System.out.println("WHM-SELFTEST [SRV] " + act + " " + amount + ": health " + health + " -> " + p.getHealth() + ", absorption " + absorption + " -> "
+            + p.getAbsorptionAmount() + ", hurtResistantTime " + resistant + " -> " + p.hurtResistantTime + ", armor " + p.getTotalArmorValue()
+            + ", invulnerable " + p.isEntityInvulnerable() + ", creative " + p.capabilities.disableDamage);
+    }
+
+    private void run0(EntityPlayerMP p, Act act, float amount) {
         switch (act) {
             case SETUP:
                 p.mcServer.func_147139_a(EnumDifficulty.NORMAL);

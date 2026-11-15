@@ -10,6 +10,8 @@
         "forge"
       ],
       "game_versions": [
+        "1.12",
+        "1.12.1",
         "1.12.2"
       ],
       "java": 8,
@@ -53,6 +55,99 @@
         "required": [
           "fabric-api"
         ],
+        "optional": []
+      }
+    },
+    {
+      "path": "legacy/targets/1.7.10-forge/build/libs/whathitme-forge-1.7.10-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.7.10"
+      ],
+      "java": 8,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "oldforge/targets/1.8.9-forge/build/libs/whathitme-forge-1.8.9-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.8.9"
+      ],
+      "java": 8,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "oldforge/targets/1.9.4-forge/build/libs/whathitme-forge-1.9.4-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.9",
+        "1.9.4"
+      ],
+      "java": 8,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "oldforge/targets/1.10.2-forge/build/libs/whathitme-forge-1.10.2-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.10",
+        "1.10.2"
+      ],
+      "java": 8,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "oldforge/targets/1.11.2-forge/build/libs/whathitme-forge-1.11.2-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.11",
+        "1.11.2"
+      ],
+      "java": 8,
+      "dependencies": {
+        "required": [],
         "optional": []
       }
     }
