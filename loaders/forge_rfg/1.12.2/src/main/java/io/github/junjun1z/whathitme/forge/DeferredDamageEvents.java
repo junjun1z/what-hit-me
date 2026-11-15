@@ -1,12 +1,12 @@
 package io.github.junjun1z.whathitme.forge;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 import io.github.junjun1z.whathitme.core.server.PlayerHandle;
 import io.github.junjun1z.whathitme.core.server.ServerCore;
+import io.github.junjun1z.whathitme.core.server.ServerPort;
 import io.github.junjun1z.whathitme.mc.Facts;
 import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.entity.player.EntityPlayerMP;
@@ -17,12 +17,11 @@ import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
 
 /**
  * Forge for 1.12 / 1.12.1 has no LivingDamageEvent (damage after armor and absorption). As on 1.11.2 and older, the hit
  * seen by LivingHurtEvent is kept until the very next thing that happens to that player (its next hurt event, its death,
- * its next tick or the end of the server tick, whichever comes first); by then Minecraft has applied it, and the health /
+ * or a one-off task queued for the next server tick, whichever comes first); by then Minecraft has applied it, and the health /
  * absorption left are read from the player ({@link ServerCore#onDamageAfter}). A Totem of Undying that saved the player
  * is recognised by the totem it used.
  * <p>
@@ -91,7 +90,11 @@ public final class DeferredDamageEvents {
         if (!(event.getEntityLiving() instanceof EntityPlayer) || event.getAmount() <= 0) return;
         EntityPlayerMP p = tracked(event.getEntityLiving());
         if (p == null) return;
-        pending.put(p.getUniqueID(), new Hit(p, event.getSource(), p.world.getTotalWorldTime(), PlayerHandle112.totems(p)));
+        UUID id = p.getUniqueID();
+        boolean queued = pending.containsKey(id);
+        pending.put(id, new Hit(p, event.getSource(), p.world.getTotalWorldTime(), PlayerHandle112.totems(p)));
+        ServerPort srv = ServerCore.port;
+        if (!queued && srv != null) srv.schedule(() -> flush(id));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)
@@ -99,19 +102,6 @@ public final class DeferredDamageEvents {
         if (!(event.getEntityLiving() instanceof EntityPlayer) || pending.isEmpty()) return;
         EntityPlayerMP p = tracked(event.getEntityLiving());
         if (p != null) flush(p.getUniqueID());
-    }
-
-    @SubscribeEvent
-    public void onPlayerTick(TickEvent.PlayerTickEvent event) {
-        if (pending.isEmpty() || event.phase != TickEvent.Phase.START || event.player.world.isRemote) return;
-        flush(event.player.getUniqueID());
-    }
-
-    @SubscribeEvent
-    public void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase != TickEvent.Phase.END || pending.isEmpty()) return;
-        for (Hit h : new ArrayList<>(pending.values())) apply(h);
-        pending.clear();
     }
 
     @SubscribeEvent

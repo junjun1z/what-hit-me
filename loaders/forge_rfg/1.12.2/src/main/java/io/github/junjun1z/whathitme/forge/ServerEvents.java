@@ -1,5 +1,6 @@
 package io.github.junjun1z.whathitme.forge;
 
+import io.github.junjun1z.whathitme.core.Safe;
 import io.github.junjun1z.whathitme.core.server.ServerCore;
 import io.github.junjun1z.whathitme.mc.Facts;
 import net.minecraft.entity.player.EntityPlayer;
@@ -8,15 +9,18 @@ import net.minecraft.util.text.ITextComponent;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
+import net.minecraftforge.event.entity.player.AttackEntityEvent;
+import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
+import net.minecraftforge.event.world.WorldEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 import net.minecraftforge.fml.common.gameevent.PlayerEvent;
-import net.minecraftforge.fml.common.gameevent.TickEvent;
 
 /**
  * Forge 1.12 events of the logical server, forwarded to {@link ServerCore}. Every handler returns on its first line for
- * anything that is not a player, so mob fights cost nothing. The damage after armor comes from {@link DamageEvents}
- * (Forge 1.12.2) or {@link DeferredDamageEvents} (Forge 1.12 / 1.12.1, which have no LivingDamageEvent).
+ * anything that is not a player, so mob fights cost nothing; there is no tick handler. The damage after armor comes
+ * from {@link DamageEvents} (Forge 1.12.2) or {@link DeferredDamageEvents} (Forge 1.12 / 1.12.1, which have no
+ * LivingDamageEvent).
  */
 public final class ServerEvents {
 
@@ -32,7 +36,7 @@ public final class ServerEvents {
         EntityPlayerMP p = tracked(event.getEntityLiving());
         if (p == null || event.getAmount() <= 0) return;
         // a fresh hit has just reset hurtResistantTime to its maximum
-        ServerCore.onHurt(p.getUniqueID(), p.world.getTotalWorldTime(), event.getSource(), event.getAmount(), p.getAbsorptionAmount(), p.getHealth(),
+        ServerCore.onHurt(new PlayerHandle112(p), p.world.getTotalWorldTime(), event.getSource(), event.getAmount(), p.getAbsorptionAmount(), p.getHealth(),
             p.isActiveItemStackBlocking(), p.hurtResistantTime >= p.maxHurtResistantTime, p.maxHurtResistantTime);
     }
 
@@ -45,11 +49,15 @@ public final class ServerEvents {
             () -> Facts.hit(p, event.getSource()));
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
     public void onDeath(LivingDeathEvent event) {
         if (!(event.getEntityLiving() instanceof EntityPlayer)) return;
         EntityPlayerMP p = tracked(event.getEntityLiving());
         if (p == null) return;
+        if (event.isCanceled()) {
+            ServerCore.onDeathCancelled(new PlayerHandle112(p), () -> Facts.hit(p, event.getSource()));
+            return;
+        }
         String msg = "";
         try {
             msg = ITextComponent.Serializer.componentToJson(p.getCombatTracker().getDeathMessage());
@@ -60,14 +68,34 @@ public final class ServerEvents {
     }
 
     @SubscribeEvent
-    public void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
-        if (!(event.player instanceof EntityPlayerMP) || event.isEndConquered()) return;
-        ServerCore.onRespawn(new PlayerHandle112((EntityPlayerMP) event.player));
+    public void onAttack(AttackEntityEvent event) {
+        if (!(event.getEntityPlayer() instanceof EntityPlayerMP)) return;
+        EntityPlayerMP p = tracked(event.getEntityPlayer());
+        if (p == null || event.getTarget() == null) return;
+        ServerCore.onPlayerAttack(p.getUniqueID(), event.getTarget().getUniqueID().toString());
     }
 
     @SubscribeEvent
-    public void onServerTick(TickEvent.ServerTickEvent event) {
-        if (event.phase == TickEvent.Phase.END) ServerCore.onTickEnd();
+    public void onItemBroken(PlayerDestroyItemEvent event) {
+        if (!(event.getEntityPlayer() instanceof EntityPlayerMP)) return;
+        EntityPlayerMP p = tracked(event.getEntityPlayer());
+        if (p == null) return;
+        Safe.run("item break event", () -> {
+            int slot = Facts.armorSlot(event.getOriginal());
+            if (slot >= 0) ServerCore.onArmorBroken(new PlayerHandle112(p), Facts.item(event.getOriginal()), slot);
+        });
+    }
+
+    @SubscribeEvent
+    public void onWorldSave(WorldEvent.Save event) {
+        if (event.getWorld().isRemote || event.getWorld().provider.getDimension() != 0) return;
+        ServerCore.onWorldSave();
+    }
+
+    @SubscribeEvent
+    public void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        if (!(event.player instanceof EntityPlayerMP) || event.isEndConquered()) return;
+        ServerCore.onRespawn(new PlayerHandle112((EntityPlayerMP) event.player));
     }
 
     @SubscribeEvent

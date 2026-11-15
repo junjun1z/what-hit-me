@@ -1,7 +1,7 @@
 {
   "whathitme.hearts": "%s ❤",
   "whathitme.unknown": "Неизвестно",
-  "whathitme.command.usage": "/whm [history|last|effects|togglechat|ignore|rename|sethint|config|search|inspect|dump|reload|snapshot|help]",
+  "whathitme.command.usage": "/whm [history|last|effects|stats|togglechat|ignore|rename|sethint|config|search|inspect|test|dump|reload|snapshot|help]",
   "whathitme.summary.header": "========== [ What Hit Me? ] ==========",
   "whathitme.summary.footer": "=====================================",
   "whathitme.summary.killing": "☠ Смертельный удар: %s",

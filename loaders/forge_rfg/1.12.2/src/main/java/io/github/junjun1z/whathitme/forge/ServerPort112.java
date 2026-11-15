@@ -3,7 +3,12 @@ package io.github.junjun1z.whathitme.forge;
 import java.io.File;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Queue;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.FutureTask;
+
+import com.google.common.util.concurrent.ListenableFutureTask;
 
 import io.github.junjun1z.whathitme.core.data.Registries;
 import io.github.junjun1z.whathitme.core.server.PlayerHandle;
@@ -11,6 +16,7 @@ import io.github.junjun1z.whathitme.core.server.ServerPort;
 import io.github.junjun1z.whathitme.mc.Registries112;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.server.MinecraftServer;
+import net.minecraftforge.fml.common.ObfuscationReflectionHelper;
 
 /** The running 1.12 server for the core. */
 final class ServerPort112 implements ServerPort {
@@ -46,5 +52,22 @@ final class ServerPort112 implements ServerPort {
     @Override
     public Registries registries() {
         return Registries112.INSTANCE;
+    }
+
+    /** MinecraftServer#addScheduledTask runs at once on the server thread; the task queue itself runs at the next tick */
+    @SuppressWarnings("unchecked")
+    @Override
+    public boolean schedule(Runnable task) {
+        Queue<FutureTask<?>> q = ObfuscationReflectionHelper.getPrivateValue(MinecraftServer.class, server, "futureTaskQueue", "field_175589_i");
+        if (q == null) return false;
+        synchronized (q) {
+            q.add(ListenableFutureTask.create(Executors.callable(task)));
+        }
+        return true;
+    }
+
+    @Override
+    public boolean runCommand(String command) {
+        return server.getCommandManager().executeCommand(server, command) > 0;
     }
 }

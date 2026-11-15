@@ -6,15 +6,18 @@ import java.util.List;
 
 import io.github.junjun1z.whathitme.core.client.ClientPort;
 import io.github.junjun1z.whathitme.core.data.Entry;
+import io.github.junjun1z.whathitme.core.data.Gear;
 import io.github.junjun1z.whathitme.core.data.Registries;
 import io.github.junjun1z.whathitme.core.net.Packets;
 import io.github.junjun1z.whathitme.core.text.Txt;
+import io.github.junjun1z.whathitme.mc.Facts;
 import io.github.junjun1z.whathitme.mc.McText;
 import io.github.junjun1z.whathitme.mc.Registries112;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGameOver;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.network.NetworkPlayerInfo;
+import net.minecraft.entity.player.EntityPlayer;
 import net.minecraft.util.text.ITextComponent;
 import net.minecraft.util.text.TextComponentTranslation;
 import net.minecraftforge.fml.relauncher.Side;
@@ -96,6 +99,22 @@ final class ClientPort112 implements ClientPort {
     @Override
     public boolean playerDead() {
         return mc().player == null || mc().player.getHealth() <= 0f || mc().player.isDead || mc().currentScreen instanceof GuiGameOver;
+    }
+
+    /** Set by /whm config, opened by {@link ClientEvents} on the next client tick (the chat screen closes after the command) */
+    static volatile boolean openConfig;
+
+    @Override
+    public boolean openConfigScreen() {
+        openConfig = true;
+        return true;
+    }
+
+    @Override
+    public Gear localGear() {
+        EntityPlayer p = mc().player;
+        if (p == null) return null;
+        return new Gear(Facts.dimension(p.world), p.posX, p.posY, p.posZ, p.getMaxHealth(), Facts.armor(p), Registries112.effects(p));
     }
 
     @Override

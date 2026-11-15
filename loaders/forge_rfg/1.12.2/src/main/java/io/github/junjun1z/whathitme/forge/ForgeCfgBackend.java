@@ -75,6 +75,17 @@ public final class ForgeCfgBackend implements ConfigBackend {
     }
 
     @Override
+    public String raw(String category, String key) {
+        if (!cfg.hasCategory(category) || !cfg.getCategory(category).containsKey(key)) return null;
+        return cfg.getCategory(category).get(key).getString();
+    }
+
+    @Override
+    public void remove(String category, String key) {
+        if (cfg.hasCategory(category) && cfg.getCategory(category).containsKey(key)) cfg.getCategory(category).remove(key);
+    }
+
+    @Override
     public void categoryLangKey(String category, String key) {
         cfg.setCategoryLanguageKey(category, key);
     }

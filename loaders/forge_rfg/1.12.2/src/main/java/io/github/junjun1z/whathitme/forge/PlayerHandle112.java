@@ -5,9 +5,11 @@ import java.util.List;
 import java.util.UUID;
 
 import io.github.junjun1z.whathitme.core.data.Entry;
+import io.github.junjun1z.whathitme.core.data.Gear;
 import io.github.junjun1z.whathitme.core.net.Packets;
 import io.github.junjun1z.whathitme.core.server.PlayerHandle;
 import io.github.junjun1z.whathitme.core.text.Txt;
+import io.github.junjun1z.whathitme.mc.Facts;
 import io.github.junjun1z.whathitme.mc.McText;
 import io.github.junjun1z.whathitme.mc.Registries112;
 import net.minecraft.entity.player.EntityPlayer;
@@ -17,7 +19,6 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
-import net.minecraft.server.MinecraftServer;
 import net.minecraftforge.common.util.Constants;
 
 /** A 1.12 server player for the core. Per-player settings live in the player's persistent NBT. */
@@ -42,11 +43,10 @@ public class PlayerHandle112 implements PlayerHandle {
         return p.getName();
     }
 
+    /** Permission level 2: an operator, or the owner of a single player / LAN world with cheats */
     @Override
     public boolean isAdmin() {
-        if (p.canUseCommand(2, "whm")) return true;
-        MinecraftServer s = p.getServer();
-        return s != null && !s.isDedicatedServer() && p.getName().equals(s.getServerOwner());
+        return p.canUseCommand(2, "whm");
     }
 
     @Override
@@ -128,5 +128,25 @@ public class PlayerHandle112 implements PlayerHandle {
     @Override
     public List<Entry> effects() {
         return Registries112.effects(p);
+    }
+
+    @Override
+    public String environment() {
+        return Facts.environment(p);
+    }
+
+    @Override
+    public Gear.Item[] armor() {
+        return Facts.armor(p);
+    }
+
+    @Override
+    public String dimension() {
+        return Facts.dimension(p.world);
+    }
+
+    @Override
+    public double[] position() {
+        return new double[] {p.posX, p.posY, p.posZ};
     }
 }

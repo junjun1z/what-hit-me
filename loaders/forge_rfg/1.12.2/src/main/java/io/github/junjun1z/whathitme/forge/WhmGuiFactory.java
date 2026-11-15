@@ -9,11 +9,14 @@ import io.github.junjun1z.whathitme.core.config.WhmConfig;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.client.resources.I18n;
+import net.minecraftforge.common.config.ConfigCategory;
 import net.minecraftforge.common.config.ConfigElement;
 import net.minecraftforge.common.config.Configuration;
+import net.minecraftforge.common.config.Property;
 import net.minecraftforge.fml.client.IModGuiFactory;
 import net.minecraftforge.fml.client.config.DummyConfigElement;
 import net.minecraftforge.fml.client.config.GuiConfig;
+import net.minecraftforge.fml.client.config.GuiConfigEntries;
 import net.minecraftforge.fml.client.config.IConfigElement;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
@@ -47,9 +50,71 @@ public final class WhmGuiFactory implements IModGuiFactory {
     private static List<IConfigElement> categories(Configuration cfg, String... names) {
         List<IConfigElement> out = new ArrayList<>();
         for (String n : names) {
-            if (cfg.hasCategory(n)) out.add(new ConfigElement(cfg.getCategory(n)));
+            if (!cfg.hasCategory(n)) continue;
+            ConfigCategory c = cfg.getCategory(n);
+            for (Property p : c.values()) p.setConfigEntryClass(WhmConfig.isLocked(p.getName()) ? lockedEntry(p) : null);
+            out.add(new ConfigElement(c));
         }
         return out;
+    }
+
+    /** lockedFeatures of the pack folder: shown greyed out, not editable */
+    private static Class<? extends GuiConfigEntries.IConfigEntry> lockedEntry(Property p) {
+        if (p.isList()) return LockedArray.class;
+        switch (p.getType()) {
+            case BOOLEAN:
+                return LockedString.class;
+            case INTEGER:
+                return LockedInteger.class;
+            case DOUBLE:
+                return LockedDouble.class;
+            default:
+                return LockedString.class;
+        }
+    }
+
+    public static final class LockedInteger extends GuiConfigEntries.IntegerEntry {
+        public LockedInteger(GuiConfig s, GuiConfigEntries l, IConfigElement e) {
+            super(s, l, e);
+        }
+
+        @Override
+        public boolean enabled() {
+            return false;
+        }
+    }
+
+    public static final class LockedDouble extends GuiConfigEntries.DoubleEntry {
+        public LockedDouble(GuiConfig s, GuiConfigEntries l, IConfigElement e) {
+            super(s, l, e);
+        }
+
+        @Override
+        public boolean enabled() {
+            return false;
+        }
+    }
+
+    public static final class LockedString extends GuiConfigEntries.StringEntry {
+        public LockedString(GuiConfig s, GuiConfigEntries l, IConfigElement e) {
+            super(s, l, e);
+        }
+
+        @Override
+        public boolean enabled() {
+            return false;
+        }
+    }
+
+    public static final class LockedArray extends GuiConfigEntries.ArrayEntry {
+        public LockedArray(GuiConfig s, GuiConfigEntries l, IConfigElement e) {
+            super(s, l, e);
+        }
+
+        @Override
+        public boolean enabled() {
+            return false;
+        }
     }
 
     public static List<IConfigElement> elements() {
