@@ -30,6 +30,11 @@ public class WhmDriverForge implements DriverPort {
         }
         plan = new DriverPlan(this, mode);
         ClientChatReceivedEvent.BUS.addListener((java.util.function.Consumer<ClientChatReceivedEvent>) e -> plan.onChat(e.getMessage().getString()));
+        // server messages (system chat) come through their own event
+        net.minecraftforge.client.event.SystemMessageReceivedEvent.BUS.addListener(
+            (java.util.function.Consumer<net.minecraftforge.client.event.SystemMessageReceivedEvent>) e -> {
+                if (!e.isOverlay()) plan.onChat(e.getMessage().getString());
+            });
         TickEvent.ClientTickEvent.Post.BUS.addListener(e -> plan.tick());
     }
 

@@ -80,6 +80,12 @@ public class WhmDriverForge implements DriverPort {
         plan.onChat(e.getMessage().getString());
     }
 
+    /** Server messages (system chat) come through their own event on Forge 1.21.x */
+    @SubscribeEvent
+    public void onSystemChat(net.minecraftforge.client.event.SystemMessageReceivedEvent e) {
+        if (!e.isOverlay()) plan.onChat(e.getMessage().getString());
+    }
+
     @SubscribeEvent
     public void onTick(TickEvent.ClientTickEvent e) {
         if (e.phase == TickEvent.Phase.END) plan.tick();
