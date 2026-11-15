@@ -199,7 +199,7 @@ public final class ServerCore {
         DamageRecord r = hf.build(now, raw, actual, absorbed, extra, Math.max(0f, healthBefore - actual), max, Safe.get("dimension", p::dimension, ""), ctx);
         DamageRecord stored = h.add(r, mergeMs());
         tracker().catalog.register(r);
-        Stats.of(p.uuid()).addDamage(taken);
+        Stats.of(p.uuid()).addDamage(Math.min(taken, Math.max(0f, healthBefore) + absorbed)); // /kill deals Float.MAX_VALUE
         boolean lethal = healthBefore - actual <= 0f;
         boolean heavy = max > 0 && taken >= c.heavyHitThreshold * max;
         if (lethal || heavy) pending(new Pending(p.uuid(), stored, lethal, heavy, p.totems()));
