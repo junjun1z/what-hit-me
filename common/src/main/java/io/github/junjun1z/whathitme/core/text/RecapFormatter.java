@@ -156,6 +156,11 @@ public final class RecapFormatter {
             if (server.has(key)) return Msg.str(server.translate(key) + Fmt.RESET);
             return Msg.str(key);
         }
+        // a bare translation key ("mypack.damage.chaos") is translated too
+        if (v.indexOf(' ') < 0 && v.indexOf('.') > 0 && m.has(v)) {
+            if (m.localized) return Txt.empty().append(Txt.tr(v)).append(Fmt.RESET);
+            return Msg.str(Msg.ENGLISH_LANG.translate(v) + Fmt.RESET);
+        }
         return Msg.str(v.replace('&', '§') + Fmt.RESET);
     }
 

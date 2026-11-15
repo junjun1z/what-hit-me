@@ -185,6 +185,12 @@ final class V12Plan {
             DamageRecord r = new DamageRecord(0, "minecraft:magic", "magic", "", "", "", "", "minecraft", "Minecraft", 1, 1, 0, 0, -1, "", "", "", "", 1, 1, 20, "");
             return ClientCore.formatter().tip(r).toPlain(Msg.ENGLISH_LANG).contains("PackHint");
         }, null);
+        t.check("a bare translation key as rename value is translated", () -> {
+            WhmConfig.client.putMapEntry("renameMap", "minecraft:anvil", "whathitme.damage.indirectMagic");
+            String v = ClientCore.formatter().custom(ClientCore.formatter().o.rename("minecraft:anvil")).toPlain(Msg.LOCAL.lang());
+            WhmConfig.client.putMapEntry("renameMap", "minecraft:anvil", "");
+            return !v.contains("whathitme.damage");
+        }, null);
         t.check("lockedFeatures: greyed out in the config screen", () -> p.configGuiLocked("showInternalDamageId") && !p.configGuiLocked("showTimestamp"), null);
         t.cmd("/whm config showInternalDamageId false", "locked by the modpack", 40);
         t.check("locked key unchanged", () -> (WhmConfig.client.mask & WhmConfig.Flag.INTERNAL_DAMAGE_ID.bit()) != 0, null);
