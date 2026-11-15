@@ -202,7 +202,12 @@ final class DevPort112 implements DevPort {
     private static boolean locked(List<IConfigElement> list, String key) {
         for (IConfigElement e : list) {
             if (e.isProperty()) {
-                if (key.equals(e.getName()) && e.getConfigEntryClass() != null && e.getConfigEntryClass().getSimpleName().startsWith("Locked")) return true;
+                if (key.equals(e.getName()) && e.getConfigEntryClass() != null && e.getConfigEntryClass().getSimpleName().startsWith("Locked")) {
+                    // build the real screen entry: it must exist and be disabled
+                    GuiConfig g = new GuiConfig(null, java.util.Collections.singletonList(e), "whathitme", false, false, "locked test");
+                    g.setWorldAndResolution(mc(), 427, 240);
+                    return !g.entryList.listEntries.isEmpty() && !g.entryList.listEntries.get(0).enabled();
+                }
             } else if (e.getChildElements() != null && locked(e.getChildElements(), key)) {
                 return true;
             }

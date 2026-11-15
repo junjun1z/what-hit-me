@@ -173,6 +173,31 @@ final class MultiplayerPlan {
         if (serverMod) t.cmd("/whm server history", "Damage History", 60);
         t.cmd("/whm reload", "reloaded", 40);
         if (!serverMod) t.act(() -> WhmConfig.common.set("historySize", "50"));
+        if (p.v12()) v12(serverMod);
         t.sleep(20);
+    }
+
+    /** 1.2 checks; with the server mod the player is de-opped at the end (the test script ops it again) */
+    private void v12(boolean serverMod) {
+        t.cmd("/whm copyrecap", "Death recap copied", 40);
+        t.waitFor("copy recap has the equipment block", () -> p.clipboard().contains("## Equipment") && p.clipboard().contains("Max health"), 40);
+        if (!serverMod) {
+            t.cmd("/whm stats", "Death Statistics", 60);
+            t.check("local stats counted the death", () -> t.chatHas("Deaths: "), (Supplier<?>) t::chatText);
+            return;
+        }
+        t.check("server protocol 2", () -> ClientCore.serverInfo != null && ClientCore.serverInfo.protocol == 2, null);
+        t.check("death recap from the server carries the equipment", () -> ClientCore.currentDeath != null && ClientCore.currentDeath.gear != null, null);
+        t.cmd("/whm stats", "Death Statistics", 60);
+        t.cmd("/whm test minecraft:lava", "Chat preview", 60);
+        say("/deop " + p.playerName());
+        t.sleep(40);
+        t.cmd("/whm rename minecraft:fall x", "operator permission", 40);
+        t.cmd("/whm server reload", "operator permission", 60);
+        t.cmd("/whm test minecraft:lava", "operator permission", 40);
+        t.cmd("/whm stats", "Death Statistics", 60);
+        t.cmd("/whm config showTimestamp", "showTimestamp = ", 40);
+        t.cmd("/whm config historySize 20", "operator permission", 40);
+        t.cmd("/whm search fall", "Search: fall", 60);
     }
 }

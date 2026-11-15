@@ -142,6 +142,57 @@ entries) and, if a new Minecraft API generation really needs it, a new `versions
 8. **Test in game** (next section): `sp`, `mp-mod`, `mp-nomod` and the driver must all print `ALL PASSED`
    (the multiplayer modes at least once per loader family).
 
+## Porting 1.2.0 features
+
+The 1.2.0 features live in the core; 1.12.2 (`versions/1.12.2`, `loaders/forge_rfg/1.12.2`) is the reference. Every new port
+method has a Java 8 default that keeps an unported version compiling and working as in 1.1 (the feature just stays empty), so a
+version can be ported in small steps. Copy the 1.12.2 code and translate the Minecraft calls.
+
+New port methods (all optional, default in brackets):
+
+| Port method | Default | 1.12.2 implementation | Feature |
+| --- | --- | --- | --- |
+| `PlayerHandle.environment()` | `""` | `Facts.environment(player)`: block / fluid at the feet (the block stood on when the feet are in air), at the body centre, main / off hand items, built with `core.data.Context` | environment context |
+| `PlayerHandle.armor()` | `null` | `Facts.armor(player)`: head, chest, legs, feet as `Gear.Item` (id, translation key, name, mod id, enchantments) | armor break, copy with equipment |
+| `PlayerHandle.dimension()` | `""` | `Facts.dimension(world)`: `minecraft:overworld` / `the_nether` / `the_end`, other dimensions their id (1.16+: the level key) | `@dim:` keys, copy |
+| `PlayerHandle.position()` | `null` | `{x, y, z}` | copy, death trigger placeholders |
+| `ServerPort.schedule(Runnable)` | `false` | queue on the server task queue for the next tick (1.12.2 `futureTaskQueue` by reflection, because `addScheduledTask` runs at once on the server thread). 1.14+: `server.tell(new TickTask(server.getTickCount(), task))` (not `execute`, which also runs at once) | replaces the server tick handler |
+| `ServerPort.runCommand(String)` | `false` | `server.getCommandManager().executeCommand(server, cmd)` (1.13+: `server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), cmd)`) | deathTriggers |
+| `ClientPort.localGear()` | `null` | `new Gear(dimension, x, y, z, maxHealth, Facts.armor(p), effects)` of the own player | copy recap of client estimates |
+| `ClientPort.openConfigScreen()` | `false` (= `/whm config` lists the keys) | sets a flag; the client tick handler opens the config screen on the next tick (a screen opened from the chat handler is closed by the chat screen) | `/whm config` |
+| `Registries.damageTypes()` | vanilla ids with vanilla flags | static `DamageSource` fields of `DamageSource` (exact flags). 1.19.4+: every key of the DamageType registry, flags from its tags | catalog cache, search |
+| `Platform.Mods.version(modId)` | `""` | mod container version | catalog cache hash |
+| `EntityFacts.weaponId` | `""` | registry id of the held item (`Facts.entity`) | `@item:` keys |
+| `ConfigBackend.raw / remove` | none | `ForgeCfgBackend` (`CfgFile` already has them) | migration of `showHintsAndTips` |
+
+New core calls from the loader (players only, first line returns for anything else):
+
+| Core call | Forge 1.12.2 (reference) | Newer Forge / NeoForge | Fabric |
+| --- | --- | --- | --- |
+| `ServerCore.onHurt(PlayerHandle, ...)` (overload, reads the armor before the hit) | `LivingHurtEvent` HIGHEST | `LivingHurtEvent` HIGHEST (NeoForge 1.20.5+: `LivingIncomingDamageEvent`) | `ALLOW_DAMAGE` |
+| `ServerCore.onPlayerAttack(uuid, targetUuid)` | `AttackEntityEvent` | `AttackEntityEvent` | `AttackEntityCallback` (server side only) |
+| `ServerCore.onArmorBroken(handle, item, slot)` | `PlayerDestroyItemEvent` (armor only) | same | none (the armor comparison of onHurt / onDamage finds it) |
+| `ServerCore.onDeathCancelled(handle, facts)` | `LivingDeathEvent` LOWEST with `receiveCanceled = true`, when cancelled | same | not visible (`ALLOW_DEATH` of other mods); revives are found by the revive check |
+| `ServerCore.onWorldSave()` | `WorldEvent.Save` (overworld only) | `LevelEvent.Save` | none (stats are also saved on death and logout); `SERVER_STOPPING` is fine |
+| `CatalogCache.init(registries)` | `FMLPostInitializationEvent` | server started / client joined a world (dynamic registries) | `SERVER_STARTED` / client join |
+| `ServerCore.onTickEnd()` | removed | remove once `schedule` is implemented | same |
+
+Other rules: `PlayerHandle.isAdmin()` is permission level 2 only (single player counts only with cheats); `DevPort.v12()` returns
+true to run the 1.2 self-test checks (`devtest/common/.../V12Plan.java`) plus `configScreenOpen()`, `closeScreen()`,
+`configGuiLocked(key)` and the new `DevPort.Act` values (see `DevPort112`).
+
+Config screens: 1.12.2 and older keep Forge's `GuiConfig` (`WhmGuiFactory`); `lockedFeatures` entries get a disabled entry class
+(`WhmGuiFactory.Locked*`). Newer versions need their own small screen listing `WhmConfig.Base.settings()` of both files (locked keys
+drawn disabled), registered with Forge `ConfigScreenHandler.ConfigScreenFactory` / NeoForge `IConfigScreenFactory`. Fabric: when Mod
+Menu is installed, register the screen through an optional `modmenu` entrypoint (`ModMenuApi#getModConfigScreenFactory`, Mod Menu as
+`suggests`, compile-only dependency) and let `ClientPort.openConfigScreen()` open the screen of that same factory; without Mod Menu it
+opens our screen directly. Mod Menu must never be a required dependency.
+
+Protocol 2 (`Packets.PROTOCOL`): the hello carries 2; the server answers with a `ServerInfo` extension (protocol, lockedFeatures,
+pack renames / hints) and sends recaps with the extended body (kind byte `| 0x40`: extra record fields, armor break lines, equipment).
+Clients of 1.0 / 1.1 get the old format (armor break lines removed), and a 1.2 client treats display bits it does not get from an old
+server as on. Never reorder `WhmConfig.Flag`: its ordinal is the bit on the wire.
+
 ## In-game self-test (development)
 
 Build with `-Pselftest`. Use only `build/devlibs/whathitme-selftest.jar` (the mod + self-test, for clients **and test
