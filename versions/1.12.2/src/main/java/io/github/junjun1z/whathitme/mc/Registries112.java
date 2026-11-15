@@ -1,11 +1,15 @@
 package io.github.junjun1z.whathitme.mc;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import io.github.junjun1z.whathitme.core.Platform;
+import io.github.junjun1z.whathitme.core.data.DamageIdScanner;
 import io.github.junjun1z.whathitme.core.data.Entry;
 import io.github.junjun1z.whathitme.core.data.Registries;
 import net.minecraft.entity.EntityLivingBase;
@@ -13,6 +17,8 @@ import net.minecraft.item.ItemStack;
 import net.minecraft.potion.Potion;
 import net.minecraft.potion.PotionEffect;
 import net.minecraft.util.ResourceLocation;
+import net.minecraftforge.fml.common.Loader;
+import net.minecraftforge.fml.common.ModContainer;
 import net.minecraftforge.fml.common.registry.EntityEntry;
 import net.minecraftforge.fml.common.registry.ForgeRegistries;
 
@@ -107,6 +113,27 @@ public final class Registries112 implements Registries {
         }
         for (Entry e : Registries.super.damageTypeEntries()) if (seen.add(e.id)) out.add(e);
         return out;
+    }
+
+    /** DamageSource and its vanilla subclasses as mods reference them, and every mod file */
+    @Override
+    public DamageIdScanner.Input scanInput() {
+        List<String> base = new ArrayList<>();
+        for (Class<?> c : new Class<?>[] {net.minecraft.util.DamageSource.class, net.minecraft.util.EntityDamageSource.class,
+            net.minecraft.util.EntityDamageSourceIndirect.class}) base.add(c.getName().replace('.', '/'));
+        Map<File, String> files = new LinkedHashMap<>();
+        for (ModContainer mc : Loader.instance().getActiveModList()) {
+            String id = mc.getModId();
+            if ("minecraft".equals(id) || "mcp".equals(id) || "FML".equals(id) || "forge".equals(id) || Platform.MODID.equals(id)) continue;
+            File f = mc.getSource();
+            if (f == null || !f.exists()) continue;
+            try {
+                files.putIfAbsent(f.getCanonicalFile(), id);
+            } catch (Exception ignored) {
+                // skip
+            }
+        }
+        return new DamageIdScanner.Input(base, files, Loader.instance().getIndexedModList().keySet(), DamageIdScanner.OLD_FORGE_SETTERS);
     }
 
     /** Active potion effects of an entity */

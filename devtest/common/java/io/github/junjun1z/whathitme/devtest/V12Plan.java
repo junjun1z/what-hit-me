@@ -5,7 +5,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.function.Supplier;
 
@@ -16,6 +18,7 @@ import io.github.junjun1z.whathitme.core.config.CfgFile;
 import io.github.junjun1z.whathitme.core.config.WhmConfig;
 import io.github.junjun1z.whathitme.core.data.CatalogCache;
 import io.github.junjun1z.whathitme.core.data.Context;
+import io.github.junjun1z.whathitme.core.data.DamageIdScanner;
 import io.github.junjun1z.whathitme.core.data.DamageRecord;
 import io.github.junjun1z.whathitme.core.data.MatchKey;
 import io.github.junjun1z.whathitme.core.data.Stats;
@@ -50,6 +53,21 @@ final class V12Plan {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    /** The jar this self-test runs from */
+    private static File ownJar() {
+        try {
+            String u = V12Plan.class.getProtectionDomain().getCodeSource().getLocation().toString();
+            if (u.startsWith("jar:")) u = u.substring(4, u.indexOf("!/") > 0 ? u.indexOf("!/") : u.length());
+            File f = new File(new java.net.URI(u));
+            if (f.isFile()) return f;
+        } catch (Throwable ignored) {
+            // look in mods/
+        }
+        File[] list = new File("mods").listFiles();
+        if (list != null) for (File f : list) if (f.getName().startsWith("whathitme")) return f;
+        return new File("mods");
     }
 
     private static String read(File f) {
@@ -139,6 +157,31 @@ final class V12Plan {
             t.info("cache: " + a + " / " + b + " / " + c + ", damage types " + CatalogCache.damageTypeEntries().size());
             return a.equals("created") && b.equals("hit") && c.equals("rescanned") && CatalogCache.damageTypeEntries().size() > 20;
         }, (Supplier<?>) () -> CatalogCache.status);
+        // ---- damage id scanner
+        t.check("damage id scanner: background scan finished (or no scanner on this version)", () -> CatalogCache.awaitScan(60000)
+            && Arrays.asList("done", "cached", "off").contains(CatalogCache.scanStatus), (Supplier<?>) () -> CatalogCache.scanStatus);
+        t.act(() -> t.info("damage id scan: " + CatalogCache.scanStatus + " " + CatalogCache.scanInfo + ", cache init " + CatalogCache.initMillis + " ms"));
+        t.check("damage id scanner finds the probe ids in our jar", () -> {
+            DamageIdScanner.Input base = ClientCore.port.registries().scanInput();
+            if (base == null) {
+                t.info("no scanner on this version");
+                return true;
+            }
+            File jar = ownJar();
+            Map<File, String> files = new LinkedHashMap<>();
+            files.put(jar, Platform.MODID);
+            DamageIdScanner.Result r = DamageIdScanner.scan(new DamageIdScanner.Input(base.baseClasses, files, base.modIds, base.setters));
+            Map<String, Integer> found = new LinkedHashMap<>();
+            for (DamageIdScanner.Found f : r.found) found.put(f.id, f.flags);
+            t.info("scan of " + jar.getName() + ": " + r + " " + found);
+            Integer plain = found.get("whathitme:whm_probe_plain");
+            Integer sub = found.get("whathitme:whm_probe_sub");
+            boolean dyn = false;
+            for (String id : found.keySet()) dyn |= id.startsWith("whathitme:whm_probe_dyn");
+            return plain != null && (plain & (DamageRecord.FIRE | DamageRecord.BYPASS_ARMOR)) == (DamageRecord.FIRE | DamageRecord.BYPASS_ARMOR)
+                && sub != null && (sub & DamageRecord.MAGIC) != 0 && found.containsKey("whathitme:whm_probe_named")
+                && found.containsKey("whathitme:whm_probe_child") && found.containsKey("whathitme:whm_probe_anon") && !dyn && r.errors == 0;
+        }, null);
         // ---- pack folder
         t.check("pack folder created with inert samples", () -> new File(whm(), "pack/hints/_example.json").isFile()
             && new File(whm(), "pack/triggers/_example.json").isFile() && WhmConfig.pack.triggers.isEmpty() && WhmConfig.pack.errors.isEmpty(),

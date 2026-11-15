@@ -90,6 +90,7 @@
   "whathitme.search.type.mob": "モブ",
   "whathitme.search.type.effect": "効果",
   "whathitme.search.seen": "%s回発生",
+  "whathitme.search.scanned": "(modファイルから検出・未発生)",
   "whathitme.search.muted": "(非表示中)",
   "whathitme.togglechat.on": "リスポーン時のチャット通知: ON",
   "whathitme.togglechat.off": "リスポーン時のチャット通知: OFF (もう一度 /whm togglechat で ON に戻ります)",

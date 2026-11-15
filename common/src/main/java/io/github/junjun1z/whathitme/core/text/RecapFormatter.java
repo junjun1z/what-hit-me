@@ -669,6 +669,7 @@ public final class RecapFormatter {
             if (e.type == Entry.EFFECT) c.append(" ").append((e.flags & 1) != 0 ? m.tr(Fmt.RED, "whathitme.effects.bad") : m.tr(Fmt.GREEN, "whathitme.effects.good"));
             if (!e.modName.isEmpty() && o.on(Flag.SOURCE_MOD_NAME)) c.append(Msg.str(Fmt.BLUE, " (" + e.modName + ")"));
             if (e.type == Entry.DAMAGE && e.count > 0) c.append(" ").append(m.tr(Fmt.GRAY, "whathitme.search.seen", e.count));
+            else if (e.type == Entry.DAMAGE && "scanned".equals(e.extra)) c.append(" ").append(m.tr(Fmt.DARK_GRAY, "whathitme.search.scanned"));
             if (e.type == Entry.DAMAGE && o.on(Flag.ACTION_BUTTONS)) {
                 if (o.ignored(e.id)) c.append(" ").append(m.tr(Fmt.DARK_GRAY, "whathitme.search.muted"));
                 c.append(" ").append(copyIdButton(e.id)).append(" ").append(muteButton(e.id));

@@ -161,6 +161,7 @@ New port methods (all optional, default in brackets):
 | `ClientPort.localGear()` | `null` | `new Gear(dimension, x, y, z, maxHealth, Facts.armor(p), effects)` of the own player | copy recap of client estimates |
 | `ClientPort.openConfigScreen()` | `false` (= `/whm config` lists the keys) | sets a flag; the client tick handler opens the config screen on the next tick (a screen opened from the chat handler is closed by the chat screen) | `/whm config` |
 | `Registries.damageTypeEntries()` | vanilla ids with vanilla flags | static `DamageSource` fields of `DamageSource` (exact flags). 1.19.4+: every key of the DamageType registry, flags from its tags | catalog cache, search |
+| `Registries.scanInput()` | `null` (no jar scan) | `DamageIdScanner.Input`: runtime internal names of `DamageSource`, `EntityDamageSource`, `EntityDamageSourceIndirect` (`X.class.getName().replace('.', '/')`), every mod file (`ModContainer.getSource()`, without minecraft / mcp / FML / forge / whathitme), the mod ids and `DamageIdScanner.OLD_FORGE_SETTERS` | damage ids of mods before they are seen (`scanned`) |
 | `Platform.Mods.version(modId)` | `""` | mod container version | catalog cache hash |
 | `EntityFacts.weaponId` | `""` | registry id of the held item (`Facts.entity`) | `@item:` keys |
 | `ConfigBackend.raw / remove` | none | `ForgeCfgBackend` (`CfgFile` already has them) | migration of `showHintsAndTips` |
@@ -176,6 +177,18 @@ New core calls from the loader (players only, first line returns for anything el
 | `ServerCore.onWorldSave()` | `WorldEvent.Save` (overworld only) | `LevelEvent.Save` | none (stats are also saved on death and logout); `SERVER_STOPPING` is fine |
 | `CatalogCache.init(registries)` | `FMLPostInitializationEvent` | server started / client joined a world (dynamic registries) | `SERVER_STARTED` / client join |
 | `ServerCore.onTickEnd()` | removed | remove once `schedule` is implemented | same |
+
+Damage id scanner (`core.data.DamageIdScanner`): reads the class files of the mod jars (no class loading, no ASM) and
+collects the string constants given to the damage source constructors (also `super("id")` in mod subclasses, anonymous
+subclasses and setter calls right after the constructor). `CatalogCache` runs it on a daemon thread after every cache miss
+and stores the ids under `scan` in `catalog_cache.json`; they show in `/whm search` (`#scanned`), `/whm dump` (column
+`source`) and `/whm test` completion. Port: implement `scanInput()` with the class names taken from the runtime classes,
+never hard-coded: Forge 1.7.10 - 1.12.2 MCP names (`net/minecraft/util/DamageSource`, setters `OLD_FORGE_SETTERS`), Forge
+1.13 - 1.16 the SRG/MCP class names (setters: own map of MCP + SRG names), Fabric the intermediary name
+(`net/minecraft/class_1282`, setters by intermediary method names), Forge 1.17+ / NeoForge official names. Mod files: Forge
+1.13+ `ModList.get().getModFiles()` (`getFile().getFilePath()`), Fabric `FabricLoader.getAllMods()` (`getOrigin().getPaths()`),
+nested jars are scanned one level deep. Not needed from 1.19.4 on (the DamageType registry is complete): keep the default.
+Standalone check against a mods folder: `java -cp whathitme-selftest.jar io.github.junjun1z.whathitme.devtest.ScanMain <dir>`.
 
 Other rules: `PlayerHandle.isAdmin()` is permission level 2 only (single player counts only with cheats); `DevPort.v12()` returns
 true to run the 1.2 self-test checks (`devtest/common/.../V12Plan.java`) plus `configScreenOpen()`, `closeScreen()`,

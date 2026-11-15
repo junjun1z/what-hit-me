@@ -9,7 +9,7 @@ import io.github.junjun1z.whathitme.core.text.RecapFormatter;
 /** /whm search and /whm dump data. Runs on demand only. */
 public final class SearchEngine {
 
-    public static final String[] TAGS = {"#bypasses_armor", "#absolute", "#magic", "#fire", "#explosion", "#projectile", "#damage", "#mob", "#effect"};
+    public static final String[] TAGS = {"#bypasses_armor", "#absolute", "#magic", "#fire", "#explosion", "#projectile", "#damage", "#scanned", "#mob", "#effect"};
 
     private SearchEngine() {}
 
@@ -67,6 +67,8 @@ public final class SearchEngine {
                     return e.type == Entry.DAMAGE && (e.flags & DamageRecord.PROJECTILE) != 0;
                 case "#damage":
                     return e.type == Entry.DAMAGE;
+                case "#scanned":
+                    return e.type == Entry.DAMAGE && e.count == 0 && "scanned".equals(e.extra);
                 case "#mob":
                     return e.type == Entry.MOB;
                 case "#effect":

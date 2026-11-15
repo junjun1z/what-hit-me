@@ -90,6 +90,7 @@
   "whathitme.search.type.mob": "Mob",
   "whathitme.search.type.effect": "Effect",
   "whathitme.search.seen": "seen %s×",
+  "whathitme.search.scanned": "(found in the mod files, not seen yet)",
   "whathitme.search.muted": "(muted)",
   "whathitme.togglechat.on": "Respawn chat summary: ON",
   "whathitme.togglechat.off": "Respawn chat summary: OFF (run /whm togglechat again to turn it back on)",

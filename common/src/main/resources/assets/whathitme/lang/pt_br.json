@@ -90,6 +90,7 @@
   "whathitme.search.type.mob": "Criatura",
   "whathitme.search.type.effect": "Efeito",
   "whathitme.search.seen": "visto %s×",
+  "whathitme.search.scanned": "(encontrado nos arquivos do mod, ainda não visto)",
   "whathitme.search.muted": "(oculto)",
   "whathitme.togglechat.on": "Resumo no chat ao renascer: LIGADO",
   "whathitme.togglechat.off": "Resumo no chat ao renascer: DESLIGADO (digite /whm togglechat de novo para ligar)",

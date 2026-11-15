@@ -38,4 +38,9 @@ public interface Registries {
         }
         return out;
     }
+
+    /** Classes and mod files for the damage id scanner (versions without a damage type registry); null = no scan */
+    default DamageIdScanner.Input scanInput() {
+        return null;
+    }
 }

@@ -90,6 +90,7 @@
   "whathitme.search.type.mob": "生物",
   "whathitme.search.type.effect": "效果",
   "whathitme.search.seen": "出現 %s 次",
+  "whathitme.search.scanned": "(在模組檔案中找到，尚未出現)",
   "whathitme.search.muted": "(已隱藏)",
   "whathitme.togglechat.on": "重生時的聊天摘要: 開啟",
   "whathitme.togglechat.off": "重生時的聊天摘要: 關閉 (再次輸入 /whm togglechat 即可重新開啟)",

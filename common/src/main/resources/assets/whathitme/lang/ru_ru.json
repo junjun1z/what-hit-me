@@ -90,6 +90,7 @@
   "whathitme.search.type.mob": "Моб",
   "whathitme.search.type.effect": "Эффект",
   "whathitme.search.seen": "встречено %s×",
+  "whathitme.search.scanned": "(найдено в файлах мода, ещё не встречено)",
   "whathitme.search.muted": "(скрыто)",
   "whathitme.togglechat.on": "Сводка в чате после возрождения: ВКЛ",
   "whathitme.togglechat.off": "Сводка в чате после возрождения: ВЫКЛ (введите /whm togglechat снова, чтобы включить)",

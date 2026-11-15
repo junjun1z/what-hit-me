@@ -90,6 +90,7 @@
   "whathitme.search.type.mob": "Mob",
   "whathitme.search.type.effect": "Effekt",
   "whathitme.search.seen": "%s× gesehen",
+  "whathitme.search.scanned": "(in den Mod-Dateien gefunden, noch nicht gesehen)",
   "whathitme.search.muted": "(ausgeblendet)",
   "whathitme.togglechat.on": "Chat-Zusammenfassung nach dem Wiederbeleben: AN",
   "whathitme.togglechat.off": "Chat-Zusammenfassung nach dem Wiederbeleben: AUS (/whm togglechat erneut eingeben, um sie wieder einzuschalten)",

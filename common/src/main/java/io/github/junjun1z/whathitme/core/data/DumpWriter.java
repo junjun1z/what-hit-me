@@ -80,12 +80,19 @@ public final class DumpWriter {
         return ids.size();
     }
 
+    /** seen = taken in play, scanned = found in the mod jars only, registry = listed by the game */
+    private static String source(Entry e) {
+        if (e.type != Entry.DAMAGE) return "registry";
+        if (e.count > 0) return "seen";
+        return "scanned".equals(e.extra) ? "scanned" : "registry";
+    }
+
     /** @return number of entries written */
     public static int write(File file, List<Entry> entries, WhmConfig.Base... configs) throws IOException {
         int n = 0;
         try (Writer w = new OutputStreamWriter(Files.newOutputStream(file.toPath()), StandardCharsets.UTF_8)) {
             w.write('﻿');
-            w.write("category,id,name,mod_id,mod_name,properties,times_seen,custom_name,custom_tip,ignored\n");
+            w.write("category,id,name,mod_id,mod_name,properties,times_seen,custom_name,custom_tip,ignored,source\n");
             for (Entry e : entries) {
                 String cat = e.type == Entry.DAMAGE ? "damage" : e.type == Entry.MOB ? "entity" : "effect";
                 String name = e.type == Entry.DAMAGE && !e.id.startsWith("mob:") ? RecapFormatter.pretty(e.name) : e.name;
@@ -100,16 +107,16 @@ public final class DumpWriter {
                     ign |= c.isIgnored(e.id);
                 }
                 w.write(csv(cat) + ',' + csv(e.id) + ',' + csv(name) + ',' + csv(e.modId) + ',' + csv(e.modName) + ',' + csv(props) + ','
-                    + (e.type == Entry.DAMAGE ? String.valueOf(e.count) : "") + ',' + csv(ren) + ',' + csv(tip) + ',' + (ign ? "true" : "") + '\n');
+                    + (e.type == Entry.DAMAGE ? String.valueOf(e.count) : "") + ',' + csv(ren) + ',' + csv(tip) + ',' + (ign ? "true" : "") + ',' + source(e) + '\n');
                 n++;
             }
             for (WhmConfig.Base c : configs) {
                 if (c == null) continue;
                 String src = c instanceof WhmConfig.Common ? "common" : "client";
-                for (String s : c.ignoredDamageIds) w.write("setting_" + src + ",ignoredDamageIds," + csv(s) + ",,,,,,,\n");
-                for (Map.Entry<String, String> e : c.renameMap.entrySet()) w.write("setting_" + src + ",renameMap," + csv(e.getKey()) + ",,,,," + csv(e.getValue()) + ",,\n");
-                for (Map.Entry<String, String> e : c.hintMap.entrySet()) w.write("setting_" + src + ",hintMap," + csv(e.getKey()) + ",,,,,," + csv(e.getValue()) + ",\n");
-                for (WhmConfig.Flag f : WhmConfig.Flag.values()) w.write("setting_" + src + "," + f.key + "," + ((c.mask & f.bit()) != 0) + ",,,,,,,\n");
+                for (String s : c.ignoredDamageIds) w.write("setting_" + src + ",ignoredDamageIds," + csv(s) + ",,,,,,,,\n");
+                for (Map.Entry<String, String> e : c.renameMap.entrySet()) w.write("setting_" + src + ",renameMap," + csv(e.getKey()) + ",,,,," + csv(e.getValue()) + ",,,\n");
+                for (Map.Entry<String, String> e : c.hintMap.entrySet()) w.write("setting_" + src + ",hintMap," + csv(e.getKey()) + ",,,,,," + csv(e.getValue()) + ",,\n");
+                for (WhmConfig.Flag f : WhmConfig.Flag.values()) w.write("setting_" + src + "," + f.key + "," + ((c.mask & f.bit()) != 0) + ",,,,,,,,\n");
             }
         }
         return n;

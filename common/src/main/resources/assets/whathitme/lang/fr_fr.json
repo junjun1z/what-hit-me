@@ -90,6 +90,7 @@
   "whathitme.search.type.mob": "Créature",
   "whathitme.search.type.effect": "Effet",
   "whathitme.search.seen": "vu %s×",
+  "whathitme.search.scanned": "(trouvé dans les fichiers du mod, pas encore vu)",
   "whathitme.search.muted": "(masqué)",
   "whathitme.togglechat.on": "Résumé dans le chat après réapparition : ACTIVÉ",
   "whathitme.togglechat.off": "Résumé dans le chat après réapparition : DÉSACTIVÉ (retapez /whm togglechat pour le réactiver)",

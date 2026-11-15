@@ -115,6 +115,24 @@ final class PackPlan112 {
                 + io.github.junjun1z.whathitme.core.data.CatalogCache.damageTypeEntries().size() + ", pack errors " + io.github.junjun1z.whathitme.core.config.WhmConfig.pack.errors);
         });
         t.check("1.2: catalog cache loaded in the pack", io.github.junjun1z.whathitme.core.data.CatalogCache::loaded, null);
+        t.check("1.2: damage id scan of the pack finished with ids", () -> io.github.junjun1z.whathitme.core.data.CatalogCache.awaitScan(120000)
+            && !io.github.junjun1z.whathitme.core.data.CatalogCache.scannedEntries().isEmpty(),
+            (Supplier<?>) () -> io.github.junjun1z.whathitme.core.data.CatalogCache.scanStatus);
+        t.act(() -> {
+            List<String> ids = new ArrayList<>();
+            for (io.github.junjun1z.whathitme.core.data.Entry e : io.github.junjun1z.whathitme.core.data.CatalogCache.scannedEntries()) ids.add(e.id + "/" + e.flags);
+            t.info("1.2: damage id scan " + io.github.junjun1z.whathitme.core.data.CatalogCache.scanStatus + " " + io.github.junjun1z.whathitme.core.data.CatalogCache.scanInfo
+                + ", cache init " + io.github.junjun1z.whathitme.core.data.CatalogCache.initMillis + " ms, ids: " + ids);
+            List<String> seen = new ArrayList<>();
+            PlayerHistory h = t.serverHistory();
+            if (h != null) for (DamageRecord r : h.records()) if (!r.damageId.startsWith("mob:") && !seen.contains(r.damageId)) seen.add(r.damageId);
+            List<String> scannedIds = new ArrayList<>();
+            for (io.github.junjun1z.whathitme.core.data.Entry e : io.github.junjun1z.whathitme.core.data.CatalogCache.damageTypeEntries()) scannedIds.add(e.id);
+            List<String> missing = new ArrayList<>();
+            for (String id : seen) if (!scannedIds.contains(id)) missing.add(id);
+            t.info("1.2: seen in play " + seen + ", not in the catalog " + missing);
+        });
+        t.cmd("/whm search #scanned", "Search: #scanned", 60);
         t.cmd("/whm stats", "Death Statistics", 60);
         t.cmd("/whm test mob:lycanitesmobs:ventoraptor", "Chat preview", 60);
         t.cmd("/whm copyrecap", "Death recap copied", 40);
