@@ -170,4 +170,23 @@ public final class Registries121 implements Registries {
         }
         return out;
     }
+
+    /** Every key of the DamageType registry (vanilla and mods), name = msgId, flags from its tags */
+    @Override
+    public List<Entry> damageTypeEntries() {
+        Registry<DamageType> reg = damageTypes();
+        if (reg == null) return Registries.super.damageTypeEntries();
+        List<Entry> out = new ArrayList<>();
+        for (Map.Entry<ResourceKey<DamageType>, DamageType> e : reg.entrySet()) {
+            try {
+                Identifier k = e.getKey().identifier();
+                String mod = k.getNamespace();
+                out.add(new Entry(Entry.DAMAGE, k.toString(), e.getValue().msgId(), "", mod, Platform.modName(mod),
+                    Facts.typeFlags(reg.getOrThrow(e.getKey())), 0, 0, 0, false, ""));
+            } catch (Throwable ignored) {
+                // skip odd entries
+            }
+        }
+        return out;
+    }
 }

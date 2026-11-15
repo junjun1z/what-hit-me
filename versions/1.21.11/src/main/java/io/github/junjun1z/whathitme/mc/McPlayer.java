@@ -6,7 +6,6 @@ import java.util.UUID;
 import io.github.junjun1z.whathitme.core.data.Entry;
 import io.github.junjun1z.whathitme.core.server.PlayerHandle;
 import io.github.junjun1z.whathitme.core.text.Txt;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
@@ -32,11 +31,10 @@ public abstract class McPlayer implements PlayerHandle {
         return p.getGameProfile().name();
     }
 
+    /** Permission level 2: an operator, or the owner of a single player / LAN world with cheats */
     @Override
     public boolean isAdmin() {
-        if (p.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER)) return true;
-        MinecraftServer s = p.level().getServer();
-        return s != null && s.isSingleplayerOwner(p.nameAndId());
+        return p.permissions().hasPermission(net.minecraft.server.permissions.Permissions.COMMANDS_GAMEMASTER);
     }
 
     @Override
@@ -71,5 +69,25 @@ public abstract class McPlayer implements PlayerHandle {
     @Override
     public List<Entry> effects() {
         return Registries121.effects(p);
+    }
+
+    @Override
+    public String environment() {
+        return Facts.environment(p);
+    }
+
+    @Override
+    public io.github.junjun1z.whathitme.core.data.Gear.Item[] armor() {
+        return Facts.armor(p);
+    }
+
+    @Override
+    public String dimension() {
+        return Facts.dimension(p.level());
+    }
+
+    @Override
+    public double[] position() {
+        return new double[] {p.getX(), p.getY(), p.getZ()};
     }
 }

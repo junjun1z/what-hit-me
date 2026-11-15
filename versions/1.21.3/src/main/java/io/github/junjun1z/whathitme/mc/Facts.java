@@ -146,6 +146,7 @@ public final class Facts {
                 f.weaponName = w.getHoverName().getString();
                 f.weaponKey = itemKey(w);
                 f.weaponEnchants = enchantments(w);
+                f.weaponId = itemId(w);
             }
         }
         return f;
@@ -178,5 +179,104 @@ public final class Facts {
         if (atk != null && atk != victim) h.attacker = entity(atk, victim);
         h.directName = direct != null && direct != atk && direct != victim ? entityName(direct) : "";
         return h;
+    }
+
+    public static String itemId(ItemStack s) {
+        try {
+            if (s == null || s.isEmpty()) return "";
+            net.minecraft.resources.ResourceLocation id = BuiltInRegistries.ITEM.getKey(s.getItem());
+            return id == null ? "" : id.toString();
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** An item stack as plain strings (null for an empty stack) */
+    public static io.github.junjun1z.whathitme.core.data.Gear.Item item(ItemStack s) {
+        if (s == null || s.isEmpty()) return null;
+        String id = itemId(s);
+        int c = id.indexOf(':');
+        String name;
+        try {
+            name = s.getHoverName().getString();
+        } catch (Throwable t) {
+            name = id;
+        }
+        return new io.github.junjun1z.whathitme.core.data.Gear.Item(id, itemKey(s), name, c > 0 ? id.substring(0, c) : "minecraft", enchantments(s), false);
+    }
+
+    private static final net.minecraft.world.entity.EquipmentSlot[] ARMOR = {net.minecraft.world.entity.EquipmentSlot.HEAD,
+        net.minecraft.world.entity.EquipmentSlot.CHEST, net.minecraft.world.entity.EquipmentSlot.LEGS, net.minecraft.world.entity.EquipmentSlot.FEET};
+
+    /** Armor: head, chest, legs, feet */
+    public static io.github.junjun1z.whathitme.core.data.Gear.Item[] armor(Player p) {
+        io.github.junjun1z.whathitme.core.data.Gear.Item[] out = new io.github.junjun1z.whathitme.core.data.Gear.Item[4];
+        for (int i = 0; i < 4; i++) out[i] = item(p.getItemBySlot(ARMOR[i]));
+        return out;
+    }
+
+    /** 0 head ... 3 feet, -1 = not armor */
+    public static int armorSlot(Player p, ItemStack s) {
+        if (p == null || s == null || s.isEmpty()) return -1;
+        net.minecraft.world.entity.EquipmentSlot slot = p.getEquipmentSlotForItem(s);
+        for (int i = 0; i < 4; i++) if (ARMOR[i] == slot) return i;
+        return -1;
+    }
+
+    private static void block(io.github.junjun1z.whathitme.core.data.Context c, String slot, net.minecraft.world.level.Level w, net.minecraft.core.BlockPos pos) {
+        net.minecraft.world.level.block.state.BlockState st = w.getBlockState(pos);
+        if (st.isAir()) return;
+        net.minecraft.world.level.block.Block b = st.getBlock();
+        net.minecraft.resources.ResourceLocation id = BuiltInRegistries.BLOCK.getKey(b);
+        String name;
+        try {
+            name = Component.translatable(b.getDescriptionId()).getString();
+        } catch (Throwable t) {
+            name = "";
+        }
+        if (name == null || name.isEmpty() || name.startsWith("block.")) name = id == null ? b.getClass().getSimpleName() : id.toString();
+        c.add(slot, b.getDescriptionId(), name, id == null ? "" : id.getNamespace());
+    }
+
+    private static net.minecraft.core.BlockPos pos(double x, double y, double z) {
+        return new net.minecraft.core.BlockPos(net.minecraft.util.Mth.floor(x), net.minecraft.util.Mth.floor(y), net.minecraft.util.Mth.floor(z));
+    }
+
+    /** Block / fluid at the feet (or the block stood on) and at the body centre, and the held items */
+    public static String environment(Player p) {
+        io.github.junjun1z.whathitme.core.data.Context c = new io.github.junjun1z.whathitme.core.data.Context();
+        net.minecraft.world.level.Level w = p.level();
+        net.minecraft.core.BlockPos feet = pos(p.getX(), p.getY(), p.getZ());
+        if (w.isEmptyBlock(feet)) block(c, io.github.junjun1z.whathitme.core.data.Context.FEET, w, feet.below());
+        else block(c, io.github.junjun1z.whathitme.core.data.Context.FEET, w, feet);
+        net.minecraft.core.BlockPos body = pos(p.getX(), p.getY() + p.getBbHeight() / 2.0, p.getZ());
+        if (!body.equals(feet)) block(c, io.github.junjun1z.whathitme.core.data.Context.BODY, w, body);
+        io.github.junjun1z.whathitme.core.data.Gear.Item main = item(p.getMainHandItem());
+        io.github.junjun1z.whathitme.core.data.Gear.Item off = item(p.getOffhandItem());
+        if (main != null) c.add(io.github.junjun1z.whathitme.core.data.Context.MAIN, main.key, main.name, main.modId);
+        if (off != null) c.add(io.github.junjun1z.whathitme.core.data.Context.OFF, off.key, off.name, off.modId);
+        return c.toString();
+    }
+
+    /** "minecraft:overworld", "minecraft:the_nether", ... (mod dimensions: their level key) */
+    public static String dimension(net.minecraft.world.level.Level w) {
+        try {
+            return w.dimension().location().toString();
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    /** Property flags of a damage type (from its tags) */
+    public static int typeFlags(Holder<DamageType> t) {
+        int f = 0;
+        if (t.is(DamageTypeTags.BYPASSES_ARMOR)) f |= DamageRecord.BYPASS_ARMOR;
+        if (t.is(DamageTypeTags.BYPASSES_EFFECTS) || t.is(DamageTypeTags.BYPASSES_RESISTANCE)) f |= DamageRecord.ABSOLUTE;
+        if (t.is(DamageTypeTags.WITCH_RESISTANT_TO)) f |= DamageRecord.MAGIC;
+        if (t.is(DamageTypeTags.IS_FIRE)) f |= DamageRecord.FIRE;
+        if (t.is(DamageTypeTags.IS_EXPLOSION)) f |= DamageRecord.EXPLOSION;
+        if (t.is(DamageTypeTags.IS_PROJECTILE)) f |= DamageRecord.PROJECTILE;
+        if (t.is(DamageTypeTags.BYPASSES_INVULNERABILITY)) f |= DamageRecord.BYPASS_CREATIVE;
+        return f;
     }
 }

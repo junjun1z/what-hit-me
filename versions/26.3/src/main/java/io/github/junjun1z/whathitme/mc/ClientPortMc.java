@@ -120,4 +120,29 @@ public abstract class ClientPortMc implements io.github.junjun1z.whathitme.core.
         }
         return "";
     }
+
+    /** Set by /whm config, opened by {@link #tickConfigScreen} on the next client tick (the chat screen closes after the command) */
+    private static volatile boolean openConfig;
+    /** Builds the config screen from its parent (Fabric: the Mod Menu factory when Mod Menu is installed) */
+    public static volatile java.util.function.Function<net.minecraft.client.gui.screens.Screen, net.minecraft.client.gui.screens.Screen> configScreen = ConfigScreen121::new;
+
+    @Override
+    public boolean openConfigScreen() {
+        openConfig = true;
+        return true;
+    }
+
+    /** Called by the loader's client tick */
+    public static void tickConfigScreen() {
+        if (!openConfig) return;
+        openConfig = false;
+        io.github.junjun1z.whathitme.core.Safe.run("config screen", () -> Compat26.setScreen(configScreen.apply(Compat26.screen())));
+    }
+
+    @Override
+    public io.github.junjun1z.whathitme.core.data.Gear localGear() {
+        net.minecraft.world.entity.player.Player p = mc().player;
+        if (p == null) return null;
+        return new io.github.junjun1z.whathitme.core.data.Gear(Facts.dimension(p.level()), p.getX(), p.getY(), p.getZ(), p.getMaxHealth(), Facts.armor(p), Registries121.effects(p));
+    }
 }
