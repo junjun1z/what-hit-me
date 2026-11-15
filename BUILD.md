@@ -323,3 +323,20 @@ Pitfalls seen so far:
   constructor pattern instead.
 - Fabric attack events: AttackEntityCallback on 1.16.5 / 1.17.1, a `Player#attack` HEAD mixin on the v0-only loaders.
 - `ServerPortMc.schedule`: `server.tell(new TickTask(server.getTickCount(), task))`; `runCommand`: `getCommands().performCommand`.
+
+### 1.2.0 on 1.18.2 - 1.20.6
+
+- `versions/<v>`: `ConfigScreen<suffix>` per code version (1.18.2 `TextComponent` + `new Button`, 1.19.2 `Component.literal`, 1.19.3+
+  `Button.builder`, 1.20.1 `GuiGraphics`, 1.20.2+ `Screen#render` draws the background itself). Block names in the environment context use
+  the translation key (`TranslatableComponent` / `Component.translatable`).
+- Damage ids: 1.18.2 - 1.19.3 have no DamageType registry: `scanInput()` and `damageTypeEntries()` as on 1.17.1 (static `DamageSource` fields,
+  setters found at run time), the loaders also set `Facts.modOfSource` and `Registries<v>.modFiles`. 1.19.4+: `damageTypeEntries()` lists
+  every key of the DamageType registry (flags from its tags through `Facts.typeFlags`), no scanner; the catalog cache is filled on server
+  start and on the first client tick in a world (dynamic registry).
+- Forge config factory: 1.18.2 `ConfigGuiHandler.ConfigGuiFactory`, 1.19 - 1.20.6 `ConfigScreenHandler.ConfigScreenFactory`, NeoForge 1.20.4
+  `ConfigScreenHandler.ConfigScreenFactory`, NeoForge 1.20.6 `IConfigScreenFactory` registered on the mod container. Events: Forge 1.18.2
+  `WorldEvent.Save` and `getPlayer()`, 1.19+ `LevelEvent.Save` and `getEntity()`.
+- Fabric: `AttackEntityCallback` on every version (Fabric API for 1.18 - 1.19.1 has it too), Mod Menu entrypoint `com.terraformersmc.modmenu.api`
+  (compile only: Mod Menu 3.2.5 / 4.1.2 / 5.1.0 / 6.3.1 / 7.2.2 / 8.0.1 / 10.0.0 per code version).
+- `runCommand`: 1.18.2 `Commands#performCommand`, 1.19+ `performPrefixedCommand` (its return type changes, the result is ignored).
+- 1.20.5+: `Enchantments.PROTECTION` (was `ALL_DAMAGE_PROTECTION`) in the self-test.
