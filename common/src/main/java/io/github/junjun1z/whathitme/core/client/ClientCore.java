@@ -543,7 +543,7 @@ public final class ClientCore {
                     List<String> ids = new ArrayList<>(CATALOG.ids());
                     ids.addAll(WhmConfig.client.ignoredDamageIds);
                     ids.addAll(WhmConfig.client.renameMap.keySet());
-                    if (sub.equals("test")) for (Entry e : CatalogCache.view(port.registries()).damageTypes()) ids.add(e.id);
+                    if (sub.equals("test")) for (Entry e : CatalogCache.view(port.registries()).damageTypeEntries()) ids.add(e.id);
                     return Completion.matching(args, ids);
                 }
                 case "config": {

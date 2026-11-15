@@ -849,7 +849,7 @@ public final class ServerCore {
                 case "sethint":
                 case "test": {
                     List<String> ids = new ArrayList<>(tracker().catalog.ids());
-                    if (sub.equals("test") && srv != null) for (Entry e : CatalogCache.view(srv.registries()).damageTypes()) ids.add(e.id);
+                    if (sub.equals("test") && srv != null) for (Entry e : CatalogCache.view(srv.registries()).damageTypeEntries()) ids.add(e.id);
                     ids.addAll(WhmConfig.common.ignoredDamageIds);
                     return Completion.matching(args, ids);
                 }

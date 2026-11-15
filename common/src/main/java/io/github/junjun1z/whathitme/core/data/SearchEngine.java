@@ -19,7 +19,7 @@ public final class SearchEngine {
         List<Entry> out = new ArrayList<>(catalog.entries());
         java.util.Set<String> seen = new java.util.HashSet<>();
         for (Entry e : out) seen.add(e.id);
-        for (Entry e : cached.damageTypes()) if (seen.add(e.id)) out.add(e);
+        for (Entry e : cached.damageTypeEntries()) if (seen.add(e.id)) out.add(e);
         out.addAll(cached.mobs());
         out.addAll(cached.effects());
         return out;

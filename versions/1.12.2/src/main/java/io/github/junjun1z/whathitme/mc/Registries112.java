@@ -86,7 +86,7 @@ public final class Registries112 implements Registries {
 
     /** Every static DamageSource field of DamageSource (vanilla) with its exact properties, plus the other vanilla type names */
     @Override
-    public List<Entry> damageTypes() {
+    public List<Entry> damageTypeEntries() {
         List<Entry> out = new ArrayList<>();
         java.util.Set<String> seen = new java.util.HashSet<>();
         for (java.lang.reflect.Field f : net.minecraft.util.DamageSource.class.getDeclaredFields()) {
@@ -105,7 +105,7 @@ public final class Registries112 implements Registries {
                 // skip odd fields
             }
         }
-        for (Entry e : Registries.super.damageTypes()) if (seen.add(e.id)) out.add(e);
+        for (Entry e : Registries.super.damageTypeEntries()) if (seen.add(e.id)) out.add(e);
         return out;
     }
 

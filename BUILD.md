@@ -160,7 +160,7 @@ New port methods (all optional, default in brackets):
 | `ServerPort.runCommand(String)` | `false` | `server.getCommandManager().executeCommand(server, cmd)` (1.13+: `server.getCommands().performPrefixedCommand(server.createCommandSourceStack(), cmd)`) | deathTriggers |
 | `ClientPort.localGear()` | `null` | `new Gear(dimension, x, y, z, maxHealth, Facts.armor(p), effects)` of the own player | copy recap of client estimates |
 | `ClientPort.openConfigScreen()` | `false` (= `/whm config` lists the keys) | sets a flag; the client tick handler opens the config screen on the next tick (a screen opened from the chat handler is closed by the chat screen) | `/whm config` |
-| `Registries.damageTypes()` | vanilla ids with vanilla flags | static `DamageSource` fields of `DamageSource` (exact flags). 1.19.4+: every key of the DamageType registry, flags from its tags | catalog cache, search |
+| `Registries.damageTypeEntries()` | vanilla ids with vanilla flags | static `DamageSource` fields of `DamageSource` (exact flags). 1.19.4+: every key of the DamageType registry, flags from its tags | catalog cache, search |
 | `Platform.Mods.version(modId)` | `""` | mod container version | catalog cache hash |
 | `EntityFacts.weaponId` | `""` | registry id of the held item (`Facts.entity`) | `@item:` keys |
 | `ConfigBackend.raw / remove` | none | `ForgeCfgBackend` (`CfgFile` already has them) | migration of `showHintsAndTips` |

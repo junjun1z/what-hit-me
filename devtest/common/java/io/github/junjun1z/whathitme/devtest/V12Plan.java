@@ -136,8 +136,8 @@ final class V12Plan {
             CatalogCache.init(ClientCore.port.registries(), changed, false);
             String c = CatalogCache.status;
             CatalogCache.init(ClientCore.port.registries(), mods, false);
-            t.info("cache: " + a + " / " + b + " / " + c + ", damage types " + CatalogCache.damageTypes().size());
-            return a.equals("created") && b.equals("hit") && c.equals("rescanned") && CatalogCache.damageTypes().size() > 20;
+            t.info("cache: " + a + " / " + b + " / " + c + ", damage types " + CatalogCache.damageTypeEntries().size());
+            return a.equals("created") && b.equals("hit") && c.equals("rescanned") && CatalogCache.damageTypeEntries().size() > 20;
         }, (Supplier<?>) () -> CatalogCache.status);
         // ---- pack folder
         t.check("pack folder created with inert samples", () -> new File(whm(), "pack/hints/_example.json").isFile()

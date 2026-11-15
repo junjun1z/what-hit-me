@@ -27,7 +27,7 @@ public interface Registries {
      * Every damage type of the game as {@link Entry#DAMAGE} (id, name = msgId, flags = property flags), for the catalog
      * cache. Default: the vanilla ids with the vanilla property flags.
      */
-    default List<Entry> damageTypes() {
+    default List<Entry> damageTypeEntries() {
         List<Entry> out = new java.util.ArrayList<>();
         for (String id : vanillaDamageIds()) {
             int c = id.indexOf(':');

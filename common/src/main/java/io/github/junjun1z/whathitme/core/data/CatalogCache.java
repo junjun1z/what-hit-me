@@ -111,7 +111,7 @@ public final class CatalogCache {
         }
         boolean existed = f.isFile();
         try {
-            damage = Collections.unmodifiableList(new ArrayList<>(Safe.get("damage type scan", reg::damageTypes, new ArrayList<>())));
+            damage = Collections.unmodifiableList(new ArrayList<>(Safe.get("damage type scan", reg::damageTypeEntries, new ArrayList<>())));
             mobs = Collections.unmodifiableList(new ArrayList<>(Safe.get("entity scan", reg::mobs, new ArrayList<>())));
             effects = Collections.unmodifiableList(new ArrayList<>(Safe.get("effect scan", reg::effects, new ArrayList<>())));
             living = Collections.unmodifiableList(new ArrayList<>(Safe.get("living entity scan", reg::livingEntityIds, new ArrayList<>())));
@@ -174,7 +174,7 @@ public final class CatalogCache {
         return Collections.unmodifiableList(out);
     }
 
-    public static List<Entry> damageTypes() {
+    public static List<Entry> damageTypeEntries() {
         List<Entry> d = damage;
         return d == null ? Collections.<Entry>emptyList() : d;
     }
@@ -208,9 +208,9 @@ public final class CatalogCache {
             }
 
             @Override
-            public List<Entry> damageTypes() {
+            public List<Entry> damageTypeEntries() {
                 List<Entry> d = damage;
-                return d != null ? d : reg.damageTypes();
+                return d != null ? d : reg.damageTypeEntries();
             }
 
             @Override
