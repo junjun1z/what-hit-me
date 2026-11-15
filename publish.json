@@ -46,6 +46,7 @@
         "fabric"
       ],
       "game_versions": [
+        "1.21",
         "1.21.1"
       ],
       "java": 21,
@@ -53,6 +54,558 @@
         "required": [
           "fabric-api"
         ],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.21.1-neoforge/build/libs/whathitme-neoforge-1.21.1-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "neoforge"
+      ],
+      "game_versions": [
+        "1.21",
+        "1.21.1"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "legacy/targets/1.21.1-forge/build/libs/whathitme-forge-1.21.1-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.21.1"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.21.3-fabric/build/libs/whathitme-fabric-1.21.3-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "fabric"
+      ],
+      "game_versions": [
+        "1.21.2",
+        "1.21.3"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [
+          "fabric-api"
+        ],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.21.3-neoforge/build/libs/whathitme-neoforge-1.21.3-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "neoforge"
+      ],
+      "game_versions": [
+        "1.21.3"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "legacy/targets/1.21.3-forge/build/libs/whathitme-forge-1.21.3-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.21.3"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.21.4-fabric/build/libs/whathitme-fabric-1.21.4-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "fabric"
+      ],
+      "game_versions": [
+        "1.21.4"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [
+          "fabric-api"
+        ],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.21.4-neoforge/build/libs/whathitme-neoforge-1.21.4-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "neoforge"
+      ],
+      "game_versions": [
+        "1.21.4"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "legacy/targets/1.21.4-forge/build/libs/whathitme-forge-1.21.4-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.21.4"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.21.5-fabric/build/libs/whathitme-fabric-1.21.5-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "fabric"
+      ],
+      "game_versions": [
+        "1.21.5"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [
+          "fabric-api"
+        ],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.21.5-neoforge/build/libs/whathitme-neoforge-1.21.5-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "neoforge"
+      ],
+      "game_versions": [
+        "1.21.5"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "legacy/targets/1.21.5-forge/build/libs/whathitme-forge-1.21.5-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.21.5"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.21.8-fabric/build/libs/whathitme-fabric-1.21.8-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "fabric"
+      ],
+      "game_versions": [
+        "1.21.6",
+        "1.21.7",
+        "1.21.8"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [
+          "fabric-api"
+        ],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.21.8-neoforge/build/libs/whathitme-neoforge-1.21.8-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "neoforge"
+      ],
+      "game_versions": [
+        "1.21.7",
+        "1.21.8"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "legacy/targets/1.21.8-forge/build/libs/whathitme-forge-1.21.8-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.21.8"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.21.10-fabric/build/libs/whathitme-fabric-1.21.10-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "fabric"
+      ],
+      "game_versions": [
+        "1.21.9",
+        "1.21.10"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [
+          "fabric-api"
+        ],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.21.10-neoforge/build/libs/whathitme-neoforge-1.21.10-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "neoforge"
+      ],
+      "game_versions": [
+        "1.21.9",
+        "1.21.10"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "legacy/targets/1.21.10-forge/build/libs/whathitme-forge-1.21.10-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.21.9",
+        "1.21.10"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.21.11-fabric/build/libs/whathitme-fabric-1.21.11-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "fabric"
+      ],
+      "game_versions": [
+        "1.21.11"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [
+          "fabric-api"
+        ],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/1.21.11-neoforge/build/libs/whathitme-neoforge-1.21.11-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "neoforge"
+      ],
+      "game_versions": [
+        "1.21.11"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "legacy/targets/1.21.11-forge/build/libs/whathitme-forge-1.21.11-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "1.21.11"
+      ],
+      "java": 21,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/26.1.2-fabric/build/libs/whathitme-fabric-26.1.2-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "fabric"
+      ],
+      "game_versions": [
+        "26.1",
+        "26.1.1",
+        "26.1.2"
+      ],
+      "java": 25,
+      "dependencies": {
+        "required": [
+          "fabric-api"
+        ],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/26.1.2-neoforge/build/libs/whathitme-neoforge-26.1.2-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "neoforge"
+      ],
+      "game_versions": [
+        "26.1",
+        "26.1.1",
+        "26.1.2"
+      ],
+      "java": 25,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "legacy/targets/26.1.2-forge/build/libs/whathitme-forge-26.1.2-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "26.1.2"
+      ],
+      "java": 25,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/26.2-fabric/build/libs/whathitme-fabric-26.2-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "fabric"
+      ],
+      "game_versions": [
+        "26.2"
+      ],
+      "java": 25,
+      "dependencies": {
+        "required": [
+          "fabric-api"
+        ],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/26.2-neoforge/build/libs/whathitme-neoforge-26.2-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "neoforge"
+      ],
+      "game_versions": [
+        "26.2"
+      ],
+      "java": 25,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "legacy/targets/26.2-forge/build/libs/whathitme-forge-26.2-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "26.2"
+      ],
+      "java": 25,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/26.3-fabric/build/libs/whathitme-fabric-26.3-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "fabric"
+      ],
+      "game_versions": [
+        "26.3"
+      ],
+      "java": 25,
+      "dependencies": {
+        "required": [
+          "fabric-api"
+        ],
+        "optional": []
+      }
+    },
+    {
+      "path": "targets/26.3-neoforge/build/libs/whathitme-neoforge-26.3-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "neoforge"
+      ],
+      "game_versions": [
+        "26.3"
+      ],
+      "java": 25,
+      "dependencies": {
+        "required": [],
+        "optional": []
+      }
+    },
+    {
+      "path": "legacy/targets/26.3-forge/build/libs/whathitme-forge-26.3-*.jar",
+      "exclude": [
+        "*-dev.jar",
+        "*-sources.jar"
+      ],
+      "loaders": [
+        "forge"
+      ],
+      "game_versions": [
+        "26.3"
+      ],
+      "java": 25,
+      "dependencies": {
+        "required": [],
         "optional": []
       }
     }
