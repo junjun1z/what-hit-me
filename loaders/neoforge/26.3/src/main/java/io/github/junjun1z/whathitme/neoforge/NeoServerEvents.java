@@ -1,11 +1,14 @@
 package io.github.junjun1z.whathitme.neoforge;
 
+import io.github.junjun1z.whathitme.core.Safe;
+import io.github.junjun1z.whathitme.core.data.CatalogCache;
 import io.github.junjun1z.whathitme.core.server.ServerCore;
 import io.github.junjun1z.whathitme.mc.Brig;
 import io.github.junjun1z.whathitme.mc.Facts;
 import io.github.junjun1z.whathitme.mc.McText;
 import io.github.junjun1z.whathitme.mc.ServerPortMc;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.server.level.ServerLevel;
 import net.minecraft.tags.DamageTypeTags;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -17,9 +20,11 @@ import net.neoforged.neoforge.event.entity.living.LivingDeathEvent;
 import net.neoforged.neoforge.event.entity.living.LivingIncomingDamageEvent;
 import net.neoforged.neoforge.event.entity.living.LivingUseTotemEvent;
 import net.neoforged.neoforge.event.entity.player.PlayerEvent;
+import net.neoforged.neoforge.event.entity.player.AttackEntityEvent;
+import net.neoforged.neoforge.event.entity.player.PlayerDestroyItemEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
 import net.neoforged.neoforge.event.server.ServerStoppedEvent;
-import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 /**
  * NeoForge 26.3 events of the logical server, forwarded to {@link ServerCore}. Every handler returns on its first
@@ -46,6 +51,8 @@ public final class NeoServerEvents {
         // dedicated server: JSON texts use its registries (the client sets its own supplier)
         if (!FMLEnvironment.getDist().isClient()) McText.registries = event.getServer()::registryAccess;
         ServerCore.serverStarted(port);
+        Safe.run("catalog cache", () -> CatalogCache.init(port.registries()));
+        WhatHitMeNeoForge.LOG.info("What Hit Me? catalog cache: " + CatalogCache.status + " in " + CatalogCache.initMillis + " ms, damage id scan: " + CatalogCache.scanStatus);
     }
 
     @SubscribeEvent
@@ -68,7 +75,7 @@ public final class NeoServerEvents {
         if (p == null || event.getAmount() <= 0) return;
         // a hit during the invulnerability frames only deals the difference: not a fresh hit
         boolean fresh = io.github.junjun1z.whathitme.mc.Compat26.invulnerableTime(p) <= 10 || event.getSource().is(DamageTypeTags.BYPASSES_COOLDOWN);
-        ServerCore.onHurt(p.getUUID(), p.level().getGameTime(), event.getSource(), event.getAmount(), p.getAbsorptionAmount(), p.getHealth(), p.isBlocking(),
+        ServerCore.onHurt(new NeoPlayer(p), p.level().getGameTime(), event.getSource(), event.getAmount(), p.getAbsorptionAmount(), p.getHealth(), p.isBlocking(),
             fresh, MAX_INVUL);
     }
 
@@ -99,11 +106,15 @@ public final class NeoServerEvents {
             () -> Facts.hit(p, event.getSource()));
     }
 
-    @SubscribeEvent(priority = EventPriority.LOWEST)
+    @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)
     public void onDeath(LivingDeathEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer)) return;
         ServerPlayer p = tracked(event.getEntity());
-        if (p == null || event.isCanceled()) return;
+        if (p == null) return;
+        if (event.isCanceled()) {
+            ServerCore.onDeathCancelled(new NeoPlayer(p), () -> Facts.hit(p, event.getSource()));
+            return;
+        }
         String msg = "";
         try {
             msg = McText.toJson(p.getCombatTracker().getDeathMessage());
@@ -117,14 +128,34 @@ public final class NeoServerEvents {
     }
 
     @SubscribeEvent
-    public void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
-        if (!(event.getEntity() instanceof ServerPlayer) || event.isEndConquered()) return;
-        ServerCore.onRespawn(new NeoPlayer((ServerPlayer) event.getEntity()));
+    public void onAttack(AttackEntityEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer)) return;
+        ServerPlayer p = tracked(event.getEntity());
+        if (p == null || event.getTarget() == null) return;
+        ServerCore.onPlayerAttack(p.getUUID(), event.getTarget().getUUID().toString());
     }
 
     @SubscribeEvent
-    public void onServerTick(ServerTickEvent.Post event) {
-        ServerCore.onTickEnd();
+    public void onItemBroken(PlayerDestroyItemEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer)) return;
+        ServerPlayer p = tracked(event.getEntity());
+        if (p == null) return;
+        Safe.run("item break event", () -> {
+            int slot = Facts.armorSlot(p, event.getOriginal());
+            if (slot >= 0) ServerCore.onArmorBroken(new NeoPlayer(p), Facts.item(event.getOriginal()), slot);
+        });
+    }
+
+    @SubscribeEvent
+    public void onWorldSave(LevelEvent.Save event) {
+        if (!(event.getLevel() instanceof ServerLevel)) return;
+        if ("minecraft:overworld".equals(Facts.dimension((ServerLevel) event.getLevel()))) ServerCore.onWorldSave();
+    }
+
+    @SubscribeEvent
+    public void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
+        if (!(event.getEntity() instanceof ServerPlayer) || event.isEndConquered()) return;
+        ServerCore.onRespawn(new NeoPlayer((ServerPlayer) event.getEntity()));
     }
 
     @SubscribeEvent

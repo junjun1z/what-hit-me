@@ -11,12 +11,16 @@
   "environment": "*",
   "entrypoints": {
     "main": ["io.github.junjun1z.whathitme.fabric.WhatHitMeFabric"],
-    "client": ["io.github.junjun1z.whathitme.fabric.WhatHitMeFabricClient"]
+    "client": ["io.github.junjun1z.whathitme.fabric.WhatHitMeFabricClient"],
+    "modmenu": ["io.github.junjun1z.whathitme.fabric.WhmModMenu"]
   },
   "depends": {
     "fabricloader": ">=0.15",
     "fabric-api": "*",
     "minecraft": "${mc_range}",
     "java": ">=${java_version}"
+  },
+  "suggests": {
+    "modmenu": "*"
   }
 }

@@ -194,6 +194,45 @@ public class DevPort121 implements DevPort {
     }
 
     @Override
+    public boolean v12() {
+        return true;
+    }
+
+    @Override
+    public boolean configScreenOpen() {
+        if (!(mc().screen instanceof io.github.junjun1z.whathitme.mc.ConfigScreen121)) return false;
+        String m = modMenuCheck();
+        System.out.println("WHM-SELFTEST [INFO] Mod Menu config screen: " + m);
+        return !m.startsWith("wrong") && !m.startsWith("error");
+    }
+
+    /** With Mod Menu installed, its own lookup (the config button of its mods list) must build our screen */
+    private static String modMenuCheck() {
+        try {
+            Object s = Class.forName("com.terraformersmc.modmenu.ModMenu").getMethod("getConfigScreen", String.class, net.minecraft.client.gui.screens.Screen.class).invoke(null, "whathitme", null);
+            return s instanceof io.github.junjun1z.whathitme.mc.ConfigScreen121 ? "ok" : "wrong: " + s;
+        } catch (ClassNotFoundException e) {
+            return "not installed";
+        } catch (Throwable t) {
+            return "error: " + t;
+        }
+    }
+
+    @Override
+    public void closeScreen() {
+        mc().setScreen(null);
+    }
+
+    /** Builds the real config screen: the entry must exist and be disabled */
+    @Override
+    public boolean configGuiLocked(String key) {
+        io.github.junjun1z.whathitme.mc.ConfigScreen121 s = new io.github.junjun1z.whathitme.mc.ConfigScreen121(null);
+        s.init(mc(), 427, 240);
+        Boolean active = s.entryActive(key);
+        return active != null && !active;
+    }
+
+    @Override
     public void server(Act act, float amount) {
         MinecraftServer s = server();
         s.execute(() -> run(s, s.getPlayerList().getPlayers().get(0), act, amount));
@@ -292,6 +331,50 @@ public class DevPort121 implements DevPort {
                 break;
             case CLEAR_EFFECTS:
                 p.removeAllEffects();
+                break;
+            case THORNS:
+                p.hurt(p.damageSources().thorns(zombie), amount);
+                break;
+            case REFLECT:
+                p.attack(zombie);
+                p.hurt(p.damageSources().mobAttack(zombie), amount);
+                break;
+            case BRITTLE_HELMET: {
+                ItemStack h = new ItemStack(Items.DIAMOND_HELMET);
+                h.setDamageValue(h.getMaxDamage());
+                p.setItemSlot(EquipmentSlot.HEAD, h);
+                p.setHealth(p.getMaxHealth());
+                break;
+            }
+            case ENV_SETUP:
+                level.setBlockAndUpdate(p.blockPosition(), net.minecraft.world.level.block.Blocks.COBWEB.defaultBlockState());
+                p.setItemSlot(EquipmentSlot.MAINHAND, new ItemStack(Items.STICK));
+                break;
+            case CACTUS:
+                p.hurt(p.damageSources().cactus(), amount);
+                break;
+            case ENV_CLEAR:
+                level.removeBlock(p.blockPosition(), false);
+                p.setItemSlot(EquipmentSlot.MAINHAND, ItemStack.EMPTY);
+                p.setHealth(p.getMaxHealth());
+                break;
+            case GEAR: {
+                ItemStack chest = new ItemStack(Items.IRON_CHESTPLATE);
+                chest.enchant(level.registryAccess().lookupOrThrow(Registries.ENCHANTMENT).getOrThrow(Enchantments.PROTECTION), 2);
+                p.setItemSlot(EquipmentSlot.CHEST, chest);
+                p.setItemSlot(EquipmentSlot.FEET, new ItemStack(Items.IRON_BOOTS));
+                p.addEffect(new MobEffectInstance(MobEffects.SLOWNESS, 600, 0));
+                p.setHealth(p.getMaxHealth());
+                break;
+            }
+            case VITAL_DEATH:
+                p.setHealth(10f);
+                p.die(p.damageSources().generic());
+                p.setHealth(0f);
+                break;
+            case SETHEALTH_DEATH:
+                p.setHealth(0f);
+                p.die(p.damageSources().magic());
                 break;
             default:
                 break;

@@ -54,6 +54,11 @@ public class WhatHitMeForge {
                 for (IModInfo i : ModList.get().getMods()) out.add(i.getModId());
                 return out;
             }
+
+            @Override
+            public String version(String modId) {
+                return ModList.get().getModContainerById(modId).map(c -> c.getModInfo().getVersion().toString()).orElse("");
+            }
         };
         Platform.serverLang = McText.LANG;
         Platform.configDir = FMLPaths.CONFIGDIR.get().toFile();
