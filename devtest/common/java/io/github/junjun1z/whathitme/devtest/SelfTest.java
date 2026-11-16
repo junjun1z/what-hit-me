@@ -463,5 +463,6 @@ public final class SelfTest {
         check("logout clears the buffer (no leak)", () -> ServerCore.tracker().peek(java.util.UUID.randomUUID()) == null, null);
         act(() -> info("server records: " + ids()));
         if (port.v12()) new V12Plan(this).plan();
+        if (port.v13()) new V13Plan(this).plan();
     }
 }

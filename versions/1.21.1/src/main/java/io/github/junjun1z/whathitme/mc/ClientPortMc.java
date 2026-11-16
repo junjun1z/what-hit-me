@@ -131,10 +131,29 @@ public abstract class ClientPortMc implements io.github.junjun1z.whathitme.core.
         return true;
     }
 
+    /** Set by /whm template, opened by {@link #tickConfigScreen} on the next client tick */
+    private static volatile boolean openEditor;
+
+    @Override
+    public boolean openTemplateEditor() {
+        openEditor = true;
+        return true;
+    }
+
+    @Override
+    public String playerName() {
+        return mc().player == null ? "" : mc().player.getGameProfile().getName();
+    }
+
     /** Called by the loader's client tick */
     public static void tickConfigScreen() {
+        if (openEditor) {
+            openEditor = false;
+            io.github.junjun1z.whathitme.core.Safe.run("template editor", () -> mc().setScreen(new TemplateEditorScreen121(mc().screen)));
+        }
         if (!openConfig) return;
         openConfig = false;
+
         io.github.junjun1z.whathitme.core.Safe.run("config screen", () -> mc().setScreen(configScreen.apply(mc().screen)));
     }
 

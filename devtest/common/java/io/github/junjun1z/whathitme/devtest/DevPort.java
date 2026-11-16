@@ -143,4 +143,20 @@ public interface DevPort {
     default boolean configGuiLocked(String key) {
         return false;
     }
+
+    // ---- 1.3
+
+    /** The 1.3 features (templates, death messages, template editor host) are implemented by this version */
+    default boolean v13() {
+        return false;
+    }
+
+    /** The template editor screen is open */
+    default boolean templateEditorOpen() {
+        return false;
+    }
+
+    /** Opens the What Hit Me? config screen and presses its "Templates..." button */
+    default void pressConfigTemplatesButton() {}
+
 }

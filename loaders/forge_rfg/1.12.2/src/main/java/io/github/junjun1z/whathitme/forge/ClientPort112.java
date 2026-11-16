@@ -110,8 +110,23 @@ final class ClientPort112 implements ClientPort {
         return true;
     }
 
+    /** Set by /whm template, opened by {@link ClientEvents} on the next client tick */
+    static volatile boolean openEditor;
+
+    @Override
+    public boolean openTemplateEditor() {
+        openEditor = true;
+        return true;
+    }
+
+    @Override
+    public String playerName() {
+        return mc().player == null ? "" : mc().player.getName();
+    }
+
     @Override
     public Gear localGear() {
+
         EntityPlayer p = mc().player;
         if (p == null) return null;
         return new Gear(Facts.dimension(p.world), p.posX, p.posY, p.posZ, p.getMaxHealth(), Facts.armor(p), Registries112.effects(p));

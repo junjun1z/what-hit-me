@@ -151,6 +151,14 @@ final class MultiplayerPlan {
         t.waitFor("respawned", () -> p.health() > 0f && p.noScreen(), 200);
         t.waitFor("respawn summary", () -> t.chatHas("Killing Blow"), 100);
         t.act(() -> t.info("summary: " + t.chatText().replace('\n', '|')));
+        if (serverMod && p.v13()) {
+            t.check("server protocol 3", () -> ClientCore.serverInfo != null && ClientCore.serverInfo.protocol == 3, null);
+            t.check("server pack death message replaced the vanilla one (if the server pack has one)", () -> ClientCore.serverDeathMessages.isEmpty()
+                || t.chatHas("WHMT-DM " + p.playerName()), (Supplier<?>) t::chatText);
+            t.check("server pack summary template (if the server pack has one)", () -> !ClientCore.serverTemplates.containsKey("summary") || t.chatHas("WHMT-SUM"),
+                (Supplier<?>) t::chatText);
+            t.act(() -> t.info("server pack: templates " + ClientCore.serverTemplates.keySet() + ", death messages " + ClientCore.serverDeathMessages.keySet()));
+        }
         t.cmd("/whm last", "Death Recap", 60);
         if (vc.hasTotem()) t.cmd("/whm snapshot 1", "Totem of Undying", 60);
         t.clearChat();
@@ -186,7 +194,7 @@ final class MultiplayerPlan {
             t.check("local stats counted the death", () -> t.chatHas("Deaths: "), (Supplier<?>) t::chatText);
             return;
         }
-        t.check("server protocol 2", () -> ClientCore.serverInfo != null && ClientCore.serverInfo.protocol == 2, null);
+        t.check("server protocol 2", () -> ClientCore.serverInfo != null && ClientCore.serverInfo.protocol >= 2, null);
         t.check("death recap from the server carries the equipment", () -> ClientCore.currentDeath != null && ClientCore.currentDeath.gear != null, null);
         t.cmd("/whm stats", "Death Statistics", 60);
         t.cmd("/whm test minecraft:lava", "Chat preview", 60);

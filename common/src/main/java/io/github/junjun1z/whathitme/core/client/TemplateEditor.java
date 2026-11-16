@@ -322,7 +322,7 @@ public final class TemplateEditor {
     private boolean mouseImpl(int button, double mx, double my, boolean shift) {
         if (button != 0) return false;
         for (Map.Entry<String, int[]> e : new ArrayList<>(areas.entrySet())) {
-            if (!in(e.getValue(), mx, my)) continue;
+            if (!in(e.getValue(), mx, my) || e.getKey().equals("varlist")) continue;
             String id = e.getKey();
             if (id.startsWith("tab:")) select(id.substring(4));
             else if (id.startsWith("var:")) insertVariable(id.substring(4));

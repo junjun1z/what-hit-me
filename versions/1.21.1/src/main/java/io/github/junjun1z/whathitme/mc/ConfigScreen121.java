@@ -120,7 +120,22 @@ public final class ConfigScreen121 extends Screen {
         prev.active = page > 0;
         next.active = page < pages - 1;
         addRenderableWidget(Button.builder(Component.literal("Done"), b -> onClose()).bounds(width / 2 + 5, y, 150, 20).build());
+        String tl = net.minecraft.client.resources.language.I18n.get("whathitme.config.templates");
+        int tw = Math.max(70, font.width(tl) + 12);
+        templates = addRenderableWidget(Button.builder(Component.literal(tl), b -> {
+            commit();
+            minecraft.setScreen(new TemplateEditorScreen121(this));
+        }).bounds(width - tw - 4, 4, tw, 20).build());
     }
+
+    private Button templates;
+
+    /** The "Templates..." button (self-test) */
+    public Button templatesButton() {
+        return templates;
+    }
+
+
 
     private void turn(int d) {
         commit();

@@ -139,7 +139,7 @@ public final class ClientCore {
     /** Pack templates / death messages of the server (protocol 3), or empty */
     public static Map<String, Template> serverTemplates = new java.util.LinkedHashMap<>();
     public static Map<String, String> serverDeathMessages = new java.util.LinkedHashMap<>();
-    /** Custom death messages waiting for their vanilla chat line: {plain vanilla text, replacement Txt, expiry ms} */
+    /** Custom death messages waiting for their vanilla chat line: {plain vanilla text, replacement Txt, expiry ms, used in chat} */
     private static final List<Object[]> DEATH_LINES = new ArrayList<>();
 
     /** The pack templates in use (the server's when it has the mod) */
@@ -166,11 +166,22 @@ public final class ClientCore {
                     DEATH_LINES.remove(i--);
                     continue;
                 }
-                if (e[0].equals(p)) {
-                    DEATH_LINES.remove(i);
+                if (e[0].equals(p) && e[3] == null) {
+                    e[3] = Boolean.TRUE;
                     return (Txt) e[1];
                 }
             }
+            return null;
+        }, null);
+    }
+
+    /** The death screen shows a vanilla death message: its custom replacement, or null */
+    public static Txt deathScreenReplacement(String plain) {
+        return Safe.get("death message", () -> {
+            if (plain == null) return null;
+            String p = Fmt.strip(plain).trim();
+            long now = System.currentTimeMillis();
+            for (Object[] e : DEATH_LINES) if ((Long) e[2] >= now && e[0].equals(p)) return (Txt) e[1];
             return null;
         }, null);
     }
@@ -184,7 +195,7 @@ public final class ClientCore {
         String plain = Fmt.strip(Msg.LOCAL.lang().jsonText(s.deathMessage)).trim();
         if (plain.isEmpty()) return;
         if (DEATH_LINES.size() > 20) DEATH_LINES.remove(0);
-        DEATH_LINES.add(new Object[] {plain, t, System.currentTimeMillis() + 10000L});
+        DEATH_LINES.add(new Object[] {plain, t, System.currentTimeMillis() + 10000L, null});
     }
 
     public static boolean on(Flag f) {

@@ -689,6 +689,8 @@ public final class ServerCore {
                 if (!p.isAdmin()) break; // the client already reloaded its own files
                 reload(srv);
                 p.send(new Packets.Message(false, "whathitme.reload.server"));
+                for (String w : WhmConfig.pack.warnings) p.send(new Packets.Message(true, "whathitme.reload.warning", w));
+
                 break;
             default:
                 break;

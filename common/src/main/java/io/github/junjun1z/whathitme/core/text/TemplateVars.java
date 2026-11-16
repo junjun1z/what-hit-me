@@ -271,7 +271,8 @@ public final class TemplateVars implements Template.Vars {
                 return f.detailsLink(alertIndex);
             case "timeline": {
                 List<Txt> lines = new java.util.ArrayList<>();
-                for (DamageRecord x : f.visible(s.records, 40)) lines.add(f.line(x, s.time));
+                RecapFormatter plain = new RecapFormatter(m, f.o.without(Flag.ACTION_BUTTONS));
+                for (DamageRecord x : f.visible(s.records, 40)) lines.add(plain.line(x, s.time));
                 return join(lines, "\n");
             }
             case "equipment":

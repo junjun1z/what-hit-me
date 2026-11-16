@@ -125,7 +125,7 @@ final class V12Plan {
         });
         t.sleep(80); // respawn invulnerability
         // ---- protocol / migration
-        t.check("server info protocol 2", () -> ClientCore.serverInfo != null && ClientCore.serverInfo.protocol == 2, null);
+        t.check("server info protocol 2", () -> ClientCore.serverInfo != null && ClientCore.serverInfo.protocol >= 2, null);
         t.check("old showHintsAndTips key migrated away", () -> WhmConfig.client.backend.raw(WhmConfig.CAT_DISPLAY, "showHintsAndTips") == null
             && WhmConfig.common.backend.raw(WhmConfig.CAT_DISPLAY, "showHintsAndTips") == null, null);
         t.check("migration: showHintsAndTips=false -> showHints=false (CfgFile)", () -> {

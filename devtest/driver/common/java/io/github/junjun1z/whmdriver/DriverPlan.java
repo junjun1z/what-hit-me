@@ -26,10 +26,12 @@ public final class DriverPlan {
     private boolean done;
     private int ticks;
     private boolean autoRespawn = true;
+    private final String mode;
 
     public DriverPlan(DriverPort port, String mode) {
         this.port = port;
         this.cmd = VanillaCommands.of(port.mcVersion());
+        this.mode = mode;
         if (mode.equals("two")) planSecondPlayer();
         else plan();
     }
@@ -176,6 +178,15 @@ public final class DriverPlan {
         });
         expect("respawn summary (English)", "Killing Blow", 200);
         expect("respawn summary: recap link", "Click here for full death recap", 20);
+        // 1.3: "dm-custom" = the server replaces death messages for everyone (Fabric), "dm-vanilla" = clients without the mod keep them (Forge)
+        if (mode.contains("dm-custom")) expect("custom death message from the server pack (replaced for everyone)", "WHMT-DM", 20);
+        if (mode.contains("dm-vanilla")) {
+            steps.add(() -> {
+                ok("client without the mod keeps the vanilla death message", !all().contains("WHMT-DM"));
+                return true;
+            });
+        }
+        if (mode.contains("dm")) expect("server pack template for clients without the mod (summary)", "WHMT-SUM", 20);
         say("/whm last");
         expect("/whm last", "Death Recap", 60);
         if (cmd.hasTotem()) {
