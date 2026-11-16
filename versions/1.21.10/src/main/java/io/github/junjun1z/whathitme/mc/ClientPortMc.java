@@ -120,6 +120,54 @@ public abstract class ClientPortMc implements io.github.junjun1z.whathitme.core.
         }
     }
 
+    /** Newest chat message already checked by {@link #replaceDeathMessageInChat} */
+    private static Object lastChatChecked;
+    /** A custom death message arrived: check the newest lines again on the next tick */
+    private static volatile boolean recheckChat;
+
+    /** Forge: a custom death message packet arrived (it may come after the vanilla chat line) */
+    public static void deathMessageArrived() {
+        recheckChat = true;
+    }
+
+    /**
+     * Forge 1.21.9+: the custom death message can arrive after the vanilla system chat line, so the line is replaced
+     * in the chat list (called every client tick; checks only new lines, or the newest ones after a death message).
+     */
+    @SuppressWarnings("unchecked")
+    public static void replaceDeathMessageInChat() {
+        net.minecraft.client.gui.components.ChatComponent chat = mc().gui.getChat();
+        if (chat == null) return;
+        List<net.minecraft.client.GuiMessage> list = null;
+        try {
+            for (Field f : net.minecraft.client.gui.components.ChatComponent.class.getDeclaredFields()) {
+                java.lang.reflect.Type t = f.getGenericType();
+                if (List.class.isAssignableFrom(f.getType()) && t instanceof java.lang.reflect.ParameterizedType
+                    && ((java.lang.reflect.ParameterizedType) t).getActualTypeArguments()[0] == net.minecraft.client.GuiMessage.class) {
+                    f.setAccessible(true);
+                    list = (List<net.minecraft.client.GuiMessage>) f.get(chat);
+                    break;
+                }
+            }
+        } catch (Throwable ignored) {
+            // no chat list
+        }
+        boolean recheck = recheckChat;
+        recheckChat = false;
+        if (list == null || list.isEmpty() || (!recheck && list.get(0) == lastChatChecked)) return;
+        boolean changed = false;
+        for (int i = 0; i < Math.min(10, list.size()); i++) {
+            net.minecraft.client.GuiMessage m = list.get(i);
+            if (!recheck && m == lastChatChecked) break;
+            Txt t = ClientCore.chatReplacement(m.content().getString());
+            if (t == null) continue;
+            list.set(i, new net.minecraft.client.GuiMessage(m.addedTime(), McText.of(t), m.signature(), m.tag()));
+            changed = true;
+        }
+        lastChatChecked = list.get(0);
+        if (changed) chat.rescaleChat();
+    }
+
     /** The death message of a death screen as JSON (its only Component field), "" when unknown */
     public static String deathMessage(DeathScreen screen) {
         try {

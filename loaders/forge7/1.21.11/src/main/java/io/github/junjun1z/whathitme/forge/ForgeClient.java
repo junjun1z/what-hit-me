@@ -61,6 +61,7 @@ public final class ForgeClient {
     /** Server -> client packet (already on the client thread) */
     static void onPacket(Packets.Packet p) {
         ClientCore.onPacket(p);
+        if (p instanceof Packets.Recap && ((Packets.Recap) p).kind == Packets.Recap.DEATH_MESSAGE) ClientPortMc.deathMessageArrived();
     }
 
     private static void register() {
@@ -72,6 +73,7 @@ public final class ForgeClient {
             if (mc.player == null || mc.level == null) return;
             ClientCore.tick(new FallbackEnv121(mc));
             ClientPortMc.tickConfigScreen();
+            ClientPortMc.replaceDeathMessageInChat();
             if (!catalogTried) {
                 catalogTried = true;
                 if (!CatalogCache.loaded()) Safe.run("catalog cache", () -> CatalogCache.init(PORT.registries()));
