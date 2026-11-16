@@ -52,6 +52,21 @@ public final class TemplateEditor {
     private static final int VAR_W = 118;
     private static final int VAR_ROW = 10;
 
+    /** The variable list: "#group" headers followed by their variables */
+    private static final List<String> VAR_ITEMS = new ArrayList<>();
+
+    static {
+        String[] groups = {"damage", "type", "attacker", "context", "other"};
+        for (String g : groups) {
+            VAR_ITEMS.add("#" + g);
+            for (Map.Entry<String, String> e : TemplateVars.KNOWN.entrySet()) {
+                String vg = e.getValue();
+                boolean main = vg.equals("damage") || vg.equals("type") || vg.equals("attacker") || vg.equals("context");
+                if (main ? vg.equals(g) : g.equals("other")) VAR_ITEMS.add(e.getKey());
+            }
+        }
+    }
+
     /** The open editor (self-test), null when none */
     public static volatile TemplateEditor current;
 
@@ -65,6 +80,11 @@ public final class TemplateEditor {
     private boolean sample;
     private String status = "";
     private int statusColor = 0x55FF55;
+    private long statusAt;
+    private String statusLine = "";
+    private String selectedVar;
+    private int rowsNow = 5;
+    private int varFit = 8;
     private boolean close;
     /** Where the shown lines came from: personal, pack or example */
     private String source = "";
@@ -174,6 +194,7 @@ public final class TemplateEditor {
     private void flash(String key, boolean ok, Object... args) {
         status = tr(key, args);
         statusColor = ok ? 0x55FF55 : 0xFF5555;
+        statusAt = System.currentTimeMillis();
     }
 
     // ------------------------------------------------------------------ actions
@@ -266,12 +287,8 @@ public final class TemplateEditor {
         ensureVisible();
     }
 
-    private int visibleRows() {
-        return Math.max(3, Math.min(14, (int) (lastH * 0.42f - 24) / ROW));
-    }
-
     private void ensureVisible() {
-        int rows = visibleRows();
+        int rows = rowsNow;
         if (focus < lineScroll) lineScroll = focus;
         if (focus >= lineScroll + rows) lineScroll = focus - rows + 1;
         lineScroll = Math.max(0, Math.min(lineScroll, Math.max(0, fields.size() - rows)));
@@ -325,7 +342,11 @@ public final class TemplateEditor {
             if (!in(e.getValue(), mx, my) || e.getKey().equals("varlist")) continue;
             String id = e.getKey();
             if (id.startsWith("tab:")) select(id.substring(4));
-            else if (id.startsWith("var:")) insertVariable(id.substring(4));
+            else if (id.startsWith("var:")) {
+                selectedVar = id.substring(4);
+                statusAt = 0;
+                insertVariable(selectedVar);
+            }
             else if (id.startsWith("up:")) moveLine(Integer.parseInt(id.substring(3)), -1);
             else if (id.startsWith("down:")) moveLine(Integer.parseInt(id.substring(5)), 1);
             else if (id.startsWith("del:")) removeLine(Integer.parseInt(id.substring(4)));
@@ -348,9 +369,9 @@ public final class TemplateEditor {
         int d = delta > 0 ? -1 : 1;
         int[] vars = areas.get("varlist");
         if (in(vars, mx, my)) {
-            varScroll = Math.max(0, Math.min(TemplateVars.KNOWN.size() - 1, varScroll + d));
+            varScroll = Math.max(0, Math.min(Math.max(0, VAR_ITEMS.size() - varFit), varScroll + d));
         } else {
-            lineScroll = Math.max(0, Math.min(Math.max(0, fields.size() - visibleRows()), lineScroll + d));
+            lineScroll = Math.max(0, Math.min(Math.max(0, fields.size() - rowsNow), lineScroll + d));
         }
         return true;
     }
@@ -370,9 +391,43 @@ public final class TemplateEditor {
         boolean over = enabled && in(a, mx, my);
         g.fill(x, y, x + bw, y + 13, enabled ? (over ? 0xFFA0A0A0 : 0xFF707070) : 0xFF404040);
         g.fill(x + 1, y + 1, x + bw - 1, y + 12, enabled ? (over ? 0xFF5A5A8C : 0xFF3A3A4A) : 0xFF262626);
-        g.text(label, x + (bw - g.width(label)) / 2, y + 3, enabled ? (over ? 0xFFFFA0 : 0xFFFFFF) : 0x707070);
+        String l = LegacyText.trim(g, label, bw - 4);
+        g.text(l, x + (bw - g.width(l)) / 2, y + 3, enabled ? (over ? 0xFFFFA0 : 0xFFFFFF) : 0x707070);
         if (enabled) areas.put(id, a);
         return over;
+    }
+
+    /** A thin scroll bar: first visible item, visible count, total */
+    private static void scrollBar(Gfx g, int x, int y0, int y1, int first, int visible, int total) {
+        if (total <= visible || y1 - y0 < 4) return;
+        g.fill(x, y0, x + 2, y1, 0x60FFFFFF);
+        int len = Math.max(4, (y1 - y0) * visible / total);
+        int pos = y0 + (y1 - y0 - len) * first / Math.max(1, total - visible);
+        g.fill(x, pos, x + 2, pos + len, 0xFFE0E0E0);
+    }
+
+    private String groupLabel(String group) {
+        return tr("whathitme.editor.group." + group);
+    }
+
+    /** One-line description of a variable */
+    public static String describe(String name) {
+        String key = "whathitme.var." + name;
+        return Msg.LOCAL.has(key) ? tr(key) : String.valueOf(TemplateVars.KNOWN.get(name));
+    }
+
+    public String selectedVariable() {
+        return selectedVar;
+    }
+
+    /** Plain text of the status line of the last frame (self-test) */
+    public String statusLine() {
+        return Fmt.strip(statusLine);
+    }
+
+    /** Number of template lines that fit in the last frame */
+    public int visibleLines() {
+        return rowsNow;
     }
 
     private void renderImpl(Gfx g, int w, int h, int mx, int my) {
@@ -382,93 +437,138 @@ public final class TemplateEditor {
         areas.clear();
         g.fill(0, 0, w, h, 0xC0101018);
         boolean blink = ((System.currentTimeMillis() - opened) / 500) % 2 == 0;
-        // ---- tabs
+        // tabs, wrapped to more rows in narrow windows
         int x = M;
+        int ty = 4;
         for (int i = 0; i < outputs.size(); i++) {
             String label = tr("whathitme.editor.out." + outputs.get(i));
-            int bw = g.width(label) + 10;
-            int[] a = {x, 4, x + bw, 17};
+            int bw = Math.min(g.width(label) + 10, w - 2 * M);
+            if (x > M && x + bw > w - M) {
+                x = M;
+                ty += 15;
+            }
+            int[] a = {x, ty, x + bw, ty + 13};
             boolean sel = i == out;
-            g.fill(x, 4, x + bw, 17, sel ? 0xFFC0A040 : 0xFF505050);
-            g.fill(x + 1, 5, x + bw - 1, 17, sel ? 0xFF403010 : 0xFF202020);
-            g.text(label, x + 5, 7, sel ? 0xFFFF55 : 0xCCCCCC);
+            g.fill(x, ty, x + bw, ty + 13, sel ? 0xFFC0A040 : 0xFF505050);
+            g.fill(x + 1, ty + 1, x + bw - 1, ty + 13, sel ? 0xFF403010 : 0xFF202020);
+            g.text(LegacyText.trim(g, label, bw - 6), x + 5, ty + 3, sel ? 0xFFFF55 : 0xCCCCCC);
             areas.put("tab:" + outputs.get(i), a);
             x += bw + 2;
         }
         String title = tr("whathitme.editor.title");
-        if (x + g.width(title) + M < w) g.text(Fmt.GOLD + title, w - M - g.width(title), 7, 0xFFFFFF);
-        // ---- lines
-        int top = 22;
-        int rows = visibleRows();
-        int varX = w - VAR_W - M;
+        if (x + g.width(title) + M + 6 < w) g.text(Fmt.GOLD + title, w - M - g.width(title), ty + 3, 0xFFFFFF);
+        int top = ty + 18;
+        // bottom buttons, wrapped to more rows in narrow windows
+        boolean death = Template.DEATH.equals(output());
+        String[][] btns = {
+            {"save", tr("whathitme.editor.save"), String.valueOf(!lockedNow && !death)},
+            {"pack", tr("whathitme.editor.savepack"), String.valueOf(canPack)},
+            {"reset", tr("whathitme.editor.reset"), String.valueOf(!lockedNow && !death)},
+            {"sample", tr(sample ? "whathitme.editor.usereal" : "whathitme.editor.usesample"), "true"},
+            {"cancel", tr("whathitme.editor.cancel"), "true"}};
+        int[] bx = new int[btns.length];
+        int[] brow = new int[btns.length];
+        int[] bwid = new int[btns.length];
+        int rowsB = 1;
+        x = M;
+        for (int i = 0; i < btns.length; i++) {
+            bwid[i] = Math.min(Math.max(44, g.width(btns[i][1]) + 12), w - 2 * M);
+            if (x > M && x + bwid[i] > w - M) {
+                x = M;
+                rowsB++;
+            }
+            bx[i] = x;
+            brow[i] = rowsB - 1;
+            x += bwid[i] + 2;
+        }
+        int btnTop = h - 17 - (rowsB - 1) * 15;
+        int statusY = btnTop - 11;
+        int bottom = statusY - 3;
+        // template lines: about half of the space between tabs and status line, the rest is the preview
+        int avail = bottom - top;
+        int rows = Math.min(14, (avail * 55 / 100 - 14) / ROW);
+        rows = Math.max(1, Math.min(rows, (avail - 44 - 14) / ROW));
+        rows = Math.max(1, rows);
+        rowsNow = rows;
+        int varW = Math.max(96, Math.min(140, w * 36 / 100));
+        int varX = w - varW - M;
         int listRight = varX - M;
         int bw = 12;
-        int fieldW = Math.max(60, listRight - M - 3 * (bw + 1) - 18);
+        int fx = M + 16;
+        int fieldW = Math.max(40, listRight - fx - 3 * (bw + 1) - 6);
         ensureVisible();
         for (int r = 0; r < rows; r++) {
             int i = lineScroll + r;
             if (i >= fields.size()) break;
             int y = top + r * ROW;
             g.text(Fmt.DARK_GRAY + String.valueOf(i + 1), M, y + 3, 0xFFFFFF);
-            int fx = M + 16;
             fields.get(i).draw(g, fx, y, fieldW, ROW - 1, i == focus, blink, TemplateVars::isKnown);
             areas.put("field:" + i, new int[] {fx, y, fx + fieldW, y + ROW - 1});
-            int bx = fx + fieldW + 2;
-            button(g, "up:" + i, "↑", bx, y, bw, !lockedNow && i > 0, mx, my);
-            button(g, "down:" + i, "↓", bx + bw + 1, y, bw, !lockedNow && i < fields.size() - 1, mx, my);
-            button(g, "del:" + i, "✕", bx + 2 * (bw + 1), y, bw, !lockedNow, mx, my);
+            int b0 = fx + fieldW + 2;
+            button(g, "up:" + i, "↑", b0, y, bw, !lockedNow && i > 0, mx, my);
+            button(g, "down:" + i, "↓", b0 + bw + 1, y, bw, !lockedNow && i < fields.size() - 1, mx, my);
+            button(g, "del:" + i, "✕", b0 + 2 * (bw + 1), y, bw, !lockedNow, mx, my);
         }
         int listBottom = top + rows * ROW;
-        button(g, "add", tr("whathitme.editor.addline"), M + 16, listBottom, 70, !lockedNow, mx, my);
+        scrollBar(g, listRight - 2, top, listBottom - 1, lineScroll, rows, fields.size());
+        areas.put("lines", new int[] {M, top, listRight, listBottom});
+        String addLabel = tr("whathitme.editor.addline");
+        int addW = Math.max(40, g.width(addLabel) + 12);
+        button(g, "add", addLabel, fx, listBottom, addW, !lockedNow, mx, my);
         String info = lockedNow ? Fmt.RED + tr("whathitme.editor.locked") : Fmt.GRAY + tr("whathitme.editor.source." + source);
-        g.text(LegacyText.trim(g, info, listRight - M - 92), M + 92, listBottom + 3, 0xFFFFFF);
-        // ---- variables
+        if (fields.size() > rows) info += Fmt.DARK_GRAY + "  " + (lineScroll + 1) + "-" + Math.min(fields.size(), lineScroll + rows) + "/" + fields.size();
+        g.text(LegacyText.trim(g, info, Math.max(0, listRight - fx - addW - 6)), fx + addW + 4, listBottom + 3, 0xFFFFFF);
+        // variables, grouped, scrollable
         int varTop = top;
         int varBottom = listBottom + 13;
-        g.fill(varX, varTop, varX + VAR_W, varBottom, 0x80000000);
-        areas.put("varlist", new int[] {varX, varTop, varX + VAR_W, varBottom});
-        List<String> names = new ArrayList<>(TemplateVars.KNOWN.keySet());
+        g.fill(varX, varTop, varX + varW, varBottom, 0x80000000);
+        areas.put("varlist", new int[] {varX, varTop, varX + varW, varBottom});
+        int fit = Math.max(1, (varBottom - varTop - 4) / VAR_ROW);
+        varFit = fit;
+        varScroll = Math.max(0, Math.min(varScroll, Math.max(0, VAR_ITEMS.size() - fit)));
         int vy = varTop + 2;
         String hoveredVar = null;
-        for (int i = varScroll; i < names.size() && vy + VAR_ROW <= varBottom; i++) {
-            String n = names.get(i);
-            int[] a = {varX, vy, varX + VAR_W, vy + VAR_ROW};
+        for (int i = varScroll; i < VAR_ITEMS.size() && i < varScroll + fit; i++) {
+            String n = VAR_ITEMS.get(i);
+            if (n.startsWith("#")) {
+                g.text(LegacyText.trim(g, Fmt.GOLD + groupLabel(n.substring(1)), varW - 8), varX + 3, vy + 1, 0xFFFFFF);
+                vy += VAR_ROW;
+                continue;
+            }
+            int[] a = {varX, vy, varX + varW - 3, vy + VAR_ROW};
             boolean over = in(a, mx, my);
+            if (n.equals(selectedVar)) g.fill(a[0], a[1], a[2], a[3], 0x5055FFFF);
             if (over) {
                 g.fill(a[0], a[1], a[2], a[3], 0x40FFFFFF);
                 hoveredVar = n;
             }
-            g.text("{" + n + "}", varX + 3, vy + 1, over ? 0xFFFF55 : 0x55FFFF);
-            if (!lockedNow) areas.put("var:" + n, a);
+            g.text(LegacyText.trim(g, "{" + n + "}", varW - 14), varX + 9, vy + 1, over ? 0xFFFF55 : 0x55FFFF);
+            areas.put("var:" + n, a);
             vy += VAR_ROW;
         }
-        // ---- preview
-        int py = varBottom + 6;
+        scrollBar(g, varX + varW - 3, varTop + 1, varBottom - 1, varScroll, fit, VAR_ITEMS.size());
+        // preview
+        int py = varBottom + 5;
         String sampleLabel = sample ? tr("whathitme.editor.preview.sample") : tr("whathitme.editor.preview.real");
-        g.text(Fmt.GOLD + tr("whathitme.editor.preview") + Fmt.GRAY + " (" + sampleLabel + ")", M, py, 0xFFFFFF);
-        int areaTop = py + 12;
-        int areaBottom = h - 22;
-        drawPreview(g, M, areaTop, w - 2 * M, Math.max(20, areaBottom - areaTop), mx, my, w, h);
-        // ---- bottom buttons
-        int by = h - 18;
-        int b = M;
-        boolean death = Template.DEATH.equals(output());
-        button(g, "save", tr("whathitme.editor.save"), b, by, 60, !lockedNow && !death, mx, my);
-        b += 62;
-        button(g, "pack", tr("whathitme.editor.savepack"), b, by, 80, canPack, mx, my);
-        b += 82;
-        button(g, "reset", tr("whathitme.editor.reset"), b, by, 70, !lockedNow && !death, mx, my);
-        b += 72;
-        button(g, "sample", tr(sample ? "whathitme.editor.usereal" : "whathitme.editor.usesample"), b, by, 80, true, mx, my);
-        b += 82;
-        button(g, "cancel", tr("whathitme.editor.cancel"), b, by, 60, true, mx, my);
-        b += 64;
-        if (!status.isEmpty()) g.text(LegacyText.trim(g, status, Math.max(0, w - b - M)), b, by + 3, statusColor);
+        g.text(LegacyText.trim(g, Fmt.GOLD + tr("whathitme.editor.preview") + Fmt.GRAY + " (" + sampleLabel + ")", w - 2 * M), M, py, 0xFFFFFF);
+        int areaTop = py + 11;
+        drawPreview(g, M, areaTop, w - 2 * M, Math.max(12, bottom - areaTop), mx, my, w, h);
+        // status line: a fresh message, else the selected variable
+        if (!status.isEmpty() && System.currentTimeMillis() - statusAt < 6000) {
+            statusLine = (statusColor == 0x55FF55 ? Fmt.GREEN : Fmt.RED) + status;
+        } else if (selectedVar != null) {
+            statusLine = Fmt.AQUA + "{" + selectedVar + "}" + Fmt.GRAY + " " + describe(selectedVar);
+        } else {
+            statusLine = Fmt.DARK_GRAY + tr("whathitme.editor.hint");
+        }
+        g.text(LegacyText.trim(g, statusLine, w - 2 * M), M, statusY, 0xFFFFFF);
+        for (int i = 0; i < btns.length; i++) {
+            button(g, btns[i][0], btns[i][1], bx[i], btnTop + brow[i] * 15, bwid[i], Boolean.parseBoolean(btns[i][2]), mx, my);
+        }
         if (hoveredVar != null) {
             List<String> tip = new ArrayList<>();
             tip.add(Fmt.AQUA + "{" + hoveredVar + "}");
-            String key = "whathitme.var." + hoveredVar;
-            tip.add(Msg.LOCAL.has(key) ? tr(key) : TemplateVars.KNOWN.get(hoveredVar));
+            tip.addAll(LegacyText.wrap(g, describe(hoveredVar), Math.max(80, Math.min(220, w - 40))));
             g.tooltip(tip, mx, my, w, h);
         }
     }
@@ -512,9 +612,17 @@ public final class TemplateEditor {
                 List<String> tip = new ArrayList<>();
                 if (k != null) for (Txt t : f.hoverLines(k)) tip.add(t.toLegacy(lang));
                 for (String t : tip) previewText.add(Fmt.strip(t));
+                // wrapped and cut to the preview area so it never covers the buttons
+                List<String> shown = new ArrayList<>();
+                for (String t : tip) shown.addAll(LegacyText.wrap(g, t, Math.max(60, Math.min(250, pw - 16))));
+                int max = Math.max(1, (ph - 10) / 10);
+                if (shown.size() > max) {
+                    shown = new ArrayList<>(shown.subList(0, Math.max(1, max - 1)));
+                    shown.add(Fmt.DARK_GRAY + "...");
+                }
                 // drawn like the death screen tooltip, at the top left of the preview area
                 g.push();
-                g.tooltip(tip, x - 12 + 4, y + 12 + 4, sw, sh);
+                g.tooltip(shown, x - 12 + 4, y + 12 + 4, sw, sh);
                 g.pop();
                 break;
             }

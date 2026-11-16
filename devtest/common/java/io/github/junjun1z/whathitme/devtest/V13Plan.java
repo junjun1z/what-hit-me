@@ -275,11 +275,39 @@ final class V13Plan {
         t.sleep(3);
         t.check("editor: no Save / Reset for a locked template", () -> TemplateEditor.current.area("save") == null && TemplateEditor.current.area("reset") == null, null);
         t.screenshot("whm_selftest_editor_locked");
+        t.check("editor: the variable list starts with the damage group", () -> TemplateEditor.current.area("var:damage") != null
+            && TemplateEditor.current.area("var:recap") == null, null);
+        t.act(() -> {
+            TemplateEditor e = TemplateEditor.current;
+            int[] a = e.area("varlist");
+            for (int i = 0; i < 120; i++) e.scroll((a[0] + a[2]) / 2.0, (a[1] + a[3]) / 2.0, -1);
+        });
+        t.sleep(3);
+        t.check("editor: the variable list scrolls to the last variable", () -> TemplateEditor.current.area("var:recap") != null, null);
+        t.check("editor: a clicked variable is described in the status line", () -> {
+            TemplateEditor e = TemplateEditor.current;
+            int[] a = e.area("var:recap");
+            e.mouseDown(0, (a[0] + a[2]) / 2.0, (a[1] + a[3]) / 2.0, false);
+            return "recap".equals(e.selectedVariable());
+        }, null);
+        t.sleep(3);
+        t.check("editor: status line shows the description", () -> TemplateEditor.current.statusLine().startsWith("{recap} ")
+            && TemplateEditor.current.statusLine().length() > 10, (Supplier<?>) () -> TemplateEditor.current.statusLine());
         t.check("editor: death messages tab for pack makers", () -> {
             TemplateEditor e = TemplateEditor.current;
             e.select(Template.DEATH);
             return Template.DEATH.equals(e.output());
         }, null);
+        t.act(() -> {
+            TemplateEditor e = TemplateEditor.current;
+            for (int i = 0; i < 25; i++) e.key(TemplateEditor.K_ENTER, false, false);
+        });
+        t.sleep(3);
+        t.check("editor: the template lines scroll to the focused line", () -> {
+            TemplateEditor e = TemplateEditor.current;
+            return e.lineCount() > e.visibleLines() && e.area("field:0") == null && e.area("field:" + (e.lineCount() - 1)) != null;
+        }, (Supplier<?>) () -> TemplateEditor.current.lineCount() + " lines, " + TemplateEditor.current.visibleLines() + " visible");
+        t.screenshot("whm_selftest_editor_scrolled");
         t.act(() -> TemplateEditor.current.key(TemplateEditor.K_ESCAPE, false, false));
         t.waitFor("editor: Escape closes it", () -> !p.templateEditorOpen(), 40);
         t.act(p::pressConfigTemplatesButton);
