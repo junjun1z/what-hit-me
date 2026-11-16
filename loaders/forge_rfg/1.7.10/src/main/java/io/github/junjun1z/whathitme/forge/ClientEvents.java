@@ -6,6 +6,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import org.lwjgl.input.Mouse;
 
 import cpw.mods.fml.client.event.ConfigChangedEvent;
+import cpw.mods.fml.common.eventhandler.EventPriority;
 import cpw.mods.fml.common.eventhandler.SubscribeEvent;
 import cpw.mods.fml.common.gameevent.TickEvent;
 import cpw.mods.fml.common.network.FMLNetworkEvent;
@@ -22,6 +23,9 @@ import io.github.junjun1z.whathitme.mc.Gfx17;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGameOver;
 import net.minecraft.client.gui.GuiScreen;
+import io.github.junjun1z.whathitme.core.text.Txt;
+import io.github.junjun1z.whathitme.mc.McText;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 
@@ -70,8 +74,20 @@ public final class ClientEvents {
             ClientPort17.openConfig = false;
             Safe.run("config screen", () -> mc.displayGuiScreen(new WhmGuiFactory.Screen(mc.currentScreen)));
         }
+        if (ClientPort17.openEditor) {
+            ClientPort17.openEditor = false;
+            Safe.run("template editor", () -> mc.displayGuiScreen(new GuiTemplateEditor(mc.currentScreen)));
+        }
         if (mc.thePlayer == null || mc.theWorld == null) return;
         ClientCore.tick(new FallbackEnv17(mc));
+    }
+
+    /** Custom death messages of a server with the mod replace the vanilla chat line */
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public void onChat(ClientChatReceivedEvent event) {
+        if (event.message == null) return;
+        Txt t = ClientCore.chatReplacement(event.message.getUnformattedText());
+        if (t != null) event.message = McText.of(t);
     }
 
     @SubscribeEvent

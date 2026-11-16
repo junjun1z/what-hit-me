@@ -109,6 +109,20 @@ final class ClientPort111 implements ClientPort {
         return true;
     }
 
+    /** Set by /whm template, opened by {@link ClientEvents} on the next client tick */
+    static volatile boolean openEditor;
+
+    @Override
+    public boolean openTemplateEditor() {
+        openEditor = true;
+        return true;
+    }
+
+    @Override
+    public String playerName() {
+        return mc().player == null ? "" : mc().player.getName();
+    }
+
     @Override
     public Gear localGear() {
         net.minecraft.entity.player.EntityPlayer p = mc().player;

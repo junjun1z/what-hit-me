@@ -35,7 +35,44 @@ public final class WhmGuiFactory implements IModGuiFactory {
 
     @Override
     public GuiScreen createConfigGui(GuiScreen parentScreen) {
-        return new GuiConfig(parentScreen, elements(), Platform.MODID, false, false, I18n.format("whathitme.config.title"));
+        return new WithTemplates(parentScreen);
+    }
+
+    /** Forge's config screen plus a "Templates..." button that opens the template editor */
+    public static final class WithTemplates extends GuiConfig {
+        private static final int TEMPLATES = 3013;
+
+        public WithTemplates(GuiScreen parent) {
+            super(parent, elements(), Platform.MODID, false, false, I18n.format("whathitme.config.title"));
+        }
+
+        @Override
+        public void initGui() {
+            super.initGui();
+            String label = I18n.format("whathitme.config.templates");
+            int w = Math.max(70, io.github.junjun1z.whathitme.mc.Gfx111.INSTANCE.width(label) + 12);
+            buttonList.add(new net.minecraft.client.gui.GuiButton(TEMPLATES, width - w - 4, 4, w, 20, label));
+        }
+
+        /** Same as clicking "Templates..." (self-test); false when the button is missing */
+        public boolean pressTemplates() {
+            for (net.minecraft.client.gui.GuiButton b : buttonList) {
+                if (b.id == TEMPLATES) {
+                    actionPerformed(b);
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        protected void actionPerformed(net.minecraft.client.gui.GuiButton button) {
+            if (button.id == TEMPLATES) {
+                mc.displayGuiScreen(new GuiTemplateEditor(this));
+                return;
+            }
+            super.actionPerformed(button);
+        }
     }
 
     @Override

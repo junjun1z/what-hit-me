@@ -182,6 +182,23 @@ final class DevPort111 implements DevPort {
     }
 
     @Override
+    public boolean v13() {
+        return true;
+    }
+
+    @Override
+    public boolean templateEditorOpen() {
+        return mc().currentScreen instanceof io.github.junjun1z.whathitme.forge.GuiTemplateEditor;
+    }
+
+    @Override
+    public void pressConfigTemplatesButton() {
+        io.github.junjun1z.whathitme.forge.WhmGuiFactory.WithTemplates s = new io.github.junjun1z.whathitme.forge.WhmGuiFactory.WithTemplates(null);
+        mc().displayGuiScreen(s);
+        s.pressTemplates();
+    }
+
+    @Override
     public boolean configScreenOpen() {
         return mc().currentScreen instanceof GuiConfig && "whathitme".equals(((GuiConfig) mc().currentScreen).modID);
     }

@@ -16,6 +16,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGameOver;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.util.IChatComponent;
+import io.github.junjun1z.whathitme.core.text.Txt;
+import io.github.junjun1z.whathitme.mc.McText;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent;
@@ -55,13 +58,43 @@ public final class ClientEvents {
             ClientPort18.openConfig = false;
             Safe.run("config screen", () -> mc.displayGuiScreen(new WhmGuiFactory.Screen(mc.currentScreen)));
         }
+        if (ClientPort18.openEditor) {
+            ClientPort18.openEditor = false;
+            Safe.run("template editor", () -> mc.displayGuiScreen(new GuiTemplateEditor(mc.currentScreen)));
+        }
         if (mc.thePlayer == null || mc.theWorld == null) return;
         ClientCore.tick(new FallbackEnv18(mc));
     }
 
+    /** Custom death messages of a server with the mod replace the vanilla chat line */
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public void onChat(ClientChatReceivedEvent event) {
+        if (event.message == null) return;
+        Txt t = ClientCore.chatReplacement(event.message.getUnformattedText());
+        if (t != null) event.message = McText.of(t);
+    }
+
     @SubscribeEvent
     public void onGuiOpen(GuiOpenEvent event) {
-        if (event.gui instanceof GuiGameOver) ClientCore.onDeathScreen(deathMessage((GuiGameOver) event.gui));
+        if (!(event.gui instanceof GuiGameOver)) return;
+        ClientCore.onDeathScreen(deathMessage((GuiGameOver) event.gui));
+        Safe.run("death screen message", () -> replaceDeathMessage((GuiGameOver) event.gui));
+    }
+
+    /** A custom death message of a server with the mod replaces the vanilla one on the death screen too */
+    private static void replaceDeathMessage(GuiGameOver gui) {
+        try {
+            for (Field f : GuiGameOver.class.getDeclaredFields()) {
+                if (f.getType() != IChatComponent.class) continue;
+                f.setAccessible(true);
+                IChatComponent c = (IChatComponent) f.get(gui);
+                Txt t = c == null ? null : ClientCore.deathScreenReplacement(c.getUnformattedText());
+                if (t != null) f.set(gui, McText.of(t));
+                return;
+            }
+        } catch (ReflectiveOperationException ignored) {
+            // keep the vanilla message
+        }
     }
 
     /** The vanilla death message of the death screen (no access transformer: its only IChatComponent field) */

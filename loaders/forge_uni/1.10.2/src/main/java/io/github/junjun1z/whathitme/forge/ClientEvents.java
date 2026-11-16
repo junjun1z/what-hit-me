@@ -16,6 +16,9 @@ import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.GuiGameOver;
 import net.minecraft.client.gui.GuiScreen;
 import net.minecraft.util.text.ITextComponent;
+import io.github.junjun1z.whathitme.core.text.Txt;
+import io.github.junjun1z.whathitme.mc.McText;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.fml.client.event.ConfigChangedEvent;
@@ -55,13 +58,43 @@ public final class ClientEvents {
             ClientPort110.openConfig = false;
             Safe.run("config screen", () -> mc.displayGuiScreen(new WhmGuiFactory.Screen(mc.currentScreen)));
         }
+        if (ClientPort110.openEditor) {
+            ClientPort110.openEditor = false;
+            Safe.run("template editor", () -> mc.displayGuiScreen(new GuiTemplateEditor(mc.currentScreen)));
+        }
         if (mc.player == null || mc.world == null) return;
         ClientCore.tick(new FallbackEnv110(mc));
     }
 
+    /** Custom death messages of a server with the mod replace the vanilla chat line */
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public void onChat(ClientChatReceivedEvent event) {
+        if (event.getMessage() == null) return;
+        Txt t = ClientCore.chatReplacement(event.getMessage().getUnformattedText());
+        if (t != null) event.setMessage(McText.of(t));
+    }
+
     @SubscribeEvent
     public void onGuiOpen(GuiOpenEvent event) {
-        if (event.getGui() instanceof GuiGameOver) ClientCore.onDeathScreen(deathMessage((GuiGameOver) event.getGui()));
+        if (!(event.getGui() instanceof GuiGameOver)) return;
+        ClientCore.onDeathScreen(deathMessage((GuiGameOver) event.getGui()));
+        Safe.run("death screen message", () -> replaceDeathMessage((GuiGameOver) event.getGui()));
+    }
+
+    /** A custom death message of a server with the mod replaces the vanilla one on the death screen too */
+    private static void replaceDeathMessage(GuiGameOver gui) {
+        try {
+            for (Field f : GuiGameOver.class.getDeclaredFields()) {
+                if (f.getType() != ITextComponent.class) continue;
+                f.setAccessible(true);
+                ITextComponent c = (ITextComponent) f.get(gui);
+                Txt t = c == null ? null : ClientCore.deathScreenReplacement(c.getUnformattedText());
+                if (t != null) f.set(gui, McText.of(t));
+                return;
+            }
+        } catch (ReflectiveOperationException ignored) {
+            // keep the vanilla message
+        }
     }
 
     /** The vanilla death message of the death screen (no access transformer: its only ITextComponent field) */
