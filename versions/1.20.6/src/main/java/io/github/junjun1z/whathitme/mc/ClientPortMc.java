@@ -119,6 +119,44 @@ public abstract class ClientPortMc implements io.github.junjun1z.whathitme.core.
         }
     }
 
+    /** Newest chat message already checked by {@link #replaceDeathMessageInChat} */
+    private static Object lastChatChecked;
+
+    /**
+     * Forge 1.20.6 posts no event for system chat messages: a custom death message of a server with the mod replaces the
+     * vanilla line after it was added (called every client tick, checks only the messages added since the last call).
+     */
+    @SuppressWarnings("unchecked")
+    public static void replaceDeathMessageInChat() {
+        net.minecraft.client.gui.components.ChatComponent chat = mc().gui.getChat();
+        List<net.minecraft.client.GuiMessage> list = null;
+        try {
+            for (Field f : net.minecraft.client.gui.components.ChatComponent.class.getDeclaredFields()) {
+                java.lang.reflect.Type t = f.getGenericType();
+                if (List.class.isAssignableFrom(f.getType()) && t instanceof java.lang.reflect.ParameterizedType
+                    && ((java.lang.reflect.ParameterizedType) t).getActualTypeArguments()[0] == net.minecraft.client.GuiMessage.class) {
+                    f.setAccessible(true);
+                    list = (List<net.minecraft.client.GuiMessage>) f.get(chat);
+                    break;
+                }
+            }
+        } catch (Throwable ignored) {
+            // no chat list
+        }
+        if (list == null || list.isEmpty() || list.get(0) == lastChatChecked) return;
+        boolean changed = false;
+        for (int i = 0; i < Math.min(10, list.size()); i++) {
+            net.minecraft.client.GuiMessage m = list.get(i);
+            if (m == lastChatChecked) break;
+            Txt t = ClientCore.chatReplacement(m.content().getString());
+            if (t == null) continue;
+            list.set(i, new net.minecraft.client.GuiMessage(m.addedTime(), McText.of(t), m.signature(), m.tag()));
+            changed = true;
+        }
+        lastChatChecked = list.get(0);
+        if (changed) chat.rescaleChat();
+    }
+
     /** The death message of a death screen as JSON (its only Component field), "" when unknown */
     public static String deathMessage(DeathScreen screen) {
         try {
