@@ -22,6 +22,14 @@ public final class ServerPortMc implements ServerPort {
     private final Function<ServerPlayer, PlayerHandle> wrap;
     private final Registries116 registries;
 
+    /** Set by a loader that replaces the vanilla death message itself (Fabric mixin) */
+    public static volatile boolean replacesDeathMessagesFlag;
+
+    @Override
+    public boolean replacesDeathMessages() {
+        return replacesDeathMessagesFlag;
+    }
+
     public ServerPortMc(MinecraftServer server, Function<ServerPlayer, PlayerHandle> wrap) {
         this.server = server;
         this.wrap = wrap;

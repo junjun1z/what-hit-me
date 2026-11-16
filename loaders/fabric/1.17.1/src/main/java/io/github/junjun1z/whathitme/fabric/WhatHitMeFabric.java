@@ -86,6 +86,7 @@ public final class WhatHitMeFabric implements ModInitializer {
         Platform.serverLang = McText.LANG;
         Platform.configDir = FabricLoader.getInstance().getConfigDir().toFile();
         WhmConfig.init(Platform.configDir, FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT, CfgFile::new);
+        ServerPortMc.replacesDeathMessagesFlag = true;
         ServerPlayNetworking.registerGlobalReceiver(FabricNet.ID, (server, player, handler, buf, sender) -> {
             Packets.Packet p = FabricNet.read(buf);
             if (p == null || !Packets.serverbound(p.type())) return;
@@ -134,12 +135,29 @@ public final class WhatHitMeFabric implements ModInitializer {
         ServerCore.onDamageAfter(new FabricPlayer(p), p.level.getGameTime(), source, p.getHealth(), p.getAbsorptionAmount(), () -> Facts.hit(p, source));
     }
 
+    /** Custom death message of a dying player, from onDie to the death message mixin */
+    private static final Map<java.util.UUID, net.minecraft.network.chat.Component> CUSTOM_DM = new java.util.concurrent.ConcurrentHashMap<>();
+
+    /** From the death message mixin: the pack's custom death message (decided in onDie), or the vanilla one */
+    public static net.minecraft.network.chat.Component deathMessage(ServerPlayer p, net.minecraft.network.chat.Component vanilla) {
+        net.minecraft.network.chat.Component c = CUSTOM_DM.remove(p.getUUID());
+        return c != null ? c : vanilla;
+    }
+
     /** ServerPlayer#die, first line (the combat tracker still has the death message) */
     public static void onDie(ServerPlayer p, DamageSource source) {
         if (p.level.isClientSide) return;
         String msg = "";
+        CUSTOM_DM.remove(p.getUUID());
         try {
-            msg = McText.toJson(p.getCombatTracker().getDeathMessage());
+            io.github.junjun1z.whathitme.core.text.Txt t = ServerCore.customDeathMessage(new FabricPlayer(p), () -> Facts.hit(p, source));
+            if (t != null) {
+                net.minecraft.network.chat.Component c = McText.of(t);
+                CUSTOM_DM.put(p.getUUID(), c);
+                msg = McText.toJson(c);
+            } else {
+                msg = McText.toJson(p.getCombatTracker().getDeathMessage());
+            }
         } catch (Throwable ignored) {
             // no message
         }

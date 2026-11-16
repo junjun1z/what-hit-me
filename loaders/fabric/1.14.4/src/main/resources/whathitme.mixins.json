@@ -3,7 +3,7 @@
   "minVersion": "0.8",
   "package": "io.github.junjun1z.whathitme.fabric.mixin",
   "compatibilityLevel": "JAVA_8",
-  "mixins": ["PlayerListMixin", "PlayerMixin", "ServerPlayerMixin"],
+  "mixins": ["PlayerListMixin", "PlayerMixin", "ServerPlayerMixin", "DeathMessageMixin"],
   "client": ["DeathScreenMixin", "LocalPlayerMixin", "MouseHandlerMixin"],
   "injectors": { "defaultRequire": 1 }
 }

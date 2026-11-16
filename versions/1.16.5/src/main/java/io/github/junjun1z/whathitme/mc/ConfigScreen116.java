@@ -117,6 +117,19 @@ public final class ConfigScreen116 extends Screen {
         prev.active = page > 0;
         next.active = page < pages - 1;
         addButton(new Button(width / 2 + 5, y, 150, 20, new TextComponent("Done"), b -> onClose()));
+        String tl = net.minecraft.client.resources.language.I18n.get("whathitme.config.templates");
+        int tw = Math.max(70, font.width(tl) + 12);
+        templates = addButton(new Button(width - tw - 4, 4, tw, 20, new TextComponent(tl), b -> {
+            commit();
+            minecraft.setScreen(new TemplateEditorScreen116(this));
+        }));
+    }
+
+    private Button templates;
+
+    /** The "Templates..." button (self-test) */
+    public Button templatesButton() {
+        return templates;
     }
 
     private void turn(int d) {

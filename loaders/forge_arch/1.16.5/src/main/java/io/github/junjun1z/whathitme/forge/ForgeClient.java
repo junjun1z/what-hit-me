@@ -19,6 +19,7 @@ import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.ClientChatEvent;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.GuiOpenEvent;
 import net.minecraftforge.client.event.GuiScreenEvent;
 import net.minecraftforge.common.MinecraftForge;
@@ -101,7 +102,18 @@ public final class ForgeClient {
 
     @SubscribeEvent
     public void onScreenOpening(GuiOpenEvent event) {
-        if (event.getGui() instanceof DeathScreen) ClientCore.onDeathScreen(ClientPortMc.deathMessage((DeathScreen) event.getGui()));
+        if (!(event.getGui() instanceof DeathScreen)) return;
+        DeathScreen s = (DeathScreen) event.getGui();
+        ClientCore.onDeathScreen(ClientPortMc.deathMessage(s));
+        Safe.run("death screen message", () -> ClientPortMc.replaceDeathMessage(s));
+    }
+
+    /** Custom death messages of a server with the mod replace the vanilla chat line */
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public void onChat(ClientChatReceivedEvent event) {
+        if (event.getMessage() == null) return;
+        io.github.junjun1z.whathitme.core.text.Txt t = ClientCore.chatReplacement(event.getMessage().getString());
+        if (t != null) event.setMessage(McText.of(t));
     }
 
     @SubscribeEvent
