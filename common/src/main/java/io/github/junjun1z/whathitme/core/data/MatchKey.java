@@ -11,10 +11,11 @@ import io.github.junjun1z.whathitme.core.config.WhmConfig;
 
 /**
  * A composite match key of renameMap, hintMap, ignoredDamageIds and deathTriggers. Conditions in any order, separated by
- * spaces or '&amp;': a damage id ({@code minecraft:lava}, {@code mob:minecraft:zombie}), {@code @entity_id} or
+ * spaces, '&amp;' or written directly before an '@' ({@code *@twilightforest:lich}): a damage id ({@code minecraft:lava},
+ * {@code mob:minecraft:zombie}), {@code @entity_id} or
  * {@code @mob:entity_id} (the attacker), {@code @item:modid:item_id} (attacker main hand), {@code @dim:dimension_id}.
- * Every condition may use * wildcards. All conditions must match; when several keys match, the one with the most
- * conditions wins.
+ * Every condition may use * and ? wildcards. All conditions must match. When several keys match, the one with the most
+ * conditions wins (a bare * does not count); on a tie the one with fewer wildcard conditions wins.
  */
 public final class MatchKey {
 
@@ -52,6 +53,8 @@ public final class MatchKey {
     private final int[] kinds;
     private final Pattern[] patterns;
     private final String[] exact;
+    private final int specificity;
+    private final int wildCount;
 
     private MatchKey(String text, List<Integer> kinds, List<String> values) {
         this.text = text;
@@ -59,19 +62,29 @@ public final class MatchKey {
         this.kinds = new int[n];
         this.patterns = new Pattern[n];
         this.exact = new String[n];
+        int spec = 0;
+        int ex = 0;
         for (int i = 0; i < n; i++) {
             this.kinds[i] = kinds.get(i);
             String v = values.get(i);
-            if (v.indexOf('*') >= 0 || v.indexOf('?') >= 0) patterns[i] = WhmConfig.glob(v);
-            else exact[i] = v.toLowerCase(Locale.ROOT);
+            if (v.indexOf('*') >= 0 || v.indexOf('?') >= 0) {
+                patterns[i] = WhmConfig.glob(v);
+                if (!v.replace("*", "").isEmpty()) spec++;
+            } else {
+                exact[i] = v.toLowerCase(Locale.ROOT);
+                spec++;
+                ex++;
+            }
         }
+        this.specificity = spec;
+        this.wildCount = n - ex;
     }
 
     public static MatchKey parse(String key) {
         List<Integer> kinds = new ArrayList<>();
         List<String> values = new ArrayList<>();
         String t = key == null ? "" : key.trim();
-        for (String part : t.split("[\\s&]+")) {
+        for (String part : t.split("[\\s&]+|(?=@)")) {
             if (part.isEmpty()) continue;
             String low = part.toLowerCase(Locale.ROOT);
             if (low.startsWith("@item:")) {
@@ -97,9 +110,18 @@ public final class MatchKey {
         return new MatchKey(t, kinds, values);
     }
 
-    /** Number of conditions (the specificity) */
+    /** Number of conditions */
     public int size() {
         return kinds.length;
+    }
+
+    /** Conditions that narrow the match (a bare * does not) */
+    public int specificity() {
+        return specificity;
+    }
+
+    private boolean beats(int spec, int wild) {
+        return specificity > spec || (specificity == spec && wildCount < wild);
     }
 
     private boolean test(int i, String v) {
@@ -141,11 +163,13 @@ public final class MatchKey {
         if (map == null || map.isEmpty()) return null;
         String direct = map.get(t.damageId);
         MatchKey bestKey = null;
-        int bestSize = direct != null ? 1 : 0;
+        int bestSpec = direct != null ? 1 : -1;
+        int bestWild = direct != null ? 0 : Integer.MAX_VALUE;
         for (MatchKey k : parsed) {
-            if (k.size() > bestSize && k.matches(t)) {
+            if (k.beats(bestSpec, bestWild) && k.matches(t)) {
                 bestKey = k;
-                bestSize = k.size();
+                bestSpec = k.specificity;
+                bestWild = k.wildCount;
             }
         }
         if (bestKey != null) return map.get(bestKey.text);

@@ -165,7 +165,16 @@ config/whathitme/
 | `@item:minecraft:iron_sword` | 攻撃者がメインハンドに持っているアイテム |
 | `@dim:minecraft:the_nether` | ディメンション（名前空間なしの `the_nether` でも一致） |
 
-どの条件にも `*` ワイルドカードが使えます。キーの条件はすべて一致する必要があり、複数のキーが一致したときは条件の数が多いものが優先されます。
+どの条件にも `*` と `?` のワイルドカードが使えます。`@` の前は区切りを省略して続けて書けるので、`*@twilightforest:lich`（ID に関係なくリッチからの攻撃すべて）や `minecraft:arrow@twilightforest:skeleton_druid` のようにも書けます。よく使う例:
+
+| キー | 一致するもの |
+|---|---|
+| `*@twilightforest:lich` または `@twilightforest:lich` | リッチからの攻撃すべて（攻撃のダメージ ID が何であっても） |
+| `@twilightforest:*` | Twilight Forest のどの mob からの攻撃でも |
+| `*acid*` | 「acid」を含むダメージ ID すべて（mod が実行時に ID を組み立てる場合にも使えます） |
+| `minecraft:arrow @twilightforest:skeleton_druid` | その mob が撃った矢だけ |
+
+キーの条件はすべて一致する必要があります。複数のキーが一致したときは、より具体的なものが優先されます。条件の数が多いもの（`*` だけの条件は数えません）、同じ数ならワイルドカードの少ないものです。たとえば `twilightforest:lich_bolt @twilightforest:lich` のヒントは `@twilightforest:lich` の一般的なヒントより優先され、`*` だけのキーは最も優先度の低い「その他すべて」として使えます。
 
 ### 死亡トリガー（deathTriggers）
 

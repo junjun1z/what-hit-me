@@ -165,7 +165,16 @@ Used by `renameMap`, `hintMap`, `ignoredDamageIds`, `defaultIgnoredDamageIds` an
 | `@item:minecraft:iron_sword` | The item in the attacker's main hand |
 | `@dim:minecraft:the_nether` | The dimension (`the_nether` without namespace also matches) |
 
-`*` wildcards work in every condition. All conditions of a key must match; if several keys match, the one with the most conditions wins.
+Every condition may use `*` and `?` wildcards. Conditions can also be written without a separator in front of an `@`, so `*@twilightforest:lich` (any damage from the Lich, whatever its id) and `minecraft:arrow@twilightforest:skeleton_druid` work too. Useful patterns:
+
+| Key | Matches |
+|---|---|
+| `*@twilightforest:lich` or `@twilightforest:lich` | Every hit by the Lich, whatever damage id its attacks use |
+| `@twilightforest:*` | Any attacker from Twilight Forest |
+| `*acid*` | Every damage id that contains "acid" (for ids a mod builds at run time) |
+| `minecraft:arrow @twilightforest:skeleton_druid` | Only that mob's arrows |
+
+All conditions of a key must match. When several keys match, the most specific one wins: the key with more conditions (a bare `*` does not count), and on a tie the one with fewer wildcards. So a tip for `twilightforest:lich_bolt @twilightforest:lich` beats a general tip for `@twilightforest:lich`, and `*` alone works as a catch-all with the lowest priority.
 
 ### Death triggers
 

@@ -224,6 +224,19 @@ final class V12Plan {
                 && !ClientCore.formatter().o.ignored("x")
                 && MatchKey.parse("minecraft:cactus @dim:minecraft:the_end").matches(endCactus) && !MatchKey.parse("minecraft:cactus @dim:minecraft:the_end").matches(owCactus);
         }, null);
+        t.check("composite keys: @ without separator, wildcard priority", () -> {
+            MatchKey.Target lich = new MatchKey.Target("twilightforest:lich_bolt", "twilightforest:lich", "", "minecraft:overworld");
+            Map<String, String> m = new LinkedHashMap<>();
+            m.put("*@twilightforest:lich", "A");
+            m.put("@twilightforest:lich", "B");
+            m.put("*", "Z");
+            boolean tie = "B".equals(MatchKey.best(m, MatchKey.parseAll(m.keySet()), lich));
+            m.put("twilightforest:lich_bolt@twilightforest:lich", "C");
+            boolean specific = "C".equals(MatchKey.best(m, MatchKey.parseAll(m.keySet()), lich));
+            boolean catchAll = "Z".equals(MatchKey.best(m, MatchKey.parseAll(m.keySet()), MatchKey.Target.id("minecraft:fall")));
+            return tie && specific && catchAll && MatchKey.parse("*@twilightforest:lich").matches(lich)
+                && MatchKey.parse("*lich*").matches(lich) && !MatchKey.parse("*@twilightforest:lich").matches(MatchKey.Target.id("minecraft:fall"));
+        }, null);
         t.check("pack hint used as tip", () -> {
             DamageRecord r = new DamageRecord(0, "minecraft:magic", "magic", "", "", "", "", "minecraft", "Minecraft", 1, 1, 0, 0, -1, "", "", "", "", 1, 1, 20, "");
             return ClientCore.formatter().tip(r).toPlain(Msg.ENGLISH_LANG).contains("PackHint");
