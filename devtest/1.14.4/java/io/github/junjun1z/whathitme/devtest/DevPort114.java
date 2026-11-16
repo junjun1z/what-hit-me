@@ -265,8 +265,9 @@ public class DevPort114 implements DevPort {
         switch (act) {
             case SETUP:
                 s.setDifficulty(Difficulty.NORMAL, true);
-                // through commands: the GameRules API changed in 1.14.3
-                for (String c : new String[] {"gamerule doDaylightCycle false", "gamerule doMobSpawning false", "gamerule keepInventory true"}) {
+                // through commands: the GameRules API changed in 1.14.3; slimes of the flat world spawned before the game rule are removed
+                for (String c : new String[] {"gamerule doDaylightCycle false", "gamerule doMobSpawning false", "gamerule keepInventory true",
+                    "kill @e[type=minecraft:slime]"}) {
                     s.getCommands().performCommand(s.createCommandSourceStack(), c);
                 }
                 level.setDayTime(6000);
