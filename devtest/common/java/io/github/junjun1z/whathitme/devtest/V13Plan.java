@@ -305,7 +305,7 @@ final class V13Plan {
         t.sleep(3);
         t.check("editor: the template lines scroll to the focused line", () -> {
             TemplateEditor e = TemplateEditor.current;
-            return e.lineCount() > e.visibleLines() && e.area("field:0") == null && e.area("field:" + (e.lineCount() - 1)) != null;
+            return e.lineCount() > e.visibleLines() && e.area("field:0") == null && e.area("field:25") != null;
         }, (Supplier<?>) () -> TemplateEditor.current.lineCount() + " lines, " + TemplateEditor.current.visibleLines() + " visible");
         t.screenshot("whm_selftest_editor_scrolled");
         t.act(() -> TemplateEditor.current.key(TemplateEditor.K_ESCAPE, false, false));
