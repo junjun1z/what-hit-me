@@ -267,6 +267,13 @@ the driver flag is `dm-custom` on Fabric (replaced for everyone) and `dm-vanilla
 Protocol 3 (`Packets.PROTOCOL`): `ServerInfo` carries the pack templates and death messages after the protocol 2 part (only for
 clients that said hello with 3); `Recap.DEATH_MESSAGE` = 7.
 
+Notes from 1.7.10 - 1.11.2 (same host as 1.12.2, `GuiTemplateEditor` in each loader):
+- 1.10.2 and older have no `createConfigGui`: the "Templates..." button lives in `WhmGuiFactory.Screen` (the class Forge
+  instantiates); 1.11.2 uses `WhmGuiFactory.WithTemplates` like 1.12.2. The button label width comes from `Gfx<v>.width`.
+- 1.7.10: `cpw.mods.fml` packages, `GuiScreen` input methods without `throws IOException`, raw `buttonList`; the death screen
+  shows no death message, so only the chat line is replaced. 1.7.10 / 1.8.9 change the chat text through the public
+  `event.message` field, 1.9.4+ through `setMessage`.
+
 ## In-game self-test (development)
 
 Build with `-Pselftest`. Use only `build/devlibs/whathitme-selftest.jar` (the mod + self-test, for clients **and test
