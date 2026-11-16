@@ -1,0 +1,111 @@
+package io.github.junjun1z.whathitme.mc;
+
+import org.lwjgl.glfw.GLFW;
+
+import com.mojang.blaze3d.vertex.PoseStack;
+
+import io.github.junjun1z.whathitme.core.client.TemplateEditor;
+import net.minecraft.client.gui.screens.Screen;
+import net.minecraft.network.chat.Component;
+
+/** Screen host of the core template editor on 1.19.2: forwards drawing, mouse, keys and typed characters. */
+public final class TemplateEditorScreen1192 extends Screen {
+
+    private final Screen parent;
+    public final TemplateEditor editor = new TemplateEditor();
+
+    public TemplateEditorScreen1192(Screen parent) {
+        super(Component.literal("What Hit Me? Templates"));
+        this.parent = parent;
+    }
+
+    @Override
+    protected void init() {
+        minecraft.keyboardHandler.setSendRepeatsToGui(true);
+    }
+
+    @Override
+    public boolean isPauseScreen() {
+        return false;
+    }
+
+    @Override
+    public void render(PoseStack pose, int mouseX, int mouseY, float partialTick) {
+        renderBackground(pose);
+        editor.render(new Gfx1192(pose, this), width, height, mouseX, mouseY);
+        if (editor.wantsClose()) onClose();
+    }
+
+    @Override
+    public void onClose() {
+        editor.closed();
+        if (minecraft != null) minecraft.setScreen(parent);
+    }
+
+    @Override
+    public void removed() {
+        minecraft.keyboardHandler.setSendRepeatsToGui(false);
+        editor.closed();
+    }
+
+    @Override
+    public boolean mouseClicked(double mouseX, double mouseY, int button) {
+        return editor.mouseDown(button, mouseX, mouseY, hasShiftDown()) || super.mouseClicked(mouseX, mouseY, button);
+    }
+
+    @Override
+    public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
+        return delta != 0 && editor.scroll(mouseX, mouseY, delta);
+    }
+
+    private static int map(int key) {
+        switch (key) {
+            case GLFW.GLFW_KEY_BACKSPACE:
+                return TemplateEditor.K_BACKSPACE;
+            case GLFW.GLFW_KEY_DELETE:
+                return TemplateEditor.K_DELETE;
+            case GLFW.GLFW_KEY_LEFT:
+                return TemplateEditor.K_LEFT;
+            case GLFW.GLFW_KEY_RIGHT:
+                return TemplateEditor.K_RIGHT;
+            case GLFW.GLFW_KEY_UP:
+                return TemplateEditor.K_UP;
+            case GLFW.GLFW_KEY_DOWN:
+                return TemplateEditor.K_DOWN;
+            case GLFW.GLFW_KEY_HOME:
+                return TemplateEditor.K_HOME;
+            case GLFW.GLFW_KEY_END:
+                return TemplateEditor.K_END;
+            case GLFW.GLFW_KEY_ENTER:
+            case GLFW.GLFW_KEY_KP_ENTER:
+                return TemplateEditor.K_ENTER;
+            case GLFW.GLFW_KEY_TAB:
+                return TemplateEditor.K_TAB;
+            case GLFW.GLFW_KEY_ESCAPE:
+                return TemplateEditor.K_ESCAPE;
+            case GLFW.GLFW_KEY_A:
+                return TemplateEditor.K_A;
+            case GLFW.GLFW_KEY_C:
+                return TemplateEditor.K_C;
+            case GLFW.GLFW_KEY_V:
+                return TemplateEditor.K_V;
+            case GLFW.GLFW_KEY_X:
+                return TemplateEditor.K_X;
+            default:
+                return 0;
+        }
+    }
+
+    @Override
+    public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        int k = map(keyCode);
+        if (k != 0 && editor.key(k, hasControlDown(), hasShiftDown())) return true;
+        return super.keyPressed(keyCode, scanCode, modifiers);
+    }
+
+    @Override
+    public boolean charTyped(char c, int modifiers) {
+        if (c >= 32 && c != 127 && c != '\u00a7') return editor.typed(c);
+        return false;
+    }
+}

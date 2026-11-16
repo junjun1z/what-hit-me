@@ -17,6 +17,7 @@ import io.github.junjun1z.whathitme.mc.McText;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.DeathScreen;
 import net.minecraft.client.gui.screens.Screen;
+import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.client.event.ClientPlayerNetworkEvent;
 import net.minecraftforge.client.event.RegisterClientCommandsEvent;
 import net.minecraftforge.client.event.ScreenEvent;
@@ -90,7 +91,18 @@ public final class ForgeClient {
 
     @SubscribeEvent
     public void onScreenOpening(ScreenEvent.Opening event) {
-        if (event.getNewScreen() instanceof DeathScreen) ClientCore.onDeathScreen(ClientPortMc.deathMessage((DeathScreen) event.getNewScreen()));
+        if (!(event.getNewScreen() instanceof DeathScreen)) return;
+        DeathScreen s = (DeathScreen) event.getNewScreen();
+        ClientCore.onDeathScreen(ClientPortMc.deathMessage(s));
+        Safe.run("death screen message", () -> ClientPortMc.replaceDeathMessage(s));
+    }
+
+    /** Custom death messages of a server with the mod replace the vanilla chat line (1.19+: a system message) */
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public void onChat(ClientChatReceivedEvent event) {
+        if (event.getMessage() == null) return;
+        io.github.junjun1z.whathitme.core.text.Txt t = ClientCore.chatReplacement(event.getMessage().getString());
+        if (t != null) event.setMessage(McText.of(t));
     }
 
     @SubscribeEvent

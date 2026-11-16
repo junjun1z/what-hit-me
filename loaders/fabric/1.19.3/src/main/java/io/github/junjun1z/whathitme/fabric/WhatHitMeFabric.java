@@ -84,6 +84,7 @@ public final class WhatHitMeFabric implements ModInitializer {
         Platform.serverLang = McText.LANG;
         Platform.configDir = FabricLoader.getInstance().getConfigDir().toFile();
         WhmConfig.init(Platform.configDir, FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT, CfgFile::new);
+        ServerPortMc.replacesDeathMessagesFlag = true;
         ServerPlayNetworking.registerGlobalReceiver(FabricNet.ID, (server, player, handler, buf, sender) -> {
             Packets.Packet p = FabricNet.read(buf);
             if (p != null && Packets.serverbound(p.type())) server.execute(() -> ServerCore.onPacket(new FabricPlayer(player), p));
@@ -189,5 +190,18 @@ public final class WhatHitMeFabric implements ModInitializer {
         java.util.Map<java.io.File, String> out = new java.util.LinkedHashMap<>(sources());
         out.values().removeIf(Platform.MODID::equals);
         return out;
+    }
+
+    /** From the death message mixin: the pack's custom death message, or the vanilla one */
+    public static net.minecraft.network.chat.Component deathMessage(ServerPlayer p, DamageSource source, net.minecraft.network.chat.Component vanilla) {
+        try {
+            io.github.junjun1z.whathitme.core.text.Txt t = ServerCore.customDeathMessage(new FabricPlayer(p), () -> Facts.hit(p, source));
+            if (t == null) return vanilla;
+            net.minecraft.network.chat.Component c = McText.of(t);
+            DEATH_MSG.put(p.getUUID(), McText.toJson(c));
+            return c;
+        } catch (Throwable e) {
+            return vanilla;
+        }
     }
 }

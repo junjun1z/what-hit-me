@@ -103,6 +103,22 @@ public abstract class ClientPortMc implements io.github.junjun1z.whathitme.core.
         return McText.translationOf(json);
     }
 
+    /** Forge / NeoForge: a custom death message of a server with the mod replaces the vanilla one on the death screen */
+    public static void replaceDeathMessage(DeathScreen screen) {
+        try {
+            for (Field f : DeathScreen.class.getDeclaredFields()) {
+                if (f.getType() != Component.class) continue;
+                f.setAccessible(true);
+                Component c = (Component) f.get(screen);
+                Txt t = c == null ? null : ClientCore.deathScreenReplacement(c.getString());
+                if (t != null) f.set(screen, McText.of(t));
+                return;
+            }
+        } catch (Throwable ignored) {
+            // keep the vanilla message
+        }
+    }
+
     /** The death message of a death screen as JSON (its only Component field), "" when unknown */
     public static String deathMessage(DeathScreen screen) {
         try {
@@ -130,8 +146,26 @@ public abstract class ClientPortMc implements io.github.junjun1z.whathitme.core.
         return true;
     }
 
+    /** Set by /whm template, opened by {@link #tickConfigScreen} on the next client tick */
+    private static volatile boolean openEditor;
+
+    @Override
+    public boolean openTemplateEditor() {
+        openEditor = true;
+        return true;
+    }
+
+    @Override
+    public String playerName() {
+        return mc().player == null ? "" : mc().player.getGameProfile().getName();
+    }
+
     /** Called by the loader's client tick */
     public static void tickConfigScreen() {
+        if (openEditor) {
+            openEditor = false;
+            io.github.junjun1z.whathitme.core.Safe.run("template editor", () -> mc().setScreen(new TemplateEditorScreen1202(mc().screen)));
+        }
         if (!openConfig) return;
         openConfig = false;
         io.github.junjun1z.whathitme.core.Safe.run("config screen", () -> mc().setScreen(configScreen.apply(mc().screen)));
