@@ -2,6 +2,8 @@
 
 「何にやられたのか」をはっきり見せる Minecraft 1.7.10〜26.3 の Forge・Fabric・NeoForge 用の Mod です。**どんな Mod パックでも、どんな Mod の組み合わせでも動きます。必須の前提 Mod はありません。**
 
+![What Hit Me? の動作：死亡画面のまとめ、ホバーで詳細、リスポーン後のチャット要約](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/docs/hero.gif)
+
 [English README](README.md)
 
 ![死亡画面のパネル](docs/screenshots/death-screen.png)

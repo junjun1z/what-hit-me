@@ -2,6 +2,8 @@
 
 A Minecraft mod for Forge, Fabric and NeoForge (1.7.10 - 26.3) that shows exactly what killed you. **Works in any modpack, with any combination of mods — no required dependencies.**
 
+![What Hit Me? in action: death screen recap, hover details, respawn chat summary](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/docs/hero.gif)
+
 [日本語版 README](README.ja.md)
 
 ![Death screen panel](docs/screenshots/death-screen.png)

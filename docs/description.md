@@ -2,6 +2,8 @@
 
 See exactly what killed you. **Works in any modpack, with any combination of mods — no required dependencies.**
 
+![What Hit Me? in action: death screen recap, hover details, respawn chat summary](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/docs/hero.gif)
+
 What Hit Me? records the damage a player takes and explains a death in plain words: the killing blow, the attacker and its mod, how much armor helped, whether the damage ignored armor, and what to do about it next time. It runs on the client, on the server, or both, and adds no blocks or items. Minecraft 1.7.10 - 26.3 on Forge, Fabric and NeoForge: 63 builds, each one started and tested in game.
 
 ![Death screen panel](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/docs/screenshots/death-screen.png)
