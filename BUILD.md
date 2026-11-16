@@ -237,7 +237,8 @@ Forge / NeoForge client chat event per version (the driver of the same version a
 | Forge 1.9.4 - 1.20.4 | `ClientChatReceivedEvent` (1.19.2+: also fired for system messages) | `setMessage(...)` |
 | Forge 1.19, 1.19.1, 1.20.6 | no event for system messages (Forge 41 / 42; Forge 50 has the hook commented out) | the line is replaced in the chat list on the client tick (`ClientPortMc.replaceDeathMessageInChat`) |
 | Forge 1.21.1 - 1.21.5 | `SystemMessageReceivedEvent` (server messages no longer use `ClientChatReceivedEvent`) | `setMessage(...)` |
-| Forge 1.21.6+ / 26.x | `SystemMessageReceivedEvent.BUS.addListener` (EventBus 7) | `setMessage(...)` |
+| Forge 1.21.6 - 1.21.8 | `SystemMessageReceivedEvent.BUS.addListener` (EventBus 7) | `setMessage(...)` |
+| Forge 1.21.9+ / 26.x | `SystemMessageReceivedEvent.BUS.addListener`, but the death message packet can be handled after the chat line | `setMessage(...)` plus the chat list replacement on the client tick |
 | NeoForge 1.20.2 - 26.x | `ClientChatReceivedEvent` (system messages: `ClientChatReceivedEvent.System`) | `setMessage(...)` |
 
 Death screen text: 1.13+ `DeathScreen` keeps it in a final `Component` field (`causeOfDeath`); replace it by reflection in the
@@ -294,6 +295,20 @@ Notes from 1.18.2 - 1.20.6 (`versions/<v>` hosts, shared by every loader of a co
   and Forge 1.20.6. GuiMessage is a generic class on 1.19 and a record on 1.19.1+: the 1.19.2 fallback copies the record through
   its canonical constructor (records cannot be changed by reflection). Death screen: `ScreenOpenEvent` (1.18.2) /
   `ScreenEvent.Opening` + `ClientPortMc.replaceDeathMessage`.
+
+Notes from 1.21.1 - 26.3 (`versions/<v>` hosts, shared by every loader of a code version):
+- `TemplateEditorScreen121` in every `versions/<v>`; keys are mapped with `InputConstants.KEY_*` in a `switch` (inlined per
+  target, which matters for 26.x: 26.3 uses SDL scancodes, 26.1 / 26.2 GLFW codes). 1.21.9+ input methods take `KeyEvent`,
+  `CharacterEvent` and `MouseButtonEvent` (modifiers from the event, no `Screen.hasShiftDown`), 26.x draws in
+  `extractRenderState(GuiGraphicsExtractor, ...)` and changes screens through `Compat26`; mouse buttons there go through
+  `Compat26.button`. `playerName()` uses `player.getName().getString()` (the `GameProfile` accessor changed in 1.21.9).
+- Fabric: the 1.21.1 `@ModifyExpressionValue` mixin unchanged on every version (the `getDeathMessage` call is in `die` from
+  1.21.1 to 26.3); `compatibilityLevel` JAVA_25 for 26.x.
+- Forge 1.21.1 - 1.21.5: `@SubscribeEvent SystemMessageReceivedEvent`; 1.21.8+: `SystemMessageReceivedEvent.BUS.addListener`.
+  Forge 1.21.9+ (PacketProcessor) can handle the `DEATH_MESSAGE` payload (`consumerMainThread`) after the vanilla system chat
+  line, so `ClientPortMc.replaceDeathMessageInChat()` runs on the client tick and checks the newest lines again once
+  the payload arrived (`deathMessageArrived()` from `ForgeClient.onPacket`). NeoForge keeps the order (event only).
+- Death screen: `ScreenEvent.Opening` + `ClientPortMc.replaceDeathMessage` on Forge and NeoForge.
 
 ## In-game self-test (development)
 
