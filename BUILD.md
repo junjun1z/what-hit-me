@@ -340,3 +340,20 @@ Pitfalls seen so far:
   (compile only: Mod Menu 3.2.5 / 4.1.2 / 5.1.0 / 6.3.1 / 7.2.2 / 8.0.1 / 10.0.0 per code version).
 - `runCommand`: 1.18.2 `Commands#performCommand`, 1.19+ `performPrefixedCommand` (its return type changes, the result is ignored).
 - 1.20.5+: `Enchantments.PROTECTION` (was `ALL_DAMAGE_PROTECTION`) in the self-test.
+
+### 1.2.0 on 1.21.1 - 26.3
+
+- `versions/<v>`: `ConfigScreen121` in every code version (the class names of this group keep the 121 suffix). 1.21.6+ draws text with an
+  alpha channel (`0xFFRRGGBB`), 1.21.11+ `Screen#init(int, int)`, 26.x `extractRenderState(GuiGraphicsExtractor, ...)` with
+  `GuiGraphicsExtractor#text` and `Compat26.setScreen` / `Compat26.screen()` (also for `/whm config`).
+- `damageTypeEntries()`: every key of the DamageType registry (`getHolderOrThrow` on 1.21.1, `getOrThrow` from 1.21.2); no scanner. The catalog
+  cache is filled on server start and on the first client tick in a world.
+- `Facts.armorSlot(player, stack)` uses `LivingEntity#getEquipmentSlotForItem` (an instance method since 1.20.5).
+- `ServerPortMc.schedule`: `server.tell(new TickTask(...))` on 1.21.1, `server.schedule(...)` from 1.21.2 (renamed, still only queues).
+- Forge 1.21.1 - 1.21.5 use `@SubscribeEvent` like 1.20.6; Forge 1.21.6+ (EventBus 7): `AttackEntityEvent.BUS` with a predicate listener
+  (returns false), `PlayerDestroyItemEvent.BUS` / `LevelEvent.Save.BUS` consumers, a cancelled death is seen by an `ObjBooleanBiConsumer`
+  monitor on `LivingDeathEvent.BUS`. Config factory on every Forge version: `ModLoadingContext.get().registerExtensionPoint(
+  ConfigScreenHandler.ConfigScreenFactory.class, ...)`. NeoForge: `IConfigScreenFactory` registered on the mod container, death with
+  `receiveCanceled = true`.
+- Fabric Mod Menu (compile only): 11.0.3 / 12.0.1 / 14.0.2 / 15.0.2 / 16.0.1 / 17.0.1 per code version, 26.x `compileOnly` 21.0.1 (no
+  remapping). Tested with Mod Menu 11.0.4, 12.0.1, 13.0.4, 14.0.2, 15.0.2, 16.0.1, 17.0.1, 18.0.2, 20.0.3, 21.0.1.
