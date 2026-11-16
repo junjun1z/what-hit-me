@@ -287,7 +287,14 @@ public final class SelfTest {
         sleep(100); // spawn invulnerability
         clearChat();
         // ---- damage sources
-        hit(Act.FALL, 3f);
+        // a fresh world on 1.20 can still have spawn protection here (vanilla refuses the hit): repeat until one lands
+        final int[] tries = {0};
+        then(() -> {
+            if (find(id("fall")) != null || tries[0] >= 200) return true;
+            if (tries[0]++ % 20 == 0) port.server(Act.FALL, 3f);
+            return false;
+        });
+        sleep(14);
         check("fall recorded as " + id("fall"), () -> find(id("fall")) != null, (Supplier<?>) this::ids);
         hit(Act.ZOMBIE, 4f);
         check("mob hit recorded as mob:minecraft:zombie", () -> find("mob:minecraft:zombie") != null, (Supplier<?>) this::ids);
