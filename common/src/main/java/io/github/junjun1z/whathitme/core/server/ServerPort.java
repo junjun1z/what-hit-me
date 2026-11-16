@@ -36,4 +36,15 @@ public interface ServerPort {
     default boolean runCommand(String command) {
         return false;
     }
+
+    // ---- 1.3: optional
+
+    /**
+     * The loader replaces the vanilla death message itself (Fabric mixin) with {@code ServerCore.customDeathMessage};
+     * false = players with the mod get it from the server and replace the chat line themselves.
+     */
+    default boolean replacesDeathMessages() {
+        return false;
+    }
+
 }

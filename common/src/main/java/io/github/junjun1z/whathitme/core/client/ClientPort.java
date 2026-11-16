@@ -59,4 +59,17 @@ public interface ClientPort {
     default boolean openConfigScreen() {
         return false;
     }
+
+    // ---- 1.3: optional
+
+    /** Name of the own player ({player} in templates), "" = unknown */
+    default String playerName() {
+        return "";
+    }
+
+    /** Opens the template editor screen ({@code TemplateEditor}) on the next client tick; false = no editor on this version */
+    default boolean openTemplateEditor() {
+        return false;
+    }
+
 }

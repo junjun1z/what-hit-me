@@ -246,6 +246,11 @@ public final class RecapFormatter {
             if (p != null && !p.modId.isEmpty() && o.on(Flag.SOURCE_MOD_NAME)) l.add(m.tr(Fmt.BLUE, "whathitme.hover.mod", io.github.junjun1z.whathitme.core.Platform.modName(p.modId)));
             return l;
         }
+        Template t = o.template(Template.HOVER);
+        if (t != null) {
+            List<Txt> custom = t.render(m, new TemplateVars(this, r, null, System.currentTimeMillis()));
+            if (!custom.isEmpty()) return custom;
+        }
         l.add(displayName(r).restyle(null).bold(true));
         if (r.has(DamageRecord.ESTIMATED)) l.add(m.tr(Fmt.GOLD, "whathitme.hover.estimated"));
         if (o.on(Flag.INTERNAL_DAMAGE_ID)) l.add(m.tr(Fmt.DARK_GRAY, "whathitme.hover.id", r.damageId));
@@ -336,6 +341,18 @@ public final class RecapFormatter {
             if (o.on(Flag.TIMESTAMP)) root.append(Msg.str(Fmt.DARK_GRAY, age(now - r.time) + " "));
             return root.append(displayName(r));
         }
+        Template lt = o.template(Template.LINE);
+        if (lt != null) {
+            List<Txt> custom = lt.render(m, new TemplateVars(this, r, null, now));
+            if (!custom.isEmpty()) {
+                for (int i = 0; i < custom.size(); i++) {
+                    if (i > 0) root.append("\n");
+                    root.append(custom.get(i));
+                }
+                if (o.on(Flag.ACTION_BUTTONS)) root.append(" ").append(copyIdButton(r.damageId)).append(" ").append(muteButton(r.damageId));
+                return root;
+            }
+        }
         if (r.has(DamageRecord.ESTIMATED)) root.append(m.tr(Fmt.GOLD, "whathitme.badge.estimated")).append(" ");
         if (r.has(DamageRecord.KILLING)) root.append(Msg.str(Fmt.DARK_RED, "☠ "));
         if (o.on(Flag.TIMESTAMP)) root.append(Msg.str(Fmt.DARK_GRAY, age(now - r.time) + " "));
@@ -411,6 +428,12 @@ public final class RecapFormatter {
 
     /** "Last 10s Total" relative to the newest record */
     public Txt total(List<DamageRecord> records, long end) {
+        float[] t = totals(records, end);
+        return m.tr(Fmt.GOLD, "whathitme.summary.total", o.summarySeconds, heartsText(t[0]), (int) t[1]);
+    }
+
+    /** {health points, hits} within summarySeconds before end */
+    public float[] totals(List<DamageRecord> records, long end) {
         long window = o.summarySeconds * 1000L;
         float sum = 0;
         int hits = 0;
@@ -421,7 +444,33 @@ public final class RecapFormatter {
                 hits += Math.max(1, r.hits);
             }
         }
-        return m.tr(Fmt.GOLD, "whathitme.summary.total", o.summarySeconds, heartsText(sum), hits);
+        return new float[] {sum, hits};
+    }
+
+    /** The clickable "full death recap" link of the summary */
+    public Txt recapLink() {
+        Txt recap = m.tr(Fmt.AQUA, "whathitme.summary.recap.link");
+        recap.underline(true).click(Txt.Click.RUN_COMMAND, "/whm last").hover(m.tr("whathitme.button.run", "/whm last"));
+        return recap;
+    }
+
+    /** The "/whm togglechat" notice of the summary */
+    public Txt toggleNotice() {
+        Txt cmd = Msg.str(Fmt.YELLOW, "/whm togglechat");
+        cmd.click(Txt.Click.SUGGEST_COMMAND, "/whm togglechat");
+        return m.tr(Fmt.GRAY, "whathitme.summary.toggle", cmd);
+    }
+
+    /** The [Details] link of an alert */
+    public Txt detailsLink(int index) {
+        return link(Fmt.AQUA, "whathitme.button.details", "/whm snapshot " + index, "whathitme.button.run");
+    }
+
+    private List<Txt> custom(String output, DamageRecord k, Snapshot s, long ref, int alertIndex) {
+        Template t = o.template(output);
+        if (t == null) return null;
+        List<Txt> l = t.render(m, new TemplateVars(this, k, s, ref).alertIndex(alertIndex));
+        return l.isEmpty() ? null : l;
     }
 
     private Txt killingLine(Snapshot s, String key) {
@@ -480,6 +529,8 @@ public final class RecapFormatter {
 
     /** Chat summary after respawning */
     public List<Txt> respawnSummary(Snapshot s) {
+        List<Txt> custom = custom(Template.SUMMARY, s.key(), s, s.time, 1);
+        if (custom != null) return custom;
         List<Txt> out = new ArrayList<>();
         out.add(m.tr(Fmt.GOLD, "whathitme.summary.header"));
         out.add(killingLine(s, "whathitme.summary.killing"));
@@ -539,6 +590,17 @@ public final class RecapFormatter {
     /** Chat alert after a totem pop / heavy hit */
     public Txt alert(Snapshot s, int index) {
         DamageRecord k = s.key();
+        List<Txt> custom = custom(Template.ALERT, k, s, s.time, index);
+        if (custom != null) {
+            Txt c = Txt.empty();
+            for (int i = 0; i < custom.size(); i++) {
+                if (i > 0) c.append("\n");
+                c.append(custom.get(i));
+            }
+            if (k != null) c.hover(hover(k));
+            if (!o.template(Template.ALERT).uses("details_link")) c.append(" ").append(detailsLink(index));
+            return c;
+        }
         String key = s.kind == Snapshot.TOTEM ? "whathitme.alert.totem" : s.kind == Snapshot.HEAVY ? "whathitme.alert.heavy" : "whathitme.alert.prevented";
         Txt name = k == null ? m.tr("whathitme.unknown") : displayName(k).restyle(Fmt.WHITE);
         Txt amount = k == null ? Msg.str("?") : heartsText(k.taken()).restyle(Fmt.RED);
@@ -554,7 +616,19 @@ public final class RecapFormatter {
 
     /** [Copy Recap]: the plain recap, plus the equipment block as Markdown (includeEquipmentInCopy) */
     public String copyText(Snapshot s, long now, Lang lang) {
-        StringBuilder sb = new StringBuilder(plain(fullRecap(s, now, null), lang));
+        List<Txt> custom = custom(Template.COPY, s.key(), s, now, 1);
+        if (custom != null) return plain(custom, lang);
+        return plain(fullRecap(s, now, null), lang) + equipmentBlock(s, lang);
+    }
+
+    /** The recap lines as /whm last shows them */
+    public List<Txt> builtinRecap(Snapshot s, long now) {
+        return fullRecap(s, now, null);
+    }
+
+    /** The Markdown equipment block of [Copy Recap] ("" when off or unknown), starting with a line break */
+    public String equipmentBlock(Snapshot s, Lang lang) {
+        StringBuilder sb = new StringBuilder();
         Gear g = s.gear;
         if (g == null || !o.on(Flag.EQUIPMENT_IN_COPY)) return sb.toString();
         g = g.withBroken(s.records);

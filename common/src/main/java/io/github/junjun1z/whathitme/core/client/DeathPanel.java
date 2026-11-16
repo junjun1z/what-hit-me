@@ -132,13 +132,28 @@ public final class DeathPanel {
                 footer.add(Fmt.GOLD + tr("whathitme.badge.estimated") + " " + Fmt.GRAY + tr("whathitme.panel.estimated"));
             }
         }
-        int visible = Math.min(cfg.maxVisibleLines, shown.size());
-        int maxScroll = Math.max(0, shown.size() - visible);
+        // rows of each record: one line, or the wrapped lines of a line template
+        List<List<String>> rows = new ArrayList<>();
+        long ref0 = s == null ? 0L : s.time;
+        for (DamageRecord r : shown) rows.add(rowsFor(g, f, r, ref0, lang, inner - 4));
+        int maxLines = Math.max(1, cfg.maxVisibleLines);
+        int maxScroll = shown.size();
+        int used = 0;
+        while (maxScroll > 0 && used + rows.get(maxScroll - 1).size() <= maxLines) used += rows.get(--maxScroll).size();
+        if (maxScroll == shown.size() && maxScroll > 0) maxScroll--;
         if (scroll > maxScroll) scroll = maxScroll;
         if (scroll < 0) scroll = 0;
+        int visible = 0;
+        int visibleRows = 0;
+        while (scroll + visible < shown.size()) {
+            int n = rows.get(scroll + visible).size();
+            if (visible > 0 && visibleRows + n > maxLines) break;
+            visibleRows += n;
+            visible++;
+        }
         int h = HEADER;
         if (!min) {
-            h += PAD + top.size() * LINE + (shown.isEmpty() ? 0 : 3 + visible * LINE) + 3 + footer.size() * LINE + PAD;
+            h += PAD + top.size() * LINE + (shown.isEmpty() ? 0 : 3 + visibleRows * LINE) + 3 + footer.size() * LINE + PAD;
         }
 
         // ---- position
@@ -200,17 +215,21 @@ public final class DeathPanel {
                 long ref = s.time;
                 for (int i = 0; i < visible; i++) {
                     DamageRecord r = shown.get(scroll + i);
-                    boolean over = hover(lx, ly, 0, cy, W, cy + LINE);
+                    List<String> rr = rows.get(scroll + i);
+                    int rh = rr.size() * LINE;
+                    boolean over = hover(lx, ly, 0, cy, W, cy + rh);
                     if (over) {
-                        g.fill(1, cy - 1, W - 1, cy + LINE - 1, 0x30FFFFFF);
+                        g.fill(1, cy - 1, W - 1, cy + rh - 1, 0x30FFFFFF);
                         hovered = r;
                     }
-                    g.text(LegacyText.trim(g, panelLine(f, r, ref, lang), inner - (maxScroll > 0 ? 4 : 0)), PAD, cy, 0xFFFFFF);
-                    cy += LINE;
+                    for (String row : rr) {
+                        g.text(LegacyText.trim(g, row, inner - (maxScroll > 0 ? 4 : 0)), PAD, cy, 0xFFFFFF);
+                        cy += LINE;
+                    }
                 }
                 if (maxScroll > 0) {
                     int trackTop = linesTop;
-                    int trackH = visible * LINE - 1;
+                    int trackH = visibleRows * LINE - 1;
                     int barH = Math.max(6, trackH * visible / shown.size());
                     int barY = trackTop + (trackH - barH) * scroll / maxScroll;
                     g.fill(W - 3, trackTop, W - 1, trackTop + trackH, 0x40FFFFFF);
@@ -238,6 +257,63 @@ public final class DeathPanel {
             for (Txt c : f.hoverLines(hovered)) tip.add(c.toLegacy(lang));
             g.tooltip(tip, mouseX, mouseY, screenW, screenH);
         }
+    }
+
+    /** The panel rows of one record: the built-in line, or the lines of a line template wrapped to width */
+    static List<String> rowsFor(Gfx g, RecapFormatter f, DamageRecord r, long ref, Lang lang, int width) {
+        List<String> out = new ArrayList<>();
+        io.github.junjun1z.whathitme.core.text.Template t = f.o.template(io.github.junjun1z.whathitme.core.text.Template.LINE);
+        if (t != null && !r.has(DamageRecord.ARMOR_BREAK)) {
+            for (Txt line : t.render(f.m, new io.github.junjun1z.whathitme.core.text.TemplateVars(f, r, null, ref))) {
+                out.addAll(LegacyText.wrap(g, line.toLegacy(lang), width, 3));
+            }
+        }
+        if (out.isEmpty()) out.add(panelLine(f, r, ref, lang));
+        return out;
+    }
+
+    /**
+     * Draws damage lines like the panel does (template editor preview): background, rows, the tooltip of the hovered
+     * record. Returns the height used.
+     */
+    public static int drawPreview(Gfx g, RecapFormatter f, List<DamageRecord> records, long ref, int x, int y, int maxRows, int mouseX, int mouseY,
+                                  int screenW, int screenH) {
+        Lang lang = lang();
+        int inner = W - PAD * 2;
+        List<List<String>> rows = new ArrayList<>();
+        int total = 0;
+        for (DamageRecord r : records) {
+            List<String> rr = rowsFor(g, f, r, ref, lang, inner - 4);
+            if (total + rr.size() > maxRows && total > 0) break;
+            rows.add(rr);
+            total += rr.size();
+        }
+        int h = PAD * 2 + total * LINE;
+        g.fill(x, y, x + W, y + h, 0xC0100808);
+        g.fill(x, y + h - 1, x + W, y + h, 0x80FF5555);
+        int cy = y + PAD;
+        DamageRecord hovered = null;
+        for (int i = 0; i < rows.size(); i++) {
+            int rh = rows.get(i).size() * LINE;
+            if (mouseX >= x && mouseX < x + W && mouseY >= cy && mouseY < cy + rh) {
+                g.fill(x + 1, cy - 1, x + W - 1, cy + rh - 1, 0x30FFFFFF);
+                hovered = records.get(i);
+            }
+            for (String row : rows.get(i)) {
+                g.text(LegacyText.trim(g, row, inner), x + PAD, cy, 0xFFFFFF);
+                cy += LINE;
+            }
+        }
+        if (hovered != null) {
+            List<String> tip = new ArrayList<>();
+            for (Txt c : f.hoverLines(hovered)) tip.add(c.toLegacy(lang));
+            g.tooltip(tip, mouseX, mouseY, screenW, screenH);
+        }
+        return h;
+    }
+
+    public static int width() {
+        return W;
     }
 
     private static String panelLine(RecapFormatter f, DamageRecord r, long ref, Lang lang) {

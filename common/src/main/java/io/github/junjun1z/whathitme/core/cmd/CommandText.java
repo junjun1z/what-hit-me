@@ -10,10 +10,10 @@ public final class CommandText {
 
     /** Subcommands of the server command */
     public static final String[] SERVER_SUBS = {"history", "last", "effects", "stats", "togglechat", "ignore", "rename", "sethint", "config", "search",
-        "inspect", "test", "dump", "reload", "snapshot", "help"};
+        "inspect", "test", "dump", "reload", "snapshot", "template", "help"};
     /** Subcommands of the client command */
     public static final String[] CLIENT_SUBS = {"history", "last", "effects", "stats", "togglechat", "ignore", "rename", "sethint", "config", "search",
-        "inspect", "test", "dump", "reload", "snapshot", "copy", "copyrecap", "server", "help"};
+        "inspect", "test", "dump", "reload", "snapshot", "template", "copy", "copyrecap", "server", "help"};
     /** Server subcommands offered after "/whm server " */
     public static final String[] SERVER_FORWARD = {"history", "last", "stats", "ignore", "rename", "sethint", "config", "search", "inspect", "test", "dump",
         "reload", "help"};
@@ -42,7 +42,8 @@ public final class CommandText {
     public static void help(Sink out, Msg m, boolean client) {
         out.send(m.tr(Fmt.GOLD, "whathitme.help.header"));
         String[] subs = client ? new String[] {"history", "last", "effects", "stats", "togglechat", "ignore", "rename", "sethint", "config", "search", "inspect",
-            "test", "dump", "reload", "snapshot", "server"} : SERVER_SUBS;
+            "test", "dump", "reload", "snapshot", "template", "server"} : SERVER_SUBS;
+
         for (String s : subs) {
             if (s.equals("help")) continue;
             Txt line = Msg.str(Fmt.YELLOW, "/whm " + s + " ").append(m.tr(Fmt.GRAY, "whathitme.help." + s));

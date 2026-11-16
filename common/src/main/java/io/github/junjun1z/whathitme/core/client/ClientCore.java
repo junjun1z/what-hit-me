@@ -32,6 +32,9 @@ import io.github.junjun1z.whathitme.core.text.Fmt;
 import io.github.junjun1z.whathitme.core.text.Msg;
 import io.github.junjun1z.whathitme.core.text.RecapFormatter;
 import io.github.junjun1z.whathitme.core.text.Txt;
+import io.github.junjun1z.whathitme.core.text.Template;
+import io.github.junjun1z.whathitme.core.text.DeathMessages;
+import io.github.junjun1z.whathitme.core.config.Templates;
 
 /**
  * Client side state and logic, independent of the loader: server info, death recaps, the respawn summary, the client
@@ -88,6 +91,9 @@ public final class ClientCore {
         helloSent = false;
         currentDeath = null;
         pendingSummary = null;
+        serverTemplates = new java.util.LinkedHashMap<>();
+        serverDeathMessages = new java.util.LinkedHashMap<>();
+        DEATH_LINES.clear();
         FALLBACK.clear();
         FallbackCore.INSTANCE.reset();
     }
@@ -124,7 +130,61 @@ public final class ClientCore {
             PackConfig pack = WhmConfig.pack;
             o.ignore(c.ignoredDamageIds).ignore(pack.ignored).renames(pack.renameMap).renames(c.renameMap).hints(pack.hintMap).hints(c.hintMap);
         }
+        Map<String, Template> packTemplates = i != null ? serverTemplates : WhmConfig.pack.templates;
+        o.templates(Templates.effective(cl.templates, packTemplates, ClientCore::locked))
+            .deathMessages(i != null ? serverDeathMessages : WhmConfig.pack.deathMessages).player(Safe.get("player name", () -> port == null ? "" : port.playerName(), ""));
         return o.ignore(cl.ignoredDamageIds).renames(cl.renameMap).hints(cl.hintMap);
+    }
+
+    /** Pack templates / death messages of the server (protocol 3), or empty */
+    public static Map<String, Template> serverTemplates = new java.util.LinkedHashMap<>();
+    public static Map<String, String> serverDeathMessages = new java.util.LinkedHashMap<>();
+    /** Custom death messages waiting for their vanilla chat line: {plain vanilla text, replacement Txt, expiry ms} */
+    private static final List<Object[]> DEATH_LINES = new ArrayList<>();
+
+    /** The pack templates in use (the server's when it has the mod) */
+    public static Map<String, Template> packTemplates() {
+        return serverHasMod && serverInfo != null ? serverTemplates : WhmConfig.pack.templates;
+    }
+
+    public static Map<String, String> packDeathMessages() {
+        return serverHasMod && serverInfo != null ? serverDeathMessages : WhmConfig.pack.deathMessages;
+    }
+
+    /**
+     * A chat line arrived (Forge / NeoForge client chat event): the custom death message that replaces it, or null to keep
+     * it. Only the vanilla death message the server announced right before is replaced.
+     */
+    public static Txt chatReplacement(String plain) {
+        return Safe.get("death message", () -> {
+            if (DEATH_LINES.isEmpty() || plain == null) return null;
+            long now = System.currentTimeMillis();
+            String p = Fmt.strip(plain).trim();
+            for (int i = 0; i < DEATH_LINES.size(); i++) {
+                Object[] e = DEATH_LINES.get(i);
+                if ((Long) e[2] < now) {
+                    DEATH_LINES.remove(i--);
+                    continue;
+                }
+                if (e[0].equals(p)) {
+                    DEATH_LINES.remove(i);
+                    return (Txt) e[1];
+                }
+            }
+            return null;
+        }, null);
+    }
+
+    static void onDeathMessage(Packets.Recap msg) {
+        Snapshot s = msg.snapshot;
+        if (s == null || s.key() == null || s.deathMessage.isEmpty()) return;
+        String tpl = DeathMessages.find(packDeathMessages(), s.key());
+        if (tpl == null) return;
+        Txt t = DeathMessages.render(formatter(), tpl, s.key(), msg.who, s.deathMessage);
+        String plain = Fmt.strip(Msg.LOCAL.lang().jsonText(s.deathMessage)).trim();
+        if (plain.isEmpty()) return;
+        if (DEATH_LINES.size() > 20) DEATH_LINES.remove(0);
+        DEATH_LINES.add(new Object[] {plain, t, System.currentTimeMillis() + 10000L});
     }
 
     public static boolean on(Flag f) {
@@ -210,6 +270,14 @@ public final class ClientCore {
 
     static void onServerInfo(Packets.ServerInfo msg) {
         boolean first = !serverHasMod;
+        Map<String, Template> t = new java.util.LinkedHashMap<>();
+        for (String e : msg.templates) {
+            int nl = e.indexOf('\n');
+            String name = nl < 0 ? e : e.substring(0, nl);
+            t.put(name, Template.of(nl < 0 ? new ArrayList<String>() : java.util.Arrays.asList(e.substring(nl + 1).split("\n", -1))));
+        }
+        serverTemplates = t;
+        serverDeathMessages = WhmConfig.parseMap(msg.deathMessages.toArray(new String[0]));
         serverHasMod = true;
         serverInfo = msg;
         if (first) {
@@ -235,6 +303,9 @@ public final class ClientCore {
         switch (msg.kind) {
             case Packets.Recap.DEATH:
                 if (s != null) onDeath(s);
+                break;
+            case Packets.Recap.DEATH_MESSAGE:
+                onDeathMessage(msg);
                 break;
             case Packets.Recap.HISTORY:
                 print(f.history(s == null ? new ArrayList<>() : s.records, now, WhmConfig.client.chatHistoryLines, msg.count, false, null));
@@ -488,6 +559,8 @@ public final class ClientCore {
                 WhmConfig.reloadClient();
                 if (!server) CatalogCache.rescan(port.registries());
                 print(m.tr(Fmt.GREEN, "whathitme.reload.done"));
+                for (String w : WhmConfig.client.templateWarnings) print(m.tr(Fmt.GOLD, "whathitme.reload.warning", w));
+                if (!server) for (String w : WhmConfig.pack.warnings) print(m.tr(Fmt.GOLD, "whathitme.reload.warning", w));
                 if (server && (port.isSingleplayer() || port.hasOpPermission())) request(Packets.Request.RELOAD, "");
                 break;
             }
@@ -511,6 +584,9 @@ public final class ClientCore {
                 port.sendServerCommand("whm " + (args.length > 1 ? Completion.join(args, 1) : "help"));
                 break;
             }
+            case "template":
+                template(m, f, args, now);
+                break;
             case "help":
                 CommandText.help(CHAT, m, true);
                 break;
@@ -518,6 +594,44 @@ public final class ClientCore {
                 print(m.tr(Fmt.RED, "whathitme.error.unknown", sub));
                 CommandText.help(CHAT, m, true);
         }
+    }
+
+    /** The latest death recap this client knows (server or estimate), null = none */
+    public static Snapshot latestDeath() {
+        if (currentDeath != null) return currentDeath;
+        return serverHasMod ? null : FALLBACK.lastDeath();
+    }
+
+    /** /whm template [preview &lt;output&gt; | reset [output]] */
+    private static void template(Msg m, RecapFormatter f, String[] args, long now) {
+        String usage = "/whm template [preview <" + String.join("|", Template.OUTPUTS) + "> | reset [output]]";
+        if (args.length == 1) {
+            if (Safe.get("template editor", port::openTemplateEditor, false)) return;
+            throw CommandText.usage(m, usage);
+        }
+        String a = args[1].toLowerCase(Locale.ROOT);
+        if (a.equals("preview") && args.length >= 3) {
+            print(io.github.junjun1z.whathitme.core.cmd.TemplatePreview.lines(f, args[2], latestDeath(), now));
+            return;
+        }
+        if (a.equals("reset")) {
+            try {
+                if (args.length >= 3) {
+                    String out = args[2].toLowerCase(Locale.ROOT);
+                    if (!Template.isOutput(out)) throw CommandText.err(m, "whathitme.template.unknown", args[2], String.join(", ", Template.OUTPUTS));
+                    if (Templates.locked(out, ClientCore::locked)) throw CommandText.err(m, "whathitme.config.locked", "templates." + out);
+                    Templates.savePersonal(out, null);
+                } else {
+                    Templates.resetPersonal();
+                }
+            } catch (java.io.IOException e) {
+                throw CommandText.err(m, "whathitme.template.savefailed", String.valueOf(e.getMessage()));
+            }
+            WhmConfig.reloadClient();
+            print(m.tr(Fmt.GREEN, "whathitme.template.resetdone"));
+            return;
+        }
+        throw CommandText.usage(m, usage);
     }
 
     /** Tab completion of the client command */
@@ -558,12 +672,16 @@ public final class ClientCore {
                     return Completion.matching(args, "1", "2", "3", "4", "5");
                 case "server":
                     return Completion.matching(args, CommandText.SERVER_FORWARD);
+                case "template":
+                    return Completion.matching(args, "preview", "reset");
                 default:
                     break;
             }
         }
         if (sub.equals("test")) return Completion.testArgs(args, CatalogCache.view(port.registries()));
         if (sub.equals("search")) return Completion.matching(args, Completion.searchSuggestions(CATALOG.ids()));
+        if (sub.equals("template") && args.length == 3) return Completion.matching(args, Template.OUTPUTS);
+
         if (sub.equals("config") && args.length == 3) {
             WhmConfig.Base b = WhmConfig.client.byKey().containsKey(args[1]) ? WhmConfig.client : WhmConfig.common;
             return Completion.matching(args, b.values(args[1]));

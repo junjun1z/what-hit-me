@@ -387,6 +387,9 @@ public final class WhmConfig {
         public int maxVisibleLines;
         public boolean minimized;
         public int chatHistoryLines;
+        /** Personal templates (whathitme-client-templates.json) */
+        public Map<String, io.github.junjun1z.whathitme.core.text.Template> templates = Collections.emptyMap();
+        public List<String> templateWarnings = Collections.emptyList();
 
         public Client(ConfigBackend b) {
             super(b);
@@ -415,6 +418,10 @@ public final class WhmConfig {
             maxVisibleLines = integer(backend.get(MAX_LINES), MAX_LINES);
             minimized = bool(backend.get(MINIMIZED));
             chatHistoryLines = integer(backend.get(CHAT_LINES), CHAT_LINES);
+            List<String> warn = new ArrayList<>();
+            templates = Collections.unmodifiableMap(Templates.loadPersonal(warn));
+            templateWarnings = Collections.unmodifiableList(warn);
+
             backend.categoryLangKey(CAT_LAYOUT, "whathitme.config.cat.layout");
             backend.categoryComment(CAT_LAYOUT, COMMENT_LAYOUT);
         }

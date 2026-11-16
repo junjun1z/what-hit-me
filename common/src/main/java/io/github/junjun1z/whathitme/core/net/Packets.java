@@ -14,8 +14,8 @@ import io.github.junjun1z.whathitme.core.data.Snapshot;
  */
 public final class Packets {
 
-    /** 1 = What Hit Me? 1.0 / 1.1, 2 = 1.2 (extra record fields, armor break lines, equipment, pack data) */
-    public static final int PROTOCOL = 2;
+    /** 1 = What Hit Me? 1.0 / 1.1, 2 = 1.2 (extra record fields, armor break lines, equipment, pack data), 3 = 1.3 (templates, death messages) */
+    public static final int PROTOCOL = 3;
     /** Channel name for loaders with namespaced channels ("whathitme:main") */
     public static final String CHANNEL_PATH = "main";
 
@@ -167,6 +167,12 @@ public final class Packets {
         /** renameMap / hintMap of the pack folder (lower priority than renames / hints) */
         public List<String> packRenames = new ArrayList<>();
         public List<String> packHints = new ArrayList<>();
+        /** Protocol 3 part: write it (the client said hello with 3+) */
+        public boolean v3;
+        /** Pack templates: "output\nline\nline..." */
+        public List<String> templates = new ArrayList<>();
+        /** Pack deathMessages: "match key = template" */
+        public List<String> deathMessages = new ArrayList<>();
 
         @Override
         public int type() {
@@ -198,6 +204,9 @@ public final class Packets {
             writeList(o, locked);
             writeList(o, packRenames);
             writeList(o, packHints);
+            if (!v3) return;
+            writeList(o, templates);
+            writeList(o, deathMessages);
         }
 
         static ServerInfo read(WireIn in) {
@@ -213,6 +222,11 @@ public final class Packets {
                 i.locked = readList(in);
                 i.packRenames = readList(in);
                 i.packHints = readList(in);
+                if (in.remaining() >= 4) {
+                    i.v3 = true;
+                    i.templates = readList(in);
+                    i.deathMessages = readList(in);
+                }
             }
             return i;
         }
@@ -227,6 +241,9 @@ public final class Packets {
         public static final int SNAPSHOT = 4;
         public static final int INSPECT_DEATH = 5;
         public static final int INSPECT_HISTORY = 6;
+        /** Protocol 3: a custom death message of player "who" (snapshot: the killing blow, deathMessage = the vanilla message) */
+        public static final int DEATH_MESSAGE = 7;
+
 
         public final int kind;
         public final String who;

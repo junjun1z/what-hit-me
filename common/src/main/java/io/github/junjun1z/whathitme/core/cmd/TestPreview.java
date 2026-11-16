@@ -63,7 +63,15 @@ public final class TestPreview {
         } else {
             c = c.replace("{x}", "0").replace("{y}", "0").replace("{z}", "0");
         }
-        return c.replace("{damage}", String.format(Locale.ROOT, "%.1f", k == null ? 0f : k.taken()));
+        c = c.replace("{damage}", String.format(Locale.ROOT, "%.1f", k == null ? 0f : k.taken()));
+        if (k == null || c.indexOf('{') < 0) return c;
+        // every other template variable (unknown braces stay as they are)
+        io.github.junjun1z.whathitme.core.config.WhmConfig.Common cc = io.github.junjun1z.whathitme.core.config.WhmConfig.common;
+        RecapFormatter f = new RecapFormatter(Msg.ENGLISH, new io.github.junjun1z.whathitme.core.text.DisplayOptions(
+            io.github.junjun1z.whathitme.core.config.WhmConfig.ALL_FLAGS, false, cc == null ? 10 : cc.summarySeconds));
+        io.github.junjun1z.whathitme.core.text.TemplateVars v = new io.github.junjun1z.whathitme.core.text.TemplateVars(f, k, null, System.currentTimeMillis())
+            .player(player).pos(pos).unmasked();
+        return io.github.junjun1z.whathitme.core.text.Template.fillPlain(c, Msg.ENGLISH, v);
     }
 
     /** The lines shown by /whm test (pack = null: no death triggers on this side) */
@@ -79,7 +87,11 @@ public final class TestPreview {
             if (trig.isEmpty()) out.add(m.tr(Fmt.GRAY, "whathitme.test.notriggers"));
             else out.add(m.tr(Fmt.GOLD, "whathitme.test.triggers", trig.size()));
             for (PackConfig.DeathTrigger d : trig) out.add(Msg.str(Fmt.YELLOW, " /" + fill(d.command, player, pos, k)).append(Msg.str(Fmt.DARK_GRAY, "  (" + d.match + ")")));
+            String dm = io.github.junjun1z.whathitme.core.text.DeathMessages.find(pack.deathMessages, k);
+            if (dm == null) out.add(m.tr(Fmt.GRAY, "whathitme.test.deathmessage.none"));
+            else out.add(m.tr(Fmt.GOLD, "whathitme.test.deathmessage", io.github.junjun1z.whathitme.core.text.DeathMessages.render(f, dm, k, player, "")));
         }
+
         out.add(m.tr(Fmt.GRAY, "whathitme.test.preview"));
         List<DamageRecord> recs = new ArrayList<>();
         recs.add(k);

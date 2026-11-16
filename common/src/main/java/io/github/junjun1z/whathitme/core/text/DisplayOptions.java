@@ -34,6 +34,12 @@ public final class DisplayOptions {
     /** The recipient has the mod: buttons run client commands (clipboard) */
     public final boolean clientActions;
     public final int summarySeconds;
+    /** Templates of the outputs (output name -> template); missing = built-in output */
+    private Map<String, Template> templates = new LinkedHashMap<>();
+    /** pack deathMessages ("match key" -> template) */
+    private Map<String, String> deathMessages = new LinkedHashMap<>();
+    /** Name of the reader ({player}) */
+    public String player = "";
 
     public DisplayOptions(int mask, boolean clientActions, int summarySeconds) {
         this.mask = mask;
@@ -61,11 +67,56 @@ public final class DisplayOptions {
 
     /** A copy of these options with one flag turned off */
     public DisplayOptions without(Flag f) {
-        DisplayOptions o = new DisplayOptions(mask & ~f.bit(), clientActions, summarySeconds);
+        return copy(mask & ~f.bit());
+    }
+
+    /** A copy with every display switch on (death triggers) */
+    public DisplayOptions withAll() {
+        return copy(io.github.junjun1z.whathitme.core.config.WhmConfig.ALL_FLAGS);
+    }
+
+    private DisplayOptions copy(int newMask) {
+        DisplayOptions o = new DisplayOptions(newMask, clientActions, summarySeconds);
         o.ignore.addAll(ignore);
         o.rename.addAll(rename);
         o.hint.addAll(hint);
+        o.templates.putAll(templates);
+        o.deathMessages.putAll(deathMessages);
+        o.player = player;
         return o;
+    }
+
+    /** A copy where one output uses the given template (null = built-in); used by the template editor preview */
+    public DisplayOptions withTemplate(String output, Template t) {
+        DisplayOptions o = copy(mask);
+        if (t == null) o.templates.remove(output);
+        else o.templates.put(output, t);
+        return o;
+    }
+
+    public DisplayOptions templates(Map<String, Template> t) {
+        if (t != null) templates.putAll(t);
+        return this;
+    }
+
+    public DisplayOptions deathMessages(Map<String, String> d) {
+        if (d != null) deathMessages.putAll(d);
+        return this;
+    }
+
+    public DisplayOptions player(String name) {
+        player = name == null ? "" : name;
+        return this;
+    }
+
+    /** The template of an output, null = built-in */
+    public Template template(String output) {
+        Template t = templates.get(output);
+        return t == null || t.lines.isEmpty() ? null : t;
+    }
+
+    public Map<String, String> deathMessages() {
+        return deathMessages;
     }
 
     public boolean on(Flag f) {

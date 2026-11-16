@@ -315,9 +315,60 @@ public final class ServerCore {
         Safe.run("death triggers", () -> runTriggers(p, kb, st, now));
         st.save();
         if (tracker().isModded(uid)) send(p, Packets.Recap.DEATH, "", 0, 0, s);
+        Safe.run("death message", () -> customDeathMessageToClients(p, kb, s));
         final Snapshot dead = s;
         ServerPort srv = port;
         if (srv != null && healthAtDeath <= 0.01f) Safe.get("schedule", () -> srv.schedule(() -> Safe.run("revive check", () -> reviveCheck(uid, dead))), false);
+    }
+
+
+    /** The pack's death message template for a killing blow, null = vanilla message */
+    public static String deathMessageTemplate(DamageRecord killing) {
+        Map<String, String> dm = WhmConfig.pack.deathMessages;
+        if (dm.isEmpty() || killing == null) return null;
+        return io.github.junjun1z.whathitme.core.text.DeathMessages.find(dm, killing);
+    }
+
+    /**
+     * Forge / NeoForge: no event can change the vanilla death message, so players with the mod get the custom message
+     * (they replace the vanilla chat line); the console gets a log line. Fabric replaces it itself (see
+     * {@link #customDeathMessage}).
+     */
+    private static void customDeathMessageToClients(PlayerHandle p, DamageRecord killing, Snapshot s) {
+        ServerPort srv = port;
+        if (srv == null || srv.replacesDeathMessages()) return;
+        String tpl = deathMessageTemplate(killing);
+        if (tpl == null) return;
+        Txt msg = io.github.junjun1z.whathitme.core.text.DeathMessages.render(new RecapFormatter(Msg.ENGLISH, options(null, false)), tpl, killing, p.name(),
+            s.deathMessage);
+        Platform.log.info("[What Hit Me?] Death message: " + Fmt.strip(msg.toPlain(Msg.ENGLISH_LANG)));
+        List<DamageRecord> one = new ArrayList<>();
+        one.add(killing);
+        Snapshot k = prepare(new Snapshot(Snapshot.DEATH, s.time, one, 0, s.deathMessage));
+        for (UUID id : tracker().modded()) {
+            if (tracker().protocol(id) < 3) continue;
+            PlayerHandle t = srv.player(id);
+            if (t != null) Safe.run("death message packet", () -> t.send(new Packets.Recap(Packets.Recap.DEATH_MESSAGE, p.name(), 0, 0, k, 3)));
+        }
+    }
+
+    /**
+     * Fabric: the custom death message (English, server side) used instead of the vanilla one for everyone, or null for
+     * the vanilla message. Call where the vanilla message is built, after the lethal hit was recorded.
+     */
+    public static Txt customDeathMessage(PlayerHandle p, Supplier<HitFacts> facts) {
+        return Safe.get("custom death message", () -> {
+            if (WhmConfig.pack.deathMessages.isEmpty()) return null;
+            PlayerHistory h = tracker().get(p.uuid());
+            long now = System.currentTimeMillis();
+            DamageRecord last = h.lastDamage();
+            DamageRecord k;
+            if (last != null && now - last.time <= 1500 && !last.has(DamageRecord.KILLING)) k = last.withFlags(DamageRecord.KILLING);
+            else k = facts(facts).build(now, -1f, 0f, 0f, DamageRecord.KILLING, 0f, p.maxHealth(), Safe.get("dimension", p::dimension, ""), "");
+            String tpl = deathMessageTemplate(k);
+            if (tpl == null) return null;
+            return io.github.junjun1z.whathitme.core.text.DeathMessages.render(new RecapFormatter(Msg.ENGLISH, options(null, false)), tpl, k, p.name(), "");
+        }, null);
     }
 
     /** Health restored right after a death that was not cancelled: another mod revived the player */
@@ -520,6 +571,13 @@ public final class ServerCore {
             i.locked = new ArrayList<>(pack.locked);
             put(i.renames, c.renameMap);
             put(i.packRenames, pack.renameMap);
+            if (protocol >= 3) {
+                i.v3 = true;
+                for (Map.Entry<String, io.github.junjun1z.whathitme.core.text.Template> e : pack.templates.entrySet()) {
+                    i.templates.add(e.getKey() + "\n" + String.join("\n", e.getValue().lines));
+                }
+                put(i.deathMessages, pack.deathMessages);
+            }
             if (custom) {
                 put(i.hints, c.hintMap);
                 put(i.packHints, pack.hintMap);
@@ -649,8 +707,8 @@ public final class ServerCore {
         WhmConfig.Common c = WhmConfig.common;
         PackConfig pack = WhmConfig.pack;
         DisplayOptions o = new DisplayOptions(c.mask, clientActions, c.summarySeconds).ignore(c.ignoredDamageIds).ignore(pack.ignored)
-            .renames(pack.renameMap).renames(c.renameMap).hints(pack.hintMap).hints(c.hintMap);
-        if (p != null) o.ignore(p.personalIgnored());
+            .renames(pack.renameMap).renames(c.renameMap).hints(pack.hintMap).hints(c.hintMap).templates(pack.templates).deathMessages(pack.deathMessages);
+        if (p != null) o.ignore(p.personalIgnored()).player(Safe.get("player name", p::name, ""));
         return o;
     }
 
@@ -820,6 +878,14 @@ public final class ServerCore {
                 sender.send(m.tr(Fmt.GREEN, "whathitme.reload.server"));
                 sender.send(m.tr(Fmt.GRAY, "whathitme.reload.pack", WhmConfig.pack.files.size(), WhmConfig.pack.errors.size()));
                 for (String e : WhmConfig.pack.errors) sender.send(Msg.str(Fmt.RED, e));
+                for (String w : WhmConfig.pack.warnings) sender.send(m.tr(Fmt.GOLD, "whathitme.reload.warning", w));
+                break;
+            }
+            case "template": {
+                if (player == null) throw CommandText.err(m, "whathitme.error.player");
+                if (args.length < 3 || !"preview".equalsIgnoreCase(args[1])) throw CommandText.usage(m, "/whm template preview <" + String.join("|", io.github.junjun1z.whathitme.core.text.Template.OUTPUTS) + ">");
+                Snapshot last = tracker().get(player.uuid()).lastDeath();
+                sender.send(io.github.junjun1z.whathitme.core.cmd.TemplatePreview.lines(f, args[2], last, now));
                 break;
             }
             case "help":
@@ -859,6 +925,9 @@ public final class ServerCore {
                 }
                 case "config":
                     return Completion.matching(args, WhmConfig.common.keys());
+                case "template":
+                    return Completion.matching(args, "preview");
+
                 case "inspect":
                     return Completion.matching(args, srv == null ? Collections.<String>emptyList() : srv.onlinePlayerNames());
                 case "snapshot":
@@ -870,6 +939,8 @@ public final class ServerCore {
         if (sub.equals("test") && srv != null) return Completion.testArgs(args, CatalogCache.view(srv.registries()));
         if (sub.equals("search")) return Completion.matching(args, Completion.searchSuggestions(tracker().catalog.ids()));
         if (sub.equals("config") && args.length == 3) return Completion.matching(args, WhmConfig.common.values(args[1]));
+        if (sub.equals("template") && args.length == 3) return Completion.matching(args, io.github.junjun1z.whathitme.core.text.Template.OUTPUTS);
+
         return Collections.emptyList();
     }
 }

@@ -60,6 +60,12 @@ public final class PackConfig {
     public final List<DeathTrigger> triggers = new ArrayList<>();
     public final List<String> files = new ArrayList<>();
     public final List<String> errors = new ArrayList<>();
+    /** Templates of the outputs (later files override whole templates) */
+    public final Map<String, io.github.junjun1z.whathitme.core.text.Template> templates = new LinkedHashMap<>();
+    /** Custom death messages: composite match key -> message template */
+    public final Map<String, String> deathMessages = new LinkedHashMap<>();
+    /** Unknown template variables and output names ("file: ...") */
+    public final List<String> warnings = new ArrayList<>();
 
     public boolean isLocked(String key) {
         return key != null && locked.contains(key.toLowerCase(Locale.ROOT));
@@ -71,6 +77,7 @@ public final class PackConfig {
         try {
             File dir = new File(whmDir, "pack");
             if (!dir.isDirectory()) createSamples(dir);
+            else addNewSamples(dir);
             List<File> found = new ArrayList<>();
             collect(dir, found);
             Collections.sort(found, (a, b) -> rel(dir, a).compareTo(rel(dir, b)));
@@ -147,6 +154,17 @@ public final class PackConfig {
             if (cmd.startsWith("/")) cmd = cmd.substring(1);
             triggers.add(new DeathTrigger(match, cmd, Json.bool(t.get("oncePerPlayer"), false), (int) Json.num(t.get("cooldownSeconds"), 0), file));
         }
+        Templates.readSection(o.get("templates"), file, templates, warnings);
+        Map<String, String> dm = new LinkedHashMap<>(deathMessages);
+        map(o.get("deathMessages"), dm);
+        for (Map.Entry<String, String> e : dm.entrySet()) {
+            if (e.getValue().equals(deathMessages.get(e.getKey()))) continue;
+            for (String u : io.github.junjun1z.whathitme.core.text.Template.unknown(java.util.Collections.singletonList(e.getValue()))) {
+                warnings.add(file + ": deathMessages \"" + e.getKey() + "\": unknown variable {" + u + "}");
+            }
+        }
+        deathMessages.clear();
+        deathMessages.putAll(dm);
     }
 
     private static final String[][] SAMPLES = {
@@ -182,13 +200,41 @@ public final class PackConfig {
             + "    // { \"match\": \"minecraft:lava\", \"command\": \"say {player} fell into lava at {x} {y} {z}\", \"oncePerPlayer\": true, \"cooldownSeconds\": 0 }\n"
             + "  ]\n"
             + "}\n"},
+        {"templates/_example.json", Templates.packSample()},
+        {"deathmessages/_example.json", "{\n"
+            + "  // Custom death messages (nothing changes while this is empty). Keys like renameMap (damage id, @entity, @item:, @dim:, wildcards);\n"
+            + "  // values are message templates: the template variables, & color codes, or lang:your.translation.key.\n"
+            + "  // Fabric servers replace the vanilla message for everyone. Forge / NeoForge servers send it to players who have What Hit Me?\n"
+            + "  // (players without the mod keep the vanilla message).\n"
+            + "  \"deathMessages\": {\n"
+            + "    // \"mekanism:acid\": \"{player} dissolved in acid\",\n"
+            + "    // \"*@twilightforest:lich\": \"{player} was outsmarted by the Lich\"\n"
+            + "  }\n"
+            + "}\n"},
         {"custom/_example.json", "{\n"
-            + "  // Any file may contain any of the keys renameMap, hintMap, defaultIgnoredDamageIds, lockedFeatures, deathTriggers.\n"
+            + "  // Any file may contain any of the keys renameMap, hintMap, defaultIgnoredDamageIds, lockedFeatures, deathTriggers, templates, deathMessages.\n"
             + "  // Files are read in alphabetical path order; later files override earlier entries.\n"
             + "}\n"},
     };
 
+    /** Samples added in 1.3 for pack folders created by older versions (only when their folder does not exist yet) */
+    private static void addNewSamples(File dir) {
+        for (String[] s : SAMPLES) {
+            if (!s[0].startsWith("templates/") && !s[0].startsWith("deathmessages/")) continue;
+            File f = new File(dir, s[0]);
+            File p = f.getParentFile();
+            if (p == null || p.exists()) continue;
+            try {
+                p.mkdirs();
+                Files.write(f.toPath(), s[1].getBytes(StandardCharsets.UTF_8));
+            } catch (IOException e) {
+                Platform.log.warn("Could not write " + f, e);
+            }
+        }
+    }
+
     private static void createSamples(File dir) throws IOException {
+
         for (String[] s : SAMPLES) {
             File f = new File(dir, s[0]);
             File p = f.getParentFile();
