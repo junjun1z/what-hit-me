@@ -274,6 +274,15 @@ Notes from 1.7.10 - 1.11.2 (same host as 1.12.2, `GuiTemplateEditor` in each loa
   shows no death message, so only the chat line is replaced. 1.7.10 / 1.8.9 change the chat text through the public
   `event.message` field, 1.9.4+ through `setMessage`.
 
+Notes from 1.14.4 - 1.17.1 (`versions/<v>` hosts, shared by Fabric and Forge of a version):
+- `TemplateEditorScreen114` / `115` / `116` / `117` in `versions/<v>`; `ClientPortMc.tickConfigScreen()` opens it, the "Templates..."
+  button is top right in `ConfigScreen1xx` (so Forge's mods list and Mod Menu get it too). 1.14 / 1.15 draw without `PoseStack`;
+  key repeat through `keyboardHandler.setSendRepeatsToGui`.
+- Fabric: `DeathMessageMixin` is a plain `@Redirect` of `CombatTracker#getDeathMessage()` in `ServerPlayer#die` (the same single call
+  in 1.14.4 - 1.17.1; these jars accept Fabric Loader 0.12+, so no MixinExtras). The custom message is decided in the `die` HEAD
+  mixin (`onDie`, before the recap marks the killing blow) and handed to the redirect; the recap quotes it.
+- Forge: `ClientChatReceivedEvent#setMessage` for the chat line and `ClientPortMc.replaceDeathMessage(DeathScreen)` in `GuiOpenEvent`.
+
 ## In-game self-test (development)
 
 Build with `-Pselftest`. Use only `build/devlibs/whathitme-selftest.jar` (the mod + self-test, for clients **and test
