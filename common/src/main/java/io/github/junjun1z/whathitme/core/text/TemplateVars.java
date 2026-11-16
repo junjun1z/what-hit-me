@@ -171,12 +171,10 @@ public final class TemplateVars implements Template.Vars {
                 return on(Flag.MITIGATION_DETAILS) && r.maxHealth > 0 ? num(r.maxHealth / 2f, dec, 1) : null;
             case "hits":
                 return on(Flag.HIT_COUNT) && r.hits > 1 ? Txt.lit(String.valueOf(r.hits)) : null;
-            case "damage_name": {
-                String ren = f.o.rename(r);
-                return ren != null ? f.custom(ren) : f.typeName(r.damageType);
-            }
+            case "damage_name":
+                return f.damageName(r);
             case "damage_id":
-                return on(Flag.INTERNAL_DAMAGE_ID) ? str(r.damageId) : null;
+                return on(Flag.INTERNAL_DAMAGE_ID) && RecapFormatter.idShown(r) ? str(r.damageId) : null;
             case "damage_mod":
                 return on(Flag.SOURCE_MOD_NAME) ? str(r.modName) : null;
             case "properties":
@@ -204,14 +202,14 @@ public final class TemplateVars implements Template.Vars {
             case "environment":
                 return masked ? join(f.environment(r), " | ") : join(new RecapFormatter(m, f.o.withAll()).environment(r), " | ");
             case "dimension": {
-                if (!on(Flag.EQUIPMENT_IN_COPY)) return null;
+                if (!on(Flag.EQUIPMENT_IN_COPY) || r.hidden(io.github.junjun1z.whathitme.core.data.RuleMark.H_POSITION)) return null;
                 String d = !r.dimension.isEmpty() ? r.dimension : s != null && s.gear != null ? s.gear.dimension : "";
                 return str(d);
             }
             case "x":
             case "y":
             case "z": {
-                if (!on(Flag.EQUIPMENT_IN_COPY) || !on(Flag.COORDS_IN_COPY)) return null;
+                if (!on(Flag.EQUIPMENT_IN_COPY) || !on(Flag.COORDS_IN_COPY) || r.hidden(io.github.junjun1z.whathitme.core.data.RuleMark.H_POSITION)) return null;
                 double[] p = position();
                 if (p == null) return null;
                 double c = p[name.charAt(0) - 'x'];

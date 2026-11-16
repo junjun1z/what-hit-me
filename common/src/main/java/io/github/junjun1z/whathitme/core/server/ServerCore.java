@@ -31,7 +31,13 @@ import io.github.junjun1z.whathitme.core.data.PlayerHistory;
 import io.github.junjun1z.whathitme.core.data.SearchEngine;
 import io.github.junjun1z.whathitme.core.data.Snapshot;
 import io.github.junjun1z.whathitme.core.data.Stats;
+import io.github.junjun1z.whathitme.core.data.MatchKey;
+import io.github.junjun1z.whathitme.core.data.RuleMark;
 import io.github.junjun1z.whathitme.core.net.Packets;
+import io.github.junjun1z.whathitme.core.rules.Conditions;
+import io.github.junjun1z.whathitme.core.rules.Rule;
+import io.github.junjun1z.whathitme.core.rules.RuleEval;
+import io.github.junjun1z.whathitme.core.text.DeathMessages;
 import io.github.junjun1z.whathitme.core.text.DisplayOptions;
 import io.github.junjun1z.whathitme.core.text.Fmt;
 import io.github.junjun1z.whathitme.core.text.Msg;
@@ -314,7 +320,7 @@ public final class ServerCore {
         final DamageRecord kb = killing;
         Safe.run("death triggers", () -> runTriggers(p, kb, st, now));
         st.save();
-        if (tracker().isModded(uid)) send(p, Packets.Recap.DEATH, "", 0, 0, s);
+        if (tracker().isModded(uid)) send(p, p, Packets.Recap.DEATH, "", 0, 0, s);
         Safe.run("death message", () -> customDeathMessageToClients(p, kb, s));
         final Snapshot dead = s;
         ServerPort srv = port;
@@ -326,29 +332,36 @@ public final class ServerCore {
     public static String deathMessageTemplate(DamageRecord killing) {
         Map<String, String> dm = WhmConfig.pack.deathMessages;
         if (dm.isEmpty() || killing == null) return null;
-        return io.github.junjun1z.whathitme.core.text.DeathMessages.find(dm, killing);
+        return DeathMessages.find(dm, killing);
+    }
+
+    private static RecapFormatter english() {
+        return new RecapFormatter(Msg.ENGLISH, options(null, false));
     }
 
     /**
      * Forge / NeoForge: no event can change the vanilla death message, so players with the mod get the custom message
      * (they replace the vanilla chat line); the console gets a log line. Fabric replaces it itself (see
-     * {@link #customDeathMessage}).
+     * {@link #customDeathMessage}). The rules of the dead player decide (a hidden death message has a built-in text).
      */
     private static void customDeathMessageToClients(PlayerHandle p, DamageRecord killing, Snapshot s) {
         ServerPort srv = port;
         if (srv == null || srv.replacesDeathMessages()) return;
-        String tpl = deathMessageTemplate(killing);
-        if (tpl == null) return;
-        Txt msg = io.github.junjun1z.whathitme.core.text.DeathMessages.render(new RecapFormatter(Msg.ENGLISH, options(null, false)), tpl, killing, p.name(),
-            s.deathMessage);
+        RuleEval e = RuleEval.of(p);
+        DamageRecord ruled = e.apply(killing);
+        String choice = DeathMessages.choose(WhmConfig.pack.deathMessages, killing, ruled);
+        if (choice == null) return;
+        Txt msg = DeathMessages.render(english(), choice, ruled, p.name(), s.deathMessage);
         Platform.log.info("[What Hit Me?] Death message: " + Fmt.strip(msg.toPlain(Msg.ENGLISH_LANG)));
         List<DamageRecord> one = new ArrayList<>();
         one.add(killing);
-        Snapshot k = prepare(new Snapshot(Snapshot.DEATH, s.time, one, 0, s.deathMessage));
+        // the vanilla message stays in the packet: the client looks for that chat line
+        Snapshot k = prepare(new Snapshot(Snapshot.DEATH, s.time, one, 0, s.deathMessage), e).withDeathMessage(s.deathMessage);
+        String who = p.name() + "\n" + choice;
         for (UUID id : tracker().modded()) {
             if (tracker().protocol(id) < 3) continue;
             PlayerHandle t = srv.player(id);
-            if (t != null) Safe.run("death message packet", () -> t.send(new Packets.Recap(Packets.Recap.DEATH_MESSAGE, p.name(), 0, 0, k, 3)));
+            if (t != null) Safe.run("death message packet", () -> t.send(new Packets.Recap(Packets.Recap.DEATH_MESSAGE, who, 0, 0, k, 3)));
         }
     }
 
@@ -358,17 +371,34 @@ public final class ServerCore {
      */
     public static Txt customDeathMessage(PlayerHandle p, Supplier<HitFacts> facts) {
         return Safe.get("custom death message", () -> {
-            if (WhmConfig.pack.deathMessages.isEmpty()) return null;
+            PackConfig pack = WhmConfig.pack;
+            if (pack.deathMessages.isEmpty() && pack.rules.isEmpty()) return null;
             PlayerHistory h = tracker().get(p.uuid());
             long now = System.currentTimeMillis();
             DamageRecord last = h.lastDamage();
             DamageRecord k;
             if (last != null && now - last.time <= 1500 && !last.has(DamageRecord.KILLING)) k = last.withFlags(DamageRecord.KILLING);
             else k = facts(facts).build(now, -1f, 0f, 0f, DamageRecord.KILLING, 0f, p.maxHealth(), Safe.get("dimension", p::dimension, ""), "");
-            String tpl = deathMessageTemplate(k);
-            if (tpl == null) return null;
-            return io.github.junjun1z.whathitme.core.text.DeathMessages.render(new RecapFormatter(Msg.ENGLISH, options(null, false)), tpl, k, p.name(), "");
+            DamageRecord ruled = RuleEval.of(p).apply(k);
+            String choice = DeathMessages.choose(pack.deathMessages, k, ruled);
+            if (choice == null) return null;
+            ServerPort srv = port;
+            return DeathMessages.render(english(), choice, ruled, p.name(), "", srv != null && srv.translationFallback());
         }, null);
+    }
+
+    /** A snapshot as the player it belongs to may see it (rules of that player; a hidden death message gets its built-in text) */
+    static Snapshot ruled(Snapshot s, RuleEval e, String victim) {
+        if (s == null || e == null || !e.hasRules()) return s;
+        DamageRecord raw = s.key();
+        DamageRecord k = raw == null ? null : e.apply(raw);
+        String json = "";
+        if (k != null && k.hidden(RuleMark.H_DEATH_MESSAGE) && !s.deathMessage.isEmpty()) {
+            String choice = DeathMessages.choose(WhmConfig.pack.deathMessages, raw, k);
+            Txt t = DeathMessages.render(english(), choice, k, victim, s.deathMessage);
+            json = DeathMessages.literalJson(Fmt.strip(t.toPlain(Msg.ENGLISH_LANG)));
+        }
+        return e.apply(s, json);
     }
 
     /** Health restored right after a death that was not cancelled: another mod revived the player */
@@ -412,19 +442,30 @@ public final class ServerCore {
     private static void runTriggers(PlayerHandle p, DamageRecord k, Stats st, long now) {
         ServerPort srv = port;
         if (srv == null) return;
-        for (PackConfig.DeathTrigger t : TestPreview.matching(WhmConfig.pack, k)) {
-            String id = t.id();
-            if (t.oncePerPlayer && st.triggersRun.contains(id)) continue;
-            String ck = p.uuid() + "|" + id;
-            Long prev = TRIGGER_TIMES.get(ck);
-            if (t.cooldownSeconds > 0 && prev != null && now - prev < t.cooldownSeconds * 1000L) continue;
-            String cmd = TestPreview.fill(t.command, p.name(), Safe.get("position", p::position, null), k);
-            if (srv.runCommand(cmd)) {
-                TRIGGER_TIMES.put(ck, now);
-                if (t.oncePerPlayer) {
-                    st.triggersRun.add(id);
-                    st.markDirty();
-                }
+        RuleEval e = RuleEval.of(p);
+        for (PackConfig.DeathTrigger t : TestPreview.matching(WhmConfig.pack, k, e)) {
+            runCommands(srv, p, k, st, now, t.id(), Collections.singletonList(t.command), t.oncePerPlayer, t.cooldownSeconds);
+        }
+        Rule r = e.find(k);
+        if (r != null && !r.commands.isEmpty()) runCommands(srv, p, k, st, now, r.id(), r.commands, r.oncePerPlayer, r.cooldownSeconds);
+    }
+
+    private static void runCommands(ServerPort srv, PlayerHandle p, DamageRecord k, Stats st, long now, String id, List<String> commands, boolean once,
+                                    int cooldown) {
+        if (once && st.triggersRun.contains(id)) return;
+        String ck = p.uuid() + "|" + id;
+        Long prev = TRIGGER_TIMES.get(ck);
+        if (cooldown > 0 && prev != null && now - prev < cooldown * 1000L) return;
+        boolean ran = false;
+        for (String c : commands) {
+            String cmd = TestPreview.fill(c, p.name(), Safe.get("position", p::position, null), k);
+            if (srv.runCommand(cmd)) ran = true;
+        }
+        if (ran) {
+            TRIGGER_TIMES.put(ck, now);
+            if (once) {
+                st.triggersRun.add(id);
+                st.markDirty();
             }
         }
     }
@@ -438,7 +479,7 @@ public final class ServerCore {
             if (tracker().isModded(p.uuid())) return; // that client shows its own (translated) summary
             if ((WhmConfig.common.mask & Flag.RESPAWN_CHAT_SUMMARY.bit()) == 0 || p.chatOff()) return;
             RecapFormatter f = new RecapFormatter(Msg.ENGLISH, options(p, false));
-            for (Txt line : f.respawnSummary(h.lastDeath())) p.chat(line);
+            for (Txt line : f.respawnSummary(ruled(h.lastDeath(), RuleEval.of(p), p.name()))) p.chat(line);
         });
     }
 
@@ -483,10 +524,10 @@ public final class ServerCore {
         Snapshot s = new Snapshot(kind, now, recs, key, "");
         h.addSnapshot(s, c.maxSnapshots);
         if (tracker().isModded(p.uuid())) {
-            send(p, Packets.Recap.ALERT, "", 1, h.snapshots().size(), s);
+            send(p, p, Packets.Recap.ALERT, "", 1, h.snapshots().size(), s);
         } else {
             Flag f = kind == Snapshot.HEAVY ? Flag.HEAVY_HIT_SNAPSHOT : Flag.TOTEM_CHAT_ALERT;
-            if ((c.mask & f.bit()) != 0) p.chat(new RecapFormatter(Msg.ENGLISH, options(p, false)).alert(s, 1));
+            if ((c.mask & f.bit()) != 0) p.chat(new RecapFormatter(Msg.ENGLISH, options(p, false)).alert(ruled(s, RuleEval.of(p), p.name()), 1));
         }
     }
 
@@ -506,6 +547,86 @@ public final class ServerCore {
 
     public static void serverStarted(ServerPort p) {
         port = p;
+        Safe.run("rule warnings", () -> {
+            for (String w : ruleWarnings(p)) Platform.log.warn("What Hit Me? " + w, null);
+            String dm = deathMessageWarning(p);
+            if (dm != null) Platform.log.warn("What Hit Me? " + dm, null);
+        });
+    }
+
+    /** Problems of the rules / death trigger conditions and of requireClientMod on this server */
+    public static List<String> ruleWarnings(ServerPort srv) {
+        List<String> out = Conditions.warnings(WhmConfig.pack, srv);
+        if (WhmConfig.common.requireClientMod && srv != null && !srv.canRequireClientMod()) {
+            String n = srv.platformName();
+            out.add("requireClientMod is not supported " + (n.isEmpty() ? "on this version" : "on " + n) + " (players without What Hit Me? can still join)");
+        }
+        return out;
+    }
+
+    /** Do the pack rules / deathMessages change death messages? */
+    private static boolean changesDeathMessages() {
+        PackConfig pack = WhmConfig.pack;
+        if (!pack.deathMessages.isEmpty()) return true;
+        for (Rule r : pack.rules) if ((r.hide & RuleMark.H_DEATH_MESSAGE) != 0) return true;
+        return false;
+    }
+
+    /** The loader name for the death message warning ("Forge 1.20.1"), or a neutral text */
+    private static String platform(ServerPort srv) {
+        String n = srv == null ? "" : srv.platformName();
+        return n.isEmpty() ? "this server" : n;
+    }
+
+    /**
+     * Forge / NeoForge cannot replace the death message for players without the mod: the warning text (English), null when
+     * not needed (Fabric, nothing changes death messages, or requireClientMod keeps those players out)
+     */
+    public static String deathMessageWarning(ServerPort srv) {
+        if (srv == null || srv.replacesDeathMessages() || !changesDeathMessages()) return null;
+        if (WhmConfig.common.requireClientMod && srv.canRequireClientMod()) return null;
+        return Msg.ENGLISH.text("whathitme.reload.dmwarning", platform(srv));
+    }
+
+    // ---- requireClientMod (loaders without a handshake check, e.g. Fabric)
+
+    /** Seconds a client has to say hello before requireClientMod disconnects it */
+    static final int HELLO_WAIT_SECONDS = 5;
+    private static java.util.Timer helloTimer;
+
+    /**
+     * A player joined (loaders that check requireClientMod themselves: Fabric). When requireClientMod is on, a client that did
+     * not say hello within a few seconds is disconnected. One timer task per join, nothing per tick.
+     */
+    public static void onLogin(PlayerHandle p) {
+        Safe.run("login", () -> {
+            ServerPort srv = port;
+            if (srv == null || !WhmConfig.common.requireClientMod || !srv.canRequireClientMod()) return;
+            final UUID id = p.uuid();
+            synchronized (ServerCore.class) {
+                if (helloTimer == null) helloTimer = new java.util.Timer("What Hit Me? hello check", true);
+                helloTimer.schedule(new java.util.TimerTask() {
+                    @Override
+                    public void run() {
+                        if (port != srv) return;
+                        Safe.get("schedule", () -> srv.schedule(() -> Safe.run("hello check", () -> helloCheck(srv, id))), false);
+                    }
+                }, HELLO_WAIT_SECONDS * 1000L);
+            }
+        });
+    }
+
+    private static void helloCheck(ServerPort srv, UUID id) {
+        if (port != srv || !WhmConfig.common.requireClientMod || tracker().isModded(id)) return;
+        PlayerHandle p = srv.player(id);
+        if (p == null) return;
+        Platform.log.info("[What Hit Me?] " + p.name() + " has no What Hit Me? (requireClientMod): disconnected");
+        p.disconnect(requiredText());
+    }
+
+    /** The disconnect reason of requireClientMod (English: the client has no translations) */
+    public static Txt requiredText() {
+        return Msg.ENGLISH.tr(Fmt.RED, "whathitme.kick.required");
     }
 
     /** Server stopped (also the integrated server of single player) */
@@ -521,7 +642,13 @@ public final class ServerCore {
 
     /** Removes what the server switched off before a snapshot leaves the server */
     static Snapshot prepare(Snapshot s) {
+        return prepare(s, null);
+    }
+
+    /** Like {@link #prepare(Snapshot)}, with the rules of the player the snapshot belongs to (null = none) */
+    static Snapshot prepare(Snapshot s, RuleEval e) {
         if (s == null) return null;
+        if (e != null) s = ruled(s, e, e.player() == null ? "" : e.player().name());
         WhmConfig.Common c = WhmConfig.common;
         boolean weapon = commonOn(Flag.ATTACKER_WEAPON);
         boolean dist = commonOn(Flag.ATTACKER_DISTANCE);
@@ -535,8 +662,29 @@ public final class ServerCore {
         return new Snapshot(s.kind, s.time, list, s.keyIndex, s.deathMessage, g);
     }
 
-    private static void send(PlayerHandle p, int kind, String who, int index, int count, Snapshot s) {
-        p.send(new Packets.Recap(kind, who, index, count, prepare(s), tracker().protocol(p.uuid())));
+    /**
+     * @param to receiver
+     * @param owner the player the records belong to (their rules apply)
+     */
+    private static void send(PlayerHandle to, PlayerHandle owner, int kind, String who, int index, int count, Snapshot s) {
+        to.send(new Packets.Recap(kind, who, index, count, prepare(s, RuleEval.of(owner)), tracker().protocol(to.uuid())));
+    }
+
+    /** Search / dump entries the player may see: entries whose rule hides the damage id (or the attacker of a mob) are left out */
+    static List<Entry> visibleEntries(List<Entry> all, RuleEval e) {
+        if (!e.hasRules()) return all;
+        List<Entry> out = new ArrayList<>(all.size());
+        for (Entry x : all) {
+            Rule r = null;
+            if (x.type == Entry.DAMAGE) r = e.find(MatchKey.Target.id(x.id));
+            else if (x.type == Entry.MOB) r = e.find(new MatchKey.Target("mob:" + x.id, x.id, "", ""));
+            if (r != null && ((r.hide & RuleMark.H_DAMAGE_ID) != 0 || (x.type == Entry.MOB && (r.hide & RuleMark.H_ATTACKER) != 0))) continue;
+            if (r != null && (r.hide & RuleMark.H_MOD) != 0) {
+                x = new Entry(x.type, x.id, x.name, x.nameKey, "", "", x.flags, x.count, x.amplifier, x.duration, x.milk, x.extra);
+            }
+            out.add(x);
+        }
+        return out;
     }
 
     /** A packet from a client (call on the server thread) */
@@ -616,16 +764,16 @@ public final class ServerCore {
         long now = System.currentTimeMillis();
         switch (r.kind) {
             case Packets.Request.HISTORY:
-                send(p, Packets.Recap.HISTORY, "", 0, h.snapshots().size(), new Snapshot(Snapshot.HISTORY, now, h.records(), -1, ""));
+                send(p, p, Packets.Recap.HISTORY, "", 0, h.snapshots().size(), new Snapshot(Snapshot.HISTORY, now, h.records(), -1, ""));
                 break;
             case Packets.Request.LAST:
-                send(p, Packets.Recap.LAST, "", 0, 0, h.lastDeath());
+                send(p, p, Packets.Recap.LAST, "", 0, 0, h.lastDeath());
                 break;
             case Packets.Request.SNAPSHOT: {
                 int n = Completion.parseInt(r.arg, 1);
                 List<Snapshot> list = h.snapshots();
                 Snapshot s = n >= 1 && n <= list.size() ? list.get(n - 1) : null;
-                send(p, Packets.Recap.SNAPSHOT, "", n, list.size(), s);
+                send(p, p, Packets.Recap.SNAPSHOT, "", n, list.size(), s);
                 break;
             }
             case Packets.Request.INSPECT: {
@@ -639,8 +787,8 @@ public final class ServerCore {
                     break;
                 }
                 PlayerHistory th = tracker().get(t.uuid());
-                send(p, Packets.Recap.INSPECT_DEATH, t.name(), 0, 0, th.lastDeath());
-                send(p, Packets.Recap.INSPECT_HISTORY, t.name(), 0, 0, new Snapshot(Snapshot.HISTORY, now, th.records(), -1, ""));
+                send(p, t, Packets.Recap.INSPECT_DEATH, t.name(), 0, 0, th.lastDeath());
+                send(p, t, Packets.Recap.INSPECT_HISTORY, t.name(), 0, 0, new Snapshot(Snapshot.HISTORY, now, th.records(), -1, ""));
                 break;
             }
             case Packets.Request.EFFECTS: {
@@ -649,7 +797,7 @@ public final class ServerCore {
                 break;
             }
             case Packets.Request.SEARCH: {
-                List<Entry> all = SearchEngine.search(r.arg, tracker().catalog, srv.registries());
+                List<Entry> all = visibleEntries(SearchEngine.search(r.arg, tracker().catalog, srv.registries()), RuleEval.of(p));
                 List<Entry> part = all.size() > 40 ? new ArrayList<>(all.subList(0, 40)) : all;
                 p.send(new Packets.Entries(Packets.Entries.SEARCH, r.arg, all.size(), part));
                 break;
@@ -659,7 +807,7 @@ public final class ServerCore {
                     p.send(new Packets.Message(true, "whathitme.error.noperm"));
                     break;
                 }
-                List<Entry> all = SearchEngine.all(tracker().catalog, srv.registries());
+                List<Entry> all = visibleEntries(SearchEngine.all(tracker().catalog, srv.registries()), RuleEval.of(p));
                 List<Entry> damage = new ArrayList<>();
                 for (Entry e : all) if (e.type == Entry.DAMAGE) damage.add(e);
                 p.send(new Packets.Entries(Packets.Entries.DUMP, "", damage.size(), damage.size() > 4000 ? new ArrayList<>(damage.subList(0, 4000)) : damage));
@@ -690,6 +838,8 @@ public final class ServerCore {
                 reload(srv);
                 p.send(new Packets.Message(false, "whathitme.reload.server"));
                 for (String w : WhmConfig.pack.warnings) p.send(new Packets.Message(true, "whathitme.reload.warning", w));
+                for (String w : ruleWarnings(srv)) p.send(new Packets.Message(true, "whathitme.reload.warning", w));
+                if (deathMessageWarning(srv) != null) p.send(new Packets.Message(true, "whathitme.reload.dmwarning", platform(srv)));
 
                 break;
             default:
@@ -702,6 +852,9 @@ public final class ServerCore {
         WhmConfig.reloadCommon();
         CatalogCache.rescan(srv.registries());
         broadcastInfo();
+        for (String w : ruleWarnings(srv)) Platform.log.warn("What Hit Me? " + w, null);
+        String dm = deathMessageWarning(srv);
+        if (dm != null) Platform.log.warn("What Hit Me? " + dm, null);
     }
 
     /** Display options for chat the server itself sends (players without the mod, console) */
@@ -709,7 +862,7 @@ public final class ServerCore {
         WhmConfig.Common c = WhmConfig.common;
         PackConfig pack = WhmConfig.pack;
         DisplayOptions o = new DisplayOptions(c.mask, clientActions, c.summarySeconds).ignore(c.ignoredDamageIds).ignore(pack.ignored)
-            .renames(pack.renameMap).renames(c.renameMap).hints(pack.hintMap).hints(c.hintMap).templates(pack.templates).deathMessages(pack.deathMessages);
+            .renames(pack.renameMap).renames(c.renameMap).hints(pack.hintMap).hints(c.hintMap).templates(pack.templates).packTemplates(pack.templates).deathMessages(pack.deathMessages);
         if (p != null) o.ignore(p.personalIgnored()).player(Safe.get("player name", p::name, ""));
         return o;
     }
@@ -757,14 +910,14 @@ public final class ServerCore {
             case "history": {
                 if (player == null) throw CommandText.err(m, "whathitme.error.player");
                 PlayerHistory h = tracker().get(player.uuid());
-                sender.send(f.history(h.records(), now, historyLines(), h.snapshots().size(), false, null));
+                sender.send(f.history(RuleEval.of(player).apply(h.records()), now, historyLines(), h.snapshots().size(), false, null));
                 break;
             }
             case "last": {
                 if (player == null) throw CommandText.err(m, "whathitme.error.player");
                 Snapshot s = tracker().get(player.uuid()).lastDeath();
                 if (s == null) sender.send(m.tr(Fmt.GRAY, "whathitme.last.none"));
-                else sender.send(f.fullRecap(s, now, null));
+                else sender.send(f.fullRecap(ruled(s, RuleEval.of(player), player.name()), now, null));
                 break;
             }
             case "snapshot": {
@@ -773,7 +926,7 @@ public final class ServerCore {
                 int n = args.length > 1 ? Completion.parseInt(args[1], 1) : 1;
                 if (n < 1 || n > list.size()) sender.send(m.tr(Fmt.GRAY, "whathitme.snapshot.none"));
                 else {
-                    sender.send(f.fullRecap(list.get(n - 1), now, null));
+                    sender.send(f.fullRecap(ruled(list.get(n - 1), RuleEval.of(player), player.name()), now, null));
                     sender.send(m.tr(Fmt.GRAY, "whathitme.snapshot.position", n, list.size()));
                 }
                 break;
@@ -830,7 +983,7 @@ public final class ServerCore {
                 if (args.length < 2) throw CommandText.usage(m, "/whm search <query | #tag | @modid>");
                 if (srv == null) break;
                 String q = Completion.join(args, 1);
-                List<Entry> all = SearchEngine.search(q, tracker().catalog, srv.registries());
+                List<Entry> all = visibleEntries(SearchEngine.search(q, tracker().catalog, srv.registries()), RuleEval.of(player));
                 sender.send(f.search(q, all.size() > 30 ? all.subList(0, 30) : all, all.size()));
                 break;
             }
@@ -840,21 +993,29 @@ public final class ServerCore {
                 PlayerHandle t = srv == null ? null : srv.playerByName(args[1]);
                 if (t == null) throw CommandText.err(m, "whathitme.inspect.notfound", args[1]);
                 PlayerHistory th = tracker().get(t.uuid());
-                // another player's records: no [Copy ID] / [Mute] buttons
+                // another player's records: no [Copy ID] / [Mute] buttons; that player's rules apply
                 RecapFormatter fi = new RecapFormatter(m, f.o.without(Flag.ACTION_BUTTONS));
+                RuleEval te = RuleEval.of(t);
                 if (th.lastDeath() == null) sender.send(m.tr(Fmt.GRAY, "whathitme.inspect.nodeath", t.name()));
-                else sender.send(fi.fullRecap(th.lastDeath(), now, t.name()));
-                sender.send(fi.history(th.records(), now, historyLines(), 0, false, t.name()));
+                else sender.send(fi.fullRecap(ruled(th.lastDeath(), te, t.name()), now, t.name()));
+                sender.send(fi.history(te.apply(th.records()), now, historyLines(), 0, false, t.name()));
                 break;
             }
             case "test": {
                 requireAdmin(sender, m);
-                if (args.length < 2) throw CommandText.usage(m, "/whm test <damage_id> [entity_id] [item_id] [dim_id]");
-                String name = player == null ? "Player" : player.name();
-                double[] pos = player == null ? null : Safe.get("position", player::position, null);
-                String dim = player == null ? "" : Safe.get("dimension", player::dimension, "");
-                float max = player == null ? 20f : player.maxHealth();
-                sender.send(TestPreview.lines(m, f, args, WhmConfig.pack, name, pos, dim, max));
+                TestPreview.Args ta = TestPreview.Args.parse(args);
+                if (ta.args.length < 2) throw CommandText.usage(m, TestPreview.USAGE);
+                PlayerHandle as = player;
+                if (ta.as != null) {
+                    as = srv == null ? null : srv.playerByName(ta.as);
+                    if (as == null) throw CommandText.err(m, "whathitme.inspect.notfound", ta.as);
+                }
+                String name = as == null ? "Player" : as.name();
+                double[] pos = as == null ? null : Safe.get("position", as::position, null);
+                String dim = as == null ? "" : Safe.get("dimension", as::dimension, "");
+                float max = as == null ? 20f : as.maxHealth();
+                RuleEval e = RuleEval.of(as).assume(ta.assume);
+                sender.send(TestPreview.lines(m, f, ta, WhmConfig.pack, name, pos, dim, max, e));
                 break;
             }
             case "dump": {
@@ -881,12 +1042,14 @@ public final class ServerCore {
                 sender.send(m.tr(Fmt.GRAY, "whathitme.reload.pack", WhmConfig.pack.files.size(), WhmConfig.pack.errors.size()));
                 for (String e : WhmConfig.pack.errors) sender.send(Msg.str(Fmt.RED, e));
                 for (String w : WhmConfig.pack.warnings) sender.send(m.tr(Fmt.GOLD, "whathitme.reload.warning", w));
+                for (String w : ruleWarnings(srv)) sender.send(m.tr(Fmt.GOLD, "whathitme.reload.warning", w));
+                if (deathMessageWarning(srv) != null) sender.send(m.tr(Fmt.GOLD, "whathitme.reload.dmwarning", platform(srv)));
                 break;
             }
             case "template": {
                 if (player == null) throw CommandText.err(m, "whathitme.error.player");
                 if (args.length < 3 || !"preview".equalsIgnoreCase(args[1])) throw CommandText.usage(m, "/whm template preview <" + String.join("|", io.github.junjun1z.whathitme.core.text.Template.OUTPUTS) + ">");
-                Snapshot last = tracker().get(player.uuid()).lastDeath();
+                Snapshot last = ruled(tracker().get(player.uuid()).lastDeath(), RuleEval.of(player), player.name());
                 sender.send(io.github.junjun1z.whathitme.core.cmd.TemplatePreview.lines(f, args[2], last, now));
                 break;
             }
@@ -938,7 +1101,11 @@ public final class ServerCore {
                     break;
             }
         }
-        if (sub.equals("test") && srv != null) return Completion.testArgs(args, CatalogCache.view(srv.registries()));
+        if (sub.equals("test") && srv != null) {
+            List<String> extra = TestPreview.completeOptions(args, srv.onlinePlayerNames());
+            if (extra != null) return extra;
+            return Completion.testArgs(args, CatalogCache.view(srv.registries()));
+        }
         if (sub.equals("search")) return Completion.matching(args, Completion.searchSuggestions(tracker().catalog.ids()));
         if (sub.equals("config") && args.length == 3) return Completion.matching(args, WhmConfig.common.values(args[1]));
         if (sub.equals("template") && args.length == 3) return Completion.matching(args, io.github.junjun1z.whathitme.core.text.Template.OUTPUTS);

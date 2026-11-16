@@ -77,12 +77,18 @@ public final class Snapshot {
 
     /** Protocol 2: everything */
     public void write2(WireOut buf, long now) {
+        write2(buf, now, false);
+    }
+
+    /** Protocol 2 body; v3 adds the rule result of each record */
+    public void write2(WireOut buf, long now, boolean v3) {
         buf.writeByte(kind);
         buf.writeLong(Math.max(0, now - time));
         buf.writeShort(records.size());
         for (DamageRecord r : records) {
             r.write(buf, now);
             r.writeExtra(buf);
+            if (v3) r.writeMark(buf);
         }
         buf.writeShort(keyIndex);
         buf.writeString(deathMessage.length() > 8000 ? "" : deathMessage);
@@ -91,11 +97,18 @@ public final class Snapshot {
     }
 
     public static Snapshot read2(WireIn buf, long now) {
+        return read2(buf, now, false);
+    }
+
+    public static Snapshot read2(WireIn buf, long now, boolean v3) {
         int kind = buf.readByte();
         long time = now - buf.readLong();
         int n = buf.readShort();
         List<DamageRecord> list = new ArrayList<>(Math.max(0, n));
-        for (int i = 0; i < n; i++) list.add(DamageRecord.read(buf, now).readExtra(buf));
+        for (int i = 0; i < n; i++) {
+            DamageRecord r = DamageRecord.read(buf, now).readExtra(buf);
+            list.add(v3 ? r.readMark(buf) : r);
+        }
         int key = buf.readShort();
         String dm = buf.readString();
         Gear g = buf.readBoolean() ? Gear.read(buf) : null;

@@ -78,6 +78,8 @@ public final class DamageRecord {
     public final String dimension;
     /** Environment context / broken armor piece, see {@link Context} ("" = none) */
     public final String context;
+    /** Progression rule result for the reader (server side, per output), null = no rule */
+    public final RuleMark mark;
 
     public DamageRecord(long time, String damageId, String damageType, String attackerName, String attackerKey, String attackerId,
                         String directName, String modId, String modName, float raw, float actual, float absorbed, int flags, float distance,
@@ -91,6 +93,15 @@ public final class DamageRecord {
                         String directName, String modId, String modName, float raw, float actual, float absorbed, int flags, float distance,
                         String weaponName, String weaponKey, String weaponEnchants, String ownerName, int hits, float healthAfter,
                         float maxHealth, String sourceTag, String weaponId, String dimension, String context) {
+        this(time, damageId, damageType, attackerName, attackerKey, attackerId, directName, modId, modName, raw, actual, absorbed, flags, distance,
+            weaponName, weaponKey, weaponEnchants, ownerName, hits, healthAfter, maxHealth, sourceTag, weaponId, dimension, context, null);
+    }
+
+    private DamageRecord(long time, String damageId, String damageType, String attackerName, String attackerKey, String attackerId,
+                         String directName, String modId, String modName, float raw, float actual, float absorbed, int flags, float distance,
+                         String weaponName, String weaponKey, String weaponEnchants, String ownerName, int hits, float healthAfter,
+                         float maxHealth, String sourceTag, String weaponId, String dimension, String context, RuleMark mark) {
+        this.mark = mark;
         this.time = time;
         this.damageId = s(damageId);
         this.damageType = s(damageType);
@@ -166,12 +177,24 @@ public final class DamageRecord {
         return new DamageRecord(time, damageId, damageType, attackerName, attackerKey, attackerId, directName, modId, modName, raw, actual,
             absorbed, flags, distanceOn ? distance : -1f, weapon ? weaponName : "", weapon ? weaponKey : "", weapon ? weaponEnchants : "",
             owner ? ownerName : "", hits, healthAfter, maxHealth, sourceTag, weapon ? weaponId : "", dimension,
-            env || has(ARMOR_BREAK) ? context : "");
+            env || has(ARMOR_BREAK) ? context : "", mark);
     }
 
     private DamageRecord copy(long t, int f, float hAfter, String ctx) {
         return new DamageRecord(t, damageId, damageType, attackerName, attackerKey, attackerId, directName, modId, modName, raw, actual,
-            absorbed, f, distance, weaponName, weaponKey, weaponEnchants, ownerName, hits, hAfter, maxHealth, sourceTag, weaponId, dimension, ctx);
+            absorbed, f, distance, weaponName, weaponKey, weaponEnchants, ownerName, hits, hAfter, maxHealth, sourceTag, weaponId, dimension, ctx, mark);
+    }
+
+    /** A copy with this rule result (null = none) */
+    public DamageRecord withMark(RuleMark m) {
+        return new DamageRecord(time, damageId, damageType, attackerName, attackerKey, attackerId, directName, modId, modName, raw, actual,
+            absorbed, flags, distance, weaponName, weaponKey, weaponEnchants, ownerName, hits, healthAfter, maxHealth, sourceTag, weaponId, dimension,
+            context, m);
+    }
+
+    /** A rule hides this field (RuleMark.H_*) */
+    public boolean hidden(int field) {
+        return mark != null && mark.hides(field);
     }
 
     /** Health + absorption lost as a percentage of max health, -1 = unknown */
@@ -209,6 +232,16 @@ public final class DamageRecord {
         buf.writeString(weaponId);
         buf.writeString(dimension);
         buf.writeString(context);
+    }
+
+    /** Protocol 3 part, written after {@link #writeExtra} */
+    public void writeMark(WireOut buf) {
+        buf.writeBoolean(mark != null);
+        if (mark != null) mark.write(buf);
+    }
+
+    public DamageRecord readMark(WireIn buf) {
+        return buf.readBoolean() ? withMark(RuleMark.read(buf)) : this;
     }
 
     public DamageRecord readExtra(WireIn buf) {

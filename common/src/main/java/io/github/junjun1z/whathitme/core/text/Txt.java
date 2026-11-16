@@ -32,6 +32,8 @@ public final class Txt {
     private String clickValue;
     private Txt hover;
     private List<Txt> siblings;
+    /** Translation: text shown by clients that do not know the key (null = none) */
+    private String fallback;
 
     private Txt(Kind kind, String text, Object[] args) {
         this.kind = kind;
@@ -51,6 +53,16 @@ public final class Txt {
 
     public static Txt tr(String key, Object... args) {
         return new Txt(Kind.TRANSLATE, key, args);
+    }
+
+    /**
+     * A translation with an English fallback for clients without the key (1.19.4+ translatableWithFallback; versions without
+     * it use the key). Only send it where {@code ServerPort.translationFallback()} is true.
+     */
+    public static Txt trFallback(String key, String fallback, Object... args) {
+        Txt t = new Txt(Kind.TRANSLATE, key, args);
+        t.fallback = fallback;
+        return t;
     }
 
     /** A native JSON text component (e.g. the vanilla death message), converted by the Minecraft version */
@@ -117,6 +129,11 @@ public final class Txt {
         return args.clone();
     }
 
+    /** Fallback text of a translation, null = none */
+    public String fallback() {
+        return fallback;
+    }
+
     public Fmt color() {
         return color;
     }
@@ -172,7 +189,7 @@ public final class Txt {
             default: {
                 String p = lang == null ? null : lang.pattern(text);
                 if (p == null) {
-                    sink.run(text, c, b, u);
+                    sink.run(fallback != null ? fallback : text, c, b, u);
                 } else {
                     format(lang, p, c, b, u, sink);
                 }

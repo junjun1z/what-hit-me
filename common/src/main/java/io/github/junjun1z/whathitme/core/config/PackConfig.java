@@ -34,8 +34,16 @@ public final class PackConfig {
         public final int cooldownSeconds;
         /** File the trigger comes from (for messages) */
         public final String source;
+        /** if / any / unless (progression conditions of the dead player) */
+        public final io.github.junjun1z.whathitme.core.rules.Conds conds;
 
         public DeathTrigger(String match, String command, boolean oncePerPlayer, int cooldownSeconds, String source) {
+            this(match, command, oncePerPlayer, cooldownSeconds, source, io.github.junjun1z.whathitme.core.rules.Conds.NONE);
+        }
+
+        public DeathTrigger(String match, String command, boolean oncePerPlayer, int cooldownSeconds, String source,
+                            io.github.junjun1z.whathitme.core.rules.Conds conds) {
+            this.conds = conds == null ? io.github.junjun1z.whathitme.core.rules.Conds.NONE : conds;
             this.match = match;
             this.key = MatchKey.parse(match);
             this.command = command;
@@ -64,6 +72,8 @@ public final class PackConfig {
     public final Map<String, io.github.junjun1z.whathitme.core.text.Template> templates = new LinkedHashMap<>();
     /** Custom death messages: composite match key -> message template */
     public final Map<String, String> deathMessages = new LinkedHashMap<>();
+    /** Progression rules in file order (first match wins) */
+    public final List<io.github.junjun1z.whathitme.core.rules.Rule> rules = new ArrayList<>();
     /** Unknown template variables and output names ("file: ...") */
     public final List<String> warnings = new ArrayList<>();
 
@@ -152,7 +162,22 @@ public final class PackConfig {
             String cmd = Json.str(t.get("command"), "").trim();
             if (match.isEmpty() || cmd.isEmpty()) continue;
             if (cmd.startsWith("/")) cmd = cmd.substring(1);
-            triggers.add(new DeathTrigger(match, cmd, Json.bool(t.get("oncePerPlayer"), false), (int) Json.num(t.get("cooldownSeconds"), 0), file));
+            triggers.add(new DeathTrigger(match, cmd, Json.bool(t.get("oncePerPlayer"), false), (int) Json.num(t.get("cooldownSeconds"), 0), file,
+                io.github.junjun1z.whathitme.core.rules.Conds.read(t)));
+        }
+        int n = 0;
+        for (Object v : Json.list(o.get("rules"))) {
+            n++;
+            if (!(v instanceof Map)) {
+                warnings.add(file + ": rules #" + n + " is not an object");
+                continue;
+            }
+            io.github.junjun1z.whathitme.core.rules.Rule r = io.github.junjun1z.whathitme.core.rules.Rule.read(Json.obj(v), file + " #" + n, warnings);
+            rules.add(r);
+            List<String> texts = new ArrayList<>();
+            if (r.name != null) texts.add(r.name);
+            if (r.hint != null) texts.add(r.hint);
+            for (String u : io.github.junjun1z.whathitme.core.text.Template.unknown(texts)) warnings.add(file + " #" + n + ": rule \"" + r.match + "\": unknown variable {" + u + "}");
         }
         Templates.readSection(o.get("templates"), file, templates, warnings);
         Map<String, String> dm = new LinkedHashMap<>(deathMessages);
@@ -220,7 +245,7 @@ public final class PackConfig {
     /** Samples added in 1.3 for pack folders created by older versions (only when their folder does not exist yet) */
     private static void addNewSamples(File dir) {
         for (String[] s : SAMPLES) {
-            if (!s[0].startsWith("templates/") && !s[0].startsWith("deathmessages/")) continue;
+            if (!s[0].startsWith("templates/") && !s[0].startsWith("deathmessages/") && !s[0].startsWith("rules/")) continue;
             File f = new File(dir, s[0]);
             File p = f.getParentFile();
             if (p == null || p.exists()) continue;

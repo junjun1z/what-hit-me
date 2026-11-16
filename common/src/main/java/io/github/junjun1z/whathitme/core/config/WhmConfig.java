@@ -114,6 +114,8 @@ public final class WhmConfig {
     public static final Setting SUMMARY_SECONDS = Setting.integer(CAT_TRACKING, "summarySeconds", 10, 1, 300, "Time window of the 'Last Xs Total' line.");
     public static final Setting RECAP_SECONDS = Setting.integer(CAT_TRACKING, "recapSeconds", 30, 1, 600, "Damage from this many seconds before death is kept in the death recap.");
     public static final Setting MAX_SNAPSHOTS = Setting.integer(CAT_TRACKING, "maxSnapshots", 5, 1, 50, "Totem / heavy-hit snapshots kept per player.");
+    public static final Setting REQUIRE_CLIENT_MOD = Setting.bool(CAT_TRACKING, "requireClientMod", false,
+        "Server: refuse players whose client does not have What Hit Me? (any version). Use it when progression rules hide information that the vanilla chat would show (Forge / NeoForge cannot change the vanilla death message for players without the mod).");
     // ---- layout (client only)
     public static final Setting ANCHOR = Setting.string(CAT_LAYOUT, "anchorPoint", "CENTER_LEFT", ANCHORS, "Death screen panel anchor.");
     public static final Setting OFFSET_X = Setting.integer(CAT_LAYOUT, "offsetX", 4, -4000, 4000, "Horizontal offset from the anchor (GUI pixels). Saved when you drag the panel.");
@@ -347,6 +349,7 @@ public final class WhmConfig {
         public int summarySeconds;
         public int recapSeconds;
         public int maxSnapshots;
+        public boolean requireClientMod;
 
         public Common(ConfigBackend b) {
             super(b);
@@ -360,7 +363,7 @@ public final class WhmConfig {
         @Override
         public List<Setting> settings() {
             List<Setting> out = super.settings();
-            out.addAll(Arrays.asList(HISTORY_SIZE, MERGE_WINDOW, SUMMARY_SECONDS, RECAP_SECONDS, MAX_SNAPSHOTS));
+            out.addAll(Arrays.asList(HISTORY_SIZE, MERGE_WINDOW, SUMMARY_SECONDS, RECAP_SECONDS, MAX_SNAPSHOTS, REQUIRE_CLIENT_MOD));
             return out;
         }
 
@@ -372,6 +375,7 @@ public final class WhmConfig {
             summarySeconds = integer(backend.get(SUMMARY_SECONDS), SUMMARY_SECONDS);
             recapSeconds = integer(backend.get(RECAP_SECONDS), RECAP_SECONDS);
             maxSnapshots = integer(backend.get(MAX_SNAPSHOTS), MAX_SNAPSHOTS);
+            requireClientMod = bool(backend.get(REQUIRE_CLIENT_MOD));
             if ((mask & (Flag.AUTO_HINTS.bit() | Flag.CUSTOM_HINTS.bit())) == 0) mask &= ~Flag.HINTS_AND_TIPS.bit();
             backend.categoryLangKey(CAT_TRACKING, "whathitme.config.cat.tracking");
             backend.categoryComment(CAT_TRACKING, COMMENT_TRACKING);

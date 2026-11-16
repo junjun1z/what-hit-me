@@ -75,4 +75,33 @@ public interface PlayerHandle {
     default double[] position() {
         return null;
     }
+
+    // ---- 1.3: optional (progression rules, requireClientMod)
+
+    /** Has the player completed this advancement? null = not supported by this version */
+    default Boolean hasAdvancement(String id) {
+        return null;
+    }
+
+    /** Does the player have this scoreboard tag? null = not supported */
+    default Boolean hasTag(String tag) {
+        return null;
+    }
+
+    /** Score of the player in an objective; null = not supported, {@link #NO_SCORE} = no score / no such objective */
+    default Long score(String objective) {
+        return null;
+    }
+
+    /** The version's own player object, for the quest mod providers (reflection); null = none */
+    default Object nativePlayer() {
+        return null;
+    }
+
+    /** Disconnects the player with this reason; false = not supported */
+    default boolean disconnect(Txt reason) {
+        return false;
+    }
+
+    long NO_SCORE = Long.MIN_VALUE;
 }

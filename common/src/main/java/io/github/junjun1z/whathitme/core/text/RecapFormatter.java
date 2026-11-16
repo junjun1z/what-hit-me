@@ -9,6 +9,7 @@ import io.github.junjun1z.whathitme.core.data.Context;
 import io.github.junjun1z.whathitme.core.data.DamageRecord;
 import io.github.junjun1z.whathitme.core.data.Entry;
 import io.github.junjun1z.whathitme.core.data.Gear;
+import io.github.junjun1z.whathitme.core.data.RuleMark;
 import io.github.junjun1z.whathitme.core.data.Snapshot;
 
 /** Builds every chat / tooltip text of the mod. Shared by the client (localized) and the server (English for vanilla clients). */
@@ -102,6 +103,8 @@ public final class RecapFormatter {
             Context.Part p = Context.find(r.context, Context.ARMOR);
             return m.tr(Fmt.GOLD, "whathitme.line.broken", p == null ? Msg.str("?") : partName(p));
         }
+        Txt ruled = ruleName(r);
+        if (ruled != null) return ruled;
         String ren = o.rename(r);
         if (ren != null) return custom(ren);
         if (o.on(Flag.ATTACKER_NAME) && !r.attackerName.isEmpty()) {
@@ -116,6 +119,38 @@ public final class RecapFormatter {
         }
         if (r.damageId.startsWith("mob:") && !r.attackerName.isEmpty() && !o.on(Flag.ATTACKER_NAME)) return typeName(r.damageType);
         return typeName(r.damageType);
+    }
+
+    /** The name a progression rule gives (a personal rename wins unless the rule is enforced), null = none */
+    public Txt ruleName(DamageRecord r) {
+        RuleMark mk = r.mark;
+        if (mk == null || !mk.has(RuleMark.NAME)) return null;
+        String personal = mk.enforced() ? null : o.personalRename(r);
+        return personal != null ? custom(personal) : ruleText(mk.name, r);
+    }
+
+    /** The damage name without the attacker: rule name &gt; rename &gt; damage type */
+    public Txt damageName(DamageRecord r) {
+        Txt ruled = ruleName(r);
+        if (ruled != null) return ruled;
+        String ren = o.rename(r);
+        return ren != null ? custom(ren) : typeName(r.damageType);
+    }
+
+    /** A rule's name / hint: template variables of the record, &amp; colors, lang: keys */
+    public Txt ruleText(String value, DamageRecord r) {
+        if (value.indexOf('{') < 0) return custom(value);
+        Txt t = Template.renderLine(m, value, new TemplateVars(this, r.withMark(null), null, System.currentTimeMillis()));
+        return t == null ? Msg.str("?") : t;
+    }
+
+    /** The damage id of a record may be shown (not hidden by a rule) */
+    public static boolean idShown(DamageRecord r) {
+        return !r.hidden(RuleMark.H_DAMAGE_ID) && !RuleMark.HIDDEN_ID.equals(r.damageId);
+    }
+
+    private boolean buttons(DamageRecord r) {
+        return o.on(Flag.ACTION_BUTTONS) && idShown(r);
     }
 
     public List<String> propertyKeys(int flags) {
@@ -169,6 +204,15 @@ public final class RecapFormatter {
     /** Custom tip (enableCustomHints) or automatic tip (enableAutoHints); null = none */
     public Txt tip(DamageRecord r) {
         if (r.has(DamageRecord.ARMOR_BREAK)) return null;
+        RuleMark mk = r.mark;
+        if (mk != null) {
+            if (mk.hides(RuleMark.H_TIP)) return null;
+            if (mk.has(RuleMark.HINT)) {
+                String personal = !mk.enforced() && o.on(Flag.CUSTOM_HINTS) ? o.personalHint(r) : null;
+                if (personal != null) return custom(personal);
+                return mk.hint.trim().isEmpty() ? null : ruleText(mk.hint, r);
+            }
+        }
         if (o.on(Flag.CUSTOM_HINTS)) {
             String custom = o.hint(r);
             if (custom != null) return custom(custom);
@@ -246,14 +290,14 @@ public final class RecapFormatter {
             if (p != null && !p.modId.isEmpty() && o.on(Flag.SOURCE_MOD_NAME)) l.add(m.tr(Fmt.BLUE, "whathitme.hover.mod", io.github.junjun1z.whathitme.core.Platform.modName(p.modId)));
             return l;
         }
-        Template t = o.template(Template.HOVER);
+        Template t = o.template(Template.HOVER, r);
         if (t != null) {
             List<Txt> custom = t.render(m, new TemplateVars(this, r, null, System.currentTimeMillis()));
             if (!custom.isEmpty()) return custom;
         }
         l.add(displayName(r).restyle(null).bold(true));
         if (r.has(DamageRecord.ESTIMATED)) l.add(m.tr(Fmt.GOLD, "whathitme.hover.estimated"));
-        if (o.on(Flag.INTERNAL_DAMAGE_ID)) l.add(m.tr(Fmt.DARK_GRAY, "whathitme.hover.id", r.damageId));
+        if (o.on(Flag.INTERNAL_DAMAGE_ID) && idShown(r)) l.add(m.tr(Fmt.DARK_GRAY, "whathitme.hover.id", r.damageId));
         if (o.on(Flag.DAMAGE_AMOUNT)) l.add(m.tr(Fmt.RED, "whathitme.hover.damage", heartsText(r.taken()), oneDecimal(r.taken())));
         if (o.on(Flag.MITIGATION_DETAILS)) {
             if (r.raw >= 0) {
@@ -341,7 +385,7 @@ public final class RecapFormatter {
             if (o.on(Flag.TIMESTAMP)) root.append(Msg.str(Fmt.DARK_GRAY, age(now - r.time) + " "));
             return root.append(displayName(r));
         }
-        Template lt = o.template(Template.LINE);
+        Template lt = o.template(Template.LINE, r);
         if (lt != null) {
             List<Txt> custom = lt.render(m, new TemplateVars(this, r, null, now));
             if (!custom.isEmpty()) {
@@ -349,7 +393,7 @@ public final class RecapFormatter {
                     if (i > 0) root.append("\n");
                     root.append(custom.get(i));
                 }
-                if (o.on(Flag.ACTION_BUTTONS)) root.append(" ").append(copyIdButton(r.damageId)).append(" ").append(muteButton(r.damageId));
+                if (buttons(r)) root.append(" ").append(copyIdButton(r.damageId)).append(" ").append(muteButton(r.damageId));
                 return root;
             }
         }
@@ -391,7 +435,7 @@ public final class RecapFormatter {
         if (r.has(DamageRecord.TOTEM)) root.append(" ").append(m.tr(Fmt.GOLD, "whathitme.badge.totem"));
         if (r.has(DamageRecord.HEAVY)) root.append(" ").append(m.tr(Fmt.RED, "whathitme.badge.heavy"));
         if (o.on(Flag.REFLECTED_BADGE) && r.has(DamageRecord.REFLECTED)) root.append(" ").append(m.tr(Fmt.YELLOW, "whathitme.badge.reflected"));
-        if (o.on(Flag.ACTION_BUTTONS)) root.append(" ").append(copyIdButton(r.damageId)).append(" ").append(muteButton(r.damageId));
+        if (buttons(r)) root.append(" ").append(copyIdButton(r.damageId)).append(" ").append(muteButton(r.damageId));
         return root;
     }
 
@@ -467,7 +511,7 @@ public final class RecapFormatter {
     }
 
     private List<Txt> custom(String output, DamageRecord k, Snapshot s, long ref, int alertIndex) {
-        Template t = o.template(output);
+        Template t = o.template(output, k);
         if (t == null) return null;
         List<Txt> l = t.render(m, new TemplateVars(this, k, s, ref).alertIndex(alertIndex));
         return l.isEmpty() ? null : l;
@@ -496,7 +540,7 @@ public final class RecapFormatter {
         line.hover(hover(k));
         c.append(line);
         if (k.has(DamageRecord.ESTIMATED)) c.append(" ").append(m.tr(Fmt.GOLD, "whathitme.badge.estimated"));
-        if (o.on(Flag.ACTION_BUTTONS)) c.append(" ").append(copyIdButton(k.damageId)).append(" ").append(muteButton(k.damageId));
+        if (buttons(k)) c.append(" ").append(copyIdButton(k.damageId)).append(" ").append(muteButton(k.damageId));
         return c;
     }
 
@@ -598,7 +642,7 @@ public final class RecapFormatter {
                 c.append(custom.get(i));
             }
             if (k != null) c.hover(hover(k));
-            if (!o.template(Template.ALERT).uses("details_link")) c.append(" ").append(detailsLink(index));
+            if (!o.template(Template.ALERT, k).uses("details_link")) c.append(" ").append(detailsLink(index));
             return c;
         }
         String key = s.kind == Snapshot.TOTEM ? "whathitme.alert.totem" : s.kind == Snapshot.HEAVY ? "whathitme.alert.heavy" : "whathitme.alert.prevented";

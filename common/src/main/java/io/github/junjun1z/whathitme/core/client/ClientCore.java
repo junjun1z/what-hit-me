@@ -131,9 +131,9 @@ public final class ClientCore {
             o.ignore(c.ignoredDamageIds).ignore(pack.ignored).renames(pack.renameMap).renames(c.renameMap).hints(pack.hintMap).hints(c.hintMap);
         }
         Map<String, Template> packTemplates = i != null ? serverTemplates : WhmConfig.pack.templates;
-        o.templates(Templates.effective(cl.templates, packTemplates, ClientCore::locked))
+        o.templates(Templates.effective(cl.templates, packTemplates, ClientCore::locked)).packTemplates(packTemplates)
             .deathMessages(i != null ? serverDeathMessages : WhmConfig.pack.deathMessages).player(Safe.get("player name", () -> port == null ? "" : port.playerName(), ""));
-        return o.ignore(cl.ignoredDamageIds).renames(cl.renameMap).hints(cl.hintMap);
+        return o.ignore(cl.ignoredDamageIds).personalRenames(cl.renameMap).personalHints(cl.hintMap);
     }
 
     /** Pack templates / death messages of the server (protocol 3), or empty */
@@ -189,9 +189,12 @@ public final class ClientCore {
     static void onDeathMessage(Packets.Recap msg) {
         Snapshot s = msg.snapshot;
         if (s == null || s.key() == null || s.deathMessage.isEmpty()) return;
-        String tpl = DeathMessages.find(packDeathMessages(), s.key());
-        if (tpl == null) return;
-        Txt t = DeathMessages.render(formatter(), tpl, s.key(), msg.who, s.deathMessage);
+        // "name\nchoice": the server decided (deathMessages template or a hidden death message); older form: name only
+        int nl = msg.who.indexOf('\n');
+        String who = nl < 0 ? msg.who : msg.who.substring(0, nl);
+        String tpl = nl < 0 ? DeathMessages.find(packDeathMessages(), s.key()) : msg.who.substring(nl + 1);
+        if (tpl == null || tpl.isEmpty()) return;
+        Txt t = DeathMessages.render(formatter(), tpl, s.key(), who, s.deathMessage);
         String plain = Fmt.strip(Msg.LOCAL.lang().jsonText(s.deathMessage)).trim();
         if (plain.isEmpty()) return;
         if (DEATH_LINES.size() > 20) DEATH_LINES.remove(0);
@@ -216,7 +219,8 @@ public final class ClientCore {
 
     static void register(Snapshot s) {
         if (s == null) return;
-        for (DamageRecord r : s.records) CATALOG.register(r);
+        // ids hidden by a progression rule stay out of the local catalog (completion, local search)
+        for (DamageRecord r : s.records) if (RecapFormatter.idShown(r)) CATALOG.register(r);
     }
 
     // ------------------------------------------------------------ ticks / events from the loader
@@ -536,7 +540,7 @@ public final class ClientCore {
             }
             case "test": {
                 requireOp(m);
-                if (args.length < 2) throw CommandText.usage(m, "/whm test <damage_id> [entity_id] [item_id] [dim_id]");
+                if (args.length < 2) throw CommandText.usage(m, TestPreview.USAGE);
                 if (server) port.sendServerCommand("whm " + Completion.join(args, 0));
                 else print(TestPreview.lines(m, f, args, null, "", null, "", 20f));
                 break;
@@ -689,7 +693,11 @@ public final class ClientCore {
                     break;
             }
         }
-        if (sub.equals("test")) return Completion.testArgs(args, CatalogCache.view(port.registries()));
+        if (sub.equals("test")) {
+            List<String> extra = TestPreview.completeOptions(args, java.util.Collections.<String>emptyList());
+            if (extra != null) return extra;
+            return Completion.testArgs(args, CatalogCache.view(port.registries()));
+        }
         if (sub.equals("search")) return Completion.matching(args, Completion.searchSuggestions(CATALOG.ids()));
         if (sub.equals("template") && args.length == 3) return Completion.matching(args, Template.OUTPUTS);
 

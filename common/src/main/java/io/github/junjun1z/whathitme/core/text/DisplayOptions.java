@@ -31,11 +31,16 @@ public final class DisplayOptions {
     private final List<MatchKey> ignore = new ArrayList<>();
     private final List<Layer> rename = new ArrayList<>();
     private final List<Layer> hint = new ArrayList<>();
+    /** The reader's own renames / tips (personal file); a rule with "enforce" skips them */
+    private final List<Layer> personalRename = new ArrayList<>();
+    private final List<Layer> personalHint = new ArrayList<>();
     /** The recipient has the mod: buttons run client commands (clipboard) */
     public final boolean clientActions;
     public final int summarySeconds;
     /** Templates of the outputs (output name -> template); missing = built-in output */
     private Map<String, Template> templates = new LinkedHashMap<>();
+    /** Templates without the personal ones (records of an enforced rule) */
+    private Map<String, Template> packTemplates = new LinkedHashMap<>();
     /** pack deathMessages ("match key" -> template) */
     private Map<String, String> deathMessages = new LinkedHashMap<>();
     /** Name of the reader ({player}) */
@@ -65,6 +70,23 @@ public final class DisplayOptions {
         return this;
     }
 
+    /** The reader's personal renames (highest priority, skipped for records of an enforced rule) */
+    public DisplayOptions personalRenames(Map<String, String> m) {
+        if (m != null && !m.isEmpty()) personalRename.add(0, new Layer(m));
+        return this;
+    }
+
+    public DisplayOptions personalHints(Map<String, String> m) {
+        if (m != null && !m.isEmpty()) personalHint.add(0, new Layer(m));
+        return this;
+    }
+
+    /** Templates of the pack / server only (used for records of an enforced rule) */
+    public DisplayOptions packTemplates(Map<String, Template> t) {
+        if (t != null) packTemplates.putAll(t);
+        return this;
+    }
+
     /** A copy of these options with one flag turned off */
     public DisplayOptions without(Flag f) {
         return copy(mask & ~f.bit());
@@ -80,7 +102,10 @@ public final class DisplayOptions {
         o.ignore.addAll(ignore);
         o.rename.addAll(rename);
         o.hint.addAll(hint);
+        o.personalRename.addAll(personalRename);
+        o.personalHint.addAll(personalHint);
         o.templates.putAll(templates);
+        o.packTemplates.putAll(packTemplates);
         o.deathMessages.putAll(deathMessages);
         o.player = player;
         return o;
@@ -115,6 +140,13 @@ public final class DisplayOptions {
         return t == null || t.lines.isEmpty() ? null : t;
     }
 
+    /** The template of an output for a record: an enforced rule skips the personal templates */
+    public Template template(String output, DamageRecord r) {
+        if (r == null || r.mark == null || !r.mark.enforced()) return template(output);
+        Template t = packTemplates.get(output);
+        return t == null || t.lines.isEmpty() ? null : t;
+    }
+
     public Map<String, String> deathMessages() {
         return deathMessages;
     }
@@ -132,27 +164,42 @@ public final class DisplayOptions {
     }
 
     public String rename(String id) {
-        return lookup(rename, MatchKey.Target.id(id));
+        return rename(MatchKey.Target.id(id));
     }
 
     public String rename(DamageRecord r) {
-        return lookup(rename, MatchKey.Target.of(r));
+        MatchKey.Target t = MatchKey.Target.of(r);
+        String p = r.mark != null && r.mark.enforced() ? null : lookup(personalRename, t);
+        return p != null ? p : lookup(rename, t);
+    }
+
+    /** Personal rename of a record, null = none */
+    public String personalRename(DamageRecord r) {
+        return lookup(personalRename, MatchKey.Target.of(r));
+    }
+
+    public String personalHint(DamageRecord r) {
+        return lookup(personalHint, MatchKey.Target.of(r));
     }
 
     public String hint(String id) {
-        return lookup(hint, MatchKey.Target.id(id));
+        return hint(MatchKey.Target.id(id));
     }
 
     public String hint(DamageRecord r) {
-        return lookup(hint, MatchKey.Target.of(r));
+        MatchKey.Target t = MatchKey.Target.of(r);
+        String p = r.mark != null && r.mark.enforced() ? null : lookup(personalHint, t);
+        return p != null ? p : lookup(hint, t);
     }
 
     public String hint(MatchKey.Target t) {
-        return lookup(hint, t);
+        String p = lookup(personalHint, t);
+        return p != null ? p : lookup(hint, t);
     }
 
     public String rename(MatchKey.Target t) {
-        return lookup(rename, t);
+        String p = lookup(personalRename, t);
+        return p != null ? p : lookup(rename, t);
     }
 
     private static String lookup(List<Layer> layers, MatchKey.Target t) {

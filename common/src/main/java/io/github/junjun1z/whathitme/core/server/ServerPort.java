@@ -47,4 +47,26 @@ public interface ServerPort {
         return false;
     }
 
+    /** Built-in rule conditions this version supports ("advancement", "tag", "score"); empty = none */
+    default java.util.Set<String> builtinConditions() {
+        return java.util.Collections.emptySet();
+    }
+
+    /** "Forge 1.20.1" style name of loader and version for messages ("" = unknown) */
+    default String platformName() {
+        return "";
+    }
+
+    /**
+     * Clients understand translations with an English fallback (Txt.trFallback; 1.19.4+), so a death message the server
+     * replaces for everyone can be translated for players with the mod
+     */
+    default boolean translationFallback() {
+        return false;
+    }
+
+    /** requireClientMod works on this loader (Forge: handshake, Fabric: {@code ServerCore.onLogin} + disconnect) */
+    default boolean canRequireClientMod() {
+        return false;
+    }
 }

@@ -550,7 +550,7 @@ public final class TemplateEditor {
         // preview
         int py = varBottom + 5;
         String sampleLabel = sample ? tr("whathitme.editor.preview.sample") : tr("whathitme.editor.preview.real");
-        g.text(LegacyText.trim(g, Fmt.GOLD + tr("whathitme.editor.preview") + Fmt.GRAY + " (" + sampleLabel + ")", w - 2 * M), M, py, 0xFFFFFF);
+        g.text(LegacyText.trim(g, Fmt.GOLD + tr("whathitme.editor.preview") + Fmt.GRAY + " (" + sampleLabel + ")" + ruleNote(), w - 2 * M), M, py, 0xFFFFFF);
         int areaTop = py + 11;
         drawPreview(g, M, areaTop, w - 2 * M, Math.max(12, bottom - areaTop), mx, my, w, h);
         // status line: a fresh message, else the selected variable
@@ -571,6 +571,16 @@ public final class TemplateEditor {
             tip.addAll(LegacyText.wrap(g, describe(hoveredVar), Math.max(80, Math.min(220, w - 40))));
             g.tooltip(tip, mx, my, w, h);
         }
+    }
+
+    /** " - progression rule ..." when the server applied a rule to the previewed killing blow, else "" */
+    public String ruleNote() {
+        DamageRecord k = previewData().key();
+        io.github.junjun1z.whathitme.core.data.RuleMark mk = k == null ? null : k.mark;
+        if (mk == null) return "";
+        List<String> parts = new ArrayList<>(mk.hiddenNames());
+        if (mk.enforced()) parts.add(0, "enforce");
+        return Fmt.LIGHT_PURPLE + " - " + tr("whathitme.editor.rule", parts.isEmpty() ? "-" : String.join(", ", parts));
     }
 
     private Snapshot previewData() {

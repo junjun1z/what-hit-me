@@ -278,30 +278,34 @@ public final class Packets {
         public void write(WireOut o) {
             long now = System.currentTimeMillis();
             boolean v2 = protocol >= 2;
-            o.writeByte(v2 ? kind | V2 : kind);
+            boolean v3 = protocol >= 3;
+            o.writeByte(v3 ? kind | V2 | V3 : v2 ? kind | V2 : kind);
             o.writeString(who);
             o.writeInt(index);
             o.writeInt(count);
             o.writeBoolean(snapshot != null);
             if (snapshot != null) {
-                if (v2) snapshot.write2(o, now);
+                if (v2) snapshot.write2(o, now, v3);
                 else snapshot.write(o, now);
             }
         }
 
         /** Marks the protocol 2 body in the kind byte (old clients never receive it) */
         private static final int V2 = 0x40;
+        /** Protocol 3 body: rule results of the records */
+        private static final int V3 = 0x20;
 
         static Recap read(WireIn in) {
             long now = System.currentTimeMillis();
             int raw = in.readByte();
             boolean v2 = (raw & V2) != 0;
-            int kind = raw & ~V2;
+            boolean v3 = (raw & V3) != 0;
+            int kind = raw & ~(V2 | V3);
             String who = in.readString();
             int index = in.readInt();
             int count = in.readInt();
-            Snapshot s = in.readBoolean() ? (v2 ? Snapshot.read2(in, now) : Snapshot.read(in, now)) : null;
-            return new Recap(kind, who, index, count, s, v2 ? 2 : 1);
+            Snapshot s = in.readBoolean() ? (v2 ? Snapshot.read2(in, now, v3) : Snapshot.read(in, now)) : null;
+            return new Recap(kind, who, index, count, s, v3 ? 3 : v2 ? 2 : 1);
         }
     }
 
