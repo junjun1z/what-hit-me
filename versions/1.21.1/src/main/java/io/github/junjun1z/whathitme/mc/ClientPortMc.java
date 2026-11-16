@@ -104,6 +104,22 @@ public abstract class ClientPortMc implements io.github.junjun1z.whathitme.core.
         return McText.translationOf(json);
     }
 
+    /** Forge / NeoForge: a custom death message of a server with the mod replaces the vanilla one on the death screen */
+    public static void replaceDeathMessage(DeathScreen screen) {
+        try {
+            for (Field f : DeathScreen.class.getDeclaredFields()) {
+                if (f.getType() != Component.class) continue;
+                f.setAccessible(true);
+                Component c = (Component) f.get(screen);
+                Txt t = c == null ? null : ClientCore.deathScreenReplacement(c.getString());
+                if (t != null) f.set(screen, McText.of(t));
+                return;
+            }
+        } catch (Throwable ignored) {
+            // keep the vanilla message
+        }
+    }
+
     /** The death message of a death screen as JSON (its only Component field), "" when unknown */
     public static String deathMessage(DeathScreen screen) {
         try {

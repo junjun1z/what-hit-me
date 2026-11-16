@@ -202,6 +202,23 @@ public class DevPort121 implements DevPort {
     }
 
     @Override
+    public boolean v13() {
+        return true;
+    }
+
+    @Override
+    public boolean templateEditorOpen() {
+        return io.github.junjun1z.whathitme.mc.Compat26.screen() instanceof io.github.junjun1z.whathitme.mc.TemplateEditorScreen121;
+    }
+
+    @Override
+    public void pressConfigTemplatesButton() {
+        io.github.junjun1z.whathitme.mc.ConfigScreen121 s = new io.github.junjun1z.whathitme.mc.ConfigScreen121(null);
+        io.github.junjun1z.whathitme.mc.Compat26.setScreen(s);
+        s.templatesButton().onPress(new net.minecraft.client.input.KeyEvent(com.mojang.blaze3d.platform.InputConstants.KEY_RETURN, 0, 0));
+    }
+
+    @Override
     public boolean configScreenOpen() {
         if (!(Compat26.screen() instanceof io.github.junjun1z.whathitme.mc.ConfigScreen121)) return false;
         String m = modMenuCheck();

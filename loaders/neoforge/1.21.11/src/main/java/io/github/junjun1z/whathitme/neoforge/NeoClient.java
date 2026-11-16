@@ -20,6 +20,7 @@ import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.core.HolderLookup;
 import net.neoforged.bus.api.EventPriority;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.client.event.ClientChatReceivedEvent;
 import net.neoforged.neoforge.client.event.ClientPlayerNetworkEvent;
 import net.neoforged.neoforge.client.event.ClientTickEvent;
 import net.neoforged.neoforge.client.event.RegisterClientCommandsEvent;
@@ -98,7 +99,18 @@ public final class NeoClient {
 
     @SubscribeEvent
     public void onScreenOpening(ScreenEvent.Opening event) {
-        if (event.getNewScreen() instanceof DeathScreen) ClientCore.onDeathScreen(ClientPortMc.deathMessage((DeathScreen) event.getNewScreen()));
+        if (!(event.getNewScreen() instanceof DeathScreen)) return;
+        DeathScreen s = (DeathScreen) event.getNewScreen();
+        ClientCore.onDeathScreen(ClientPortMc.deathMessage(s));
+        Safe.run("death screen message", () -> ClientPortMc.replaceDeathMessage(s));
+    }
+
+    /** Custom death messages of a server with the mod replace the vanilla chat line (ClientChatReceivedEvent.System) */
+    @SubscribeEvent(priority = EventPriority.LOW)
+    public void onChat(ClientChatReceivedEvent event) {
+        if (event.getMessage() == null) return;
+        io.github.junjun1z.whathitme.core.text.Txt t = ClientCore.chatReplacement(event.getMessage().getString());
+        if (t != null) event.setMessage(McText.of(t));
     }
 
     @SubscribeEvent

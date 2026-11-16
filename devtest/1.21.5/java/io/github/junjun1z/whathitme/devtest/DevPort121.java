@@ -199,6 +199,23 @@ public class DevPort121 implements DevPort {
     }
 
     @Override
+    public boolean v13() {
+        return true;
+    }
+
+    @Override
+    public boolean templateEditorOpen() {
+        return mc().screen instanceof io.github.junjun1z.whathitme.mc.TemplateEditorScreen121;
+    }
+
+    @Override
+    public void pressConfigTemplatesButton() {
+        io.github.junjun1z.whathitme.mc.ConfigScreen121 s = new io.github.junjun1z.whathitme.mc.ConfigScreen121(null);
+        mc().setScreen(s);
+        s.templatesButton().onPress();
+    }
+
+    @Override
     public boolean configScreenOpen() {
         if (!(mc().screen instanceof io.github.junjun1z.whathitme.mc.ConfigScreen121)) return false;
         String m = modMenuCheck();

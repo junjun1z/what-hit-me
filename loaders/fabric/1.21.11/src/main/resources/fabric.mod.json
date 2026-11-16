@@ -14,6 +14,7 @@
     "client": ["io.github.junjun1z.whathitme.fabric.WhatHitMeFabricClient"],
     "modmenu": ["io.github.junjun1z.whathitme.fabric.WhmModMenu"]
   },
+  "mixins": ["whathitme.mixins.json"],
   "depends": {
     "fabricloader": ">=0.15",
     "fabric-api": "*",
