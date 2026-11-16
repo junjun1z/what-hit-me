@@ -1,14 +1,14 @@
 # What Hit Me? - feature notes
 
-Machine-readable summary of what the code does. Source of truth: the code and `en_us.lang`.
-Mod id `whathitme`, Minecraft 1.12.2, Forge 14.23.5.2847+, Java 8. No dependencies, no Mixins, no coremods.
+Machine-readable summary of what the code does (version 1.2.0). Source of truth: the code and `en_us.json`.
+Mod id `whathitme`, Minecraft 1.7.10 - 26.3, Forge / Fabric / NeoForge, 63 builds. No required dependencies (Fabric: Fabric API; Mod Menu optional). Forge / NeoForge: no Mixins, no coremods.
 
 ## Install modes
 
 | Installed on | Works? | What you get |
 |---|---|---|
 | Client + server | yes | Accurate data from the server (raw damage before armor, mitigation %, absorption, attacker weapon/enchantments, owner, i-frame / shield flags). Translated text (10 languages), clipboard buttons. The server's `whathitme-common.cfg` limits are synced to clients on login and override the client's local common cfg. |
-| Client only (server without the mod, or vanilla server) | yes | Client fallback: the client watches its own health once per tick and, only when it drops, guesses the cause (fall, lava, fire, drowning, suffocation, void, nearby mob / projectile / creeper / TNT, poison, wither, starvation). Entries are labelled `[Client Est.]`. Death message is taken from the death screen. `inspect` is not available. Single player always counts as "both" (the integrated server has the mod). |
+| Client only (server without the mod, or vanilla server) | yes | Client fallback: the client compares its own health and, only when it drops, guesses the cause (fall, lava, fire, drowning, suffocation, void, nearby mob / projectile / creeper / TNT, poison, wither, starvation). Entries are labelled `[Client Est.]`. Death message is taken from the death screen. `inspect` is not available. Single player always counts as "both" (the integrated server has the mod). |
 | Server only (players without the mod, even plain Forge clients) | yes | The server sends readable English chat (no translation keys): respawn summary, totem / heavy-hit alerts, all `/whm` commands. `[Copy ID]` puts the id into the chat box (SUGGEST_COMMAND) because the client cannot copy to the clipboard. Per-player `togglechat` and `ignore` are stored in the player's persistent NBT. |
 | Mixed (some players have it) | yes | Each player gets the best mode for their client. The server knows who has the mod (a hello packet once per login). |
 
@@ -16,20 +16,24 @@ Nothing is sent to the chat on join. Packets are only sent on death, totem / hea
 
 ## Commands (`/whm`, alias `/whathitme`, everything Tab-completes)
 
+op = permission level 2 (`PlayerHandle.isAdmin()`), or single player with cheats enabled. Changed in 1.2: `rename`, `sethint`, `dump`, `reload` need op also on the client; single player without cheats is not op.
+
 | Command | What it does | Permission |
 |---|---|---|
 | `/whm` or `/whm history` | Recent damage taken (ring buffer, includes totem / heavy hit markers). Hover a line for details; `[Copy ID]` `[Mute]` buttons. | everyone |
 | `/whm last` | Full recap of the last death: death message, killing blow, properties, every hit in the last 30 s, "Last 10s Total", tip, `[Copy Recap]`. | everyone |
+| `/whm stats` | Total deaths, total damage taken (health actually lost), top 5 causes. | everyone |
 | `/whm effects` | Active potion effects: name, level, time left, mod, `[Milk ✔]`/`[Milk ✖]` (from `PotionEffect#getCurativeItems()`), hover shows curative items. | everyone |
 | `/whm togglechat` | Respawn chat summary on/off (client: saved to whathitme-client.cfg; server-only: per player). | everyone |
 | `/whm ignore <damage_id>` | Hide / show a damage id (toggle). Client: client cfg. Server command: op = common cfg, non-op = personal list. | everyone |
-| `/whm rename <damage_id> <name...>` | Custom display name (empty = remove). `&` color codes, or `lang:<key>`. | client: everyone (own cfg); server command: op |
-| `/whm sethint <damage_id> <tip...>` | Custom tip (empty = remove). `lang:<key>` allowed. | same as rename |
-| `/whm config` / `/whm config <key>` / `/whm config <key> <value>` | List settings / show one / change one (booleans accept true/false/on/off/toggle). | client: own cfg; server command: op |
+| `/whm rename <damage_id> <name...>` | Custom display name (empty = remove). `&` color codes, or `lang:<key>`. Client: own cfg; server command: common cfg. | op |
+| `/whm sethint <damage_id> <tip...>` | Custom tip (empty = remove). `lang:<key>` allowed. | op |
+| `/whm config` / `/whm config <key>` / `/whm config <key> <value>` | No argument: opens the settings screen on a modded client (Fabric: the Mod Menu screen factory when Mod Menu is installed, the own screen otherwise); the server command lists the settings. Show one / change one (booleans accept true/false/on/off/toggle). `lockedFeatures` keys are refused. | client keys: everyone; common keys: viewing everyone, changing op |
 | `/whm search <query>` | Search damage types (seen), mobs and effects. `#bypasses_armor #absolute #magic #fire #explosion #projectile` (damage properties), `#damage #mob #effect #debuff` (type), `@modid`, or text (id / name). Terms can be combined: `@minecraft zombie`. | everyone |
-| `/whm inspect <player>` | Last death recap + history of an online player. | op (level 2) or single-player owner |
-| `/whm dump` | Writes `whathitme_dump.csv` (game / server dir) AND `config/whathitme/hint_template.cfg`. | client: everyone; server command: op |
-| `/whm reload` | Reloads both cfg files (client also asks the server to reload if the player is op). | client: everyone; server: op |
+| `/whm inspect <player>` | Last death recap + history of an online player. | op |
+| `/whm test <damage_id> [entity_id] [item_id] [dim_id]` | Dummy killing blow: resulting name, tip, matching deathTriggers (filled in, not run), chat preview. `-` skips an argument. | op |
+| `/whm dump` | Writes `config/whathitme/.cache/whathitme_dump.csv` AND `config/whathitme/hint_template.cfg`. | op |
+| `/whm reload` | Reloads both cfg files and the pack folder, forces a catalog rescan (client also asks the server to reload if the player is op). Reports pack files read / with errors. | op |
 | `/whm snapshot [n]` | Saved totem / heavy-hit snapshots (1 = newest). | everyone |
 | `/whm copy <text>` | (client) copy text to the clipboard - used by `[Copy ID]`. | client only |
 | `/whm copyrecap` | (client) copy the last death recap as plain text. | client only |
@@ -54,12 +58,13 @@ Properties shown: Bypasses Armor (`isUnblockable`), Bypasses Magic (`isDamageAbs
 
 ## Config files (`config/whathitme/`, Forge Configuration, re-read by `/whm reload`)
 
-In-game editor (1.0.1): Mods list > What Hit Me? > Config. Two groups: "Personal (whathitme-client.cfg)" and "Modpack / server (whathitme-common.cfg)", each with its categories (Display switches, Filters / names / tips, Death screen panel or Recording). Saved and applied on Done.
+In-game editor (1.0.1 on Forge 1.7.10 - 1.12.2, every version and loader since 1.2.0; also `/whm config`): Mods list > What Hit Me? > Config (Fabric: Mod Menu, optional). Two groups: "Personal (whathitme-client.cfg)" and "Modpack / server (whathitme-common.cfg)", each with its categories (Display switches, Filters / names / tips, Death screen panel or Recording). Saved and applied on Done.
 
 An element is shown only if it is true in BOTH `whathitme-common.cfg` and `whathitme-client.cfg`. When the server has the mod, the server's common file replaces the client's common file (display switches + ignore/rename/hint lists + summarySeconds).
 
 ### Both files - category `display` (all default `true`)
-enableDeathScreenPanel, enableRespawnChatSummary, enableTotemChatAlert, enableHeavyHitSnapshot, showTimestamp, showDamageAmount, showMitigationDetails, showSmartMergeHitCount, showSourceModName, showDamageProperties, showInternalDamageId, showAttackerName, showAttackerWeapon, showAttackerDistance, showAttackerInvisibility, showEntityOwner, showHintsAndTips, showActionButtons, showToggleChatNotice.
+enableDeathScreenPanel, enableRespawnChatSummary, enableTotemChatAlert, enableHeavyHitSnapshot, showTimestamp, showDamageAmount, showMitigationDetails, showSmartMergeHitCount, showSourceModName, showDamageProperties, showInternalDamageId, showAttackerName, showAttackerWeapon, showAttackerDistance, showAttackerInvisibility, showEntityOwner, showActionButtons, showToggleChatNotice, showMaxHpPercentage, showEnvironmentContext, showReflectedBadge, showArmorBreakEvents, includeEquipmentInCopy, includeCoordsInCopy.
+Tips: enableAutoHints, enableCustomHints (common only), showHints (client only). They replace showHintsAndTips (1.0 / 1.1); an old showHintsAndTips=false sets all three false, then the old key is removed.
 
 ### Both files - category `filters`
 | key | default | meaning |
@@ -99,8 +104,26 @@ enableDeathScreenPanel, enableRespawnChatSummary, enableTotemChatAlert, enableHe
   - `S:hintMap < mob:minecraft:creeper = Creepers hiss before exploding - sprint away! >`
   - `S:renameMap < minecraft:outOfWorld = &5The Abyss >`, `draconicevolution:chaos = lang:mypack.damage.chaos`
 - No chat on first join, every element toggleable, no client install required.
-- Performance: every damage handler returns on its first line for non-players (mob fights cost nothing); fake players are ignored; history = fixed-size ring buffer of immutable records holding only primitives and Strings (no Entity references); a player's buffer is dropped on logout; no per-tick work on the server except an empty-list check (lethal/heavy hits are checked at the end of that tick only); the client fallback reads a few floats per tick and scans entities only when health drops; packets only on death / totem / heavy hit / commands.
+- Performance: every damage / death handler returns on its first line for non-players; fake players are ignored; history = fixed-size ring buffer of immutable records holding only primitives and Strings (no Entity references); a player's buffer is dropped on logout; no server tick handlers (timestamps for windows / merge / reflect / cooldowns, `ServerPort.schedule` for checks after a hit); the client fallback scans entities only when health drops; packets only on death / totem / heavy hit / commands; every hook, packet handler, scan and UI draw is guarded (`Safe`).
 - License MIT: free to include in modpacks.
+
+## 1.2.0 features
+
+- Files: `config/whathitme/pack/` (every `.json`, recursive, alphabetical path order, merged; `//` and block comments and trailing commas allowed; created with inert `_example.json` files in hints/ renames/ ignored/ triggers/ custom/), `config/whathitme/.cache/` (`catalog_cache.json`, `stats_<uuid>.json`, `whathitme_dump.csv`).
+- Pack JSON keys: `renameMap`, `hintMap` (object or list of `"key = value"`; an empty value removes an earlier entry), `defaultIgnoredDamageIds`, `lockedFeatures` (config keys, case-insensitive), `deathTriggers` (`match`, `command`, `oncePerPlayer`, `cooldownSeconds`). Priority: .cfg > pack JSON > automatic hints. A value that is a translation key (or `lang:<key>`) is translated on the client.
+- Composite keys (`MatchKey`): damage id, `@entity_id` / `@mob:entity_id` / `@entity:entity_id`, `@item:modid:item_id` (attacker main hand), `@dim:dimension_id`; separated by spaces or `&`; `*` / `?` wildcards; all conditions must match; the key with the most conditions wins. Used by renameMap, hintMap, ignoredDamageIds, defaultIgnoredDamageIds, deathTriggers.
+- deathTriggers: server only, console permission (`ServerPort.runCommand`); placeholders `{player}` `{x}` `{y}` `{z}` (floored) `{damage}` (killing blow health, one decimal); every matching trigger runs, in file order; `oncePerPlayer` is stored in the stats file; `cooldownSeconds` per player.
+- Catalog cache: SHA-256 of the sorted `modid:version` list; hit = load, miss = rescan + rewrite, `/whm reload` = forced rescan.
+- Damage id scanner (`DamageIdScanner`, 1.7.10 - 1.19.3): reads mod jar class files (no class loading), string ids given to damage source constructors (also subclasses, anonymous classes, setters right after the constructor), nested jars one level deep; daemon thread after a cache miss; stored under `scan` in `catalog_cache.json`; `#scanned` search tag, dump column `source` (seen / scanned / registry), `/whm test` completion. 1.19.4+: every key of the DamageType registry, flags from its tags.
+- `showMaxHpPercentage` `[-12.0 ❤ (30% Max HP)]` from max health at hit time; vital hit `[Localized / Vital Hit (Died with X.X ❤ total HP left)]` when total health > 0 at death; a death without a preceding damage event gets its killing blow from the death event.
+- `showEnvironmentContext`: block / fluid at the feet and body, main / off hand item, with mod ids; merged hits reuse the first hit's values.
+- `showReflectedBadge` `[⚡ Reflected / Thorns]`: thorns, or damage from an entity the player attacked within 50 ms; automatic hint.
+- `showArmorBreakEvents` `[⚠ Broken: <armor>]`: PlayerDestroyItemEvent (Forge / NeoForge) plus comparing the 4 armor slots at hurt / damage time.
+- Totem / revive: totem snapshot; death cancelled by another mod (Forge / NeoForge LivingDeathEvent LOWEST, receiveCanceled) or health restored after death -> snapshot.
+- `/whm stats`: at most 100 causes per player in memory; saved on death, logout and world save.
+- `[Copy Recap]` Markdown with `includeEquipmentInCopy` (dimension, max health, 4 armor pieces with enchantments and broken state, effects) and `includeCoordsInCopy`.
+- Config screen: Forge 1.7.10 - 1.12.2 `GuiConfig`, newer Forge / NeoForge an own screen in the mods list, Fabric through an optional Mod Menu entrypoint (`suggests`); locked keys disabled.
+- Protocol 2: ServerInfo carries lockedFeatures and pack renames / hints; features disabled on the server are masked out of packets; 1.0 / 1.1 peers get the old format.
 
 ## Build / test (for README "Building" section)
 
