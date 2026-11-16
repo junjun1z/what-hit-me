@@ -83,6 +83,7 @@ public final class ForgeClient {
         if (mc.player == null || mc.level == null) return;
         ClientCore.tick(new FallbackEnv1192(mc));
         ClientPortMc.tickConfigScreen();
+        Safe.run("death message in chat", ClientPortMc::replaceDeathMessageInChat);
         if (!catalogTried) {
             catalogTried = true;
             if (!CatalogCache.loaded()) Safe.run("catalog cache", () -> CatalogCache.init(PORT.registries()));
@@ -97,7 +98,7 @@ public final class ForgeClient {
         Safe.run("death screen message", () -> ClientPortMc.replaceDeathMessage(s));
     }
 
-    /** Custom death messages of a server with the mod replace the vanilla chat line (1.19+: a system message) */
+    /** Custom death messages replace the vanilla chat line (1.19.2: also system messages; 1.19 / 1.19.1: see onTick) */
     @SubscribeEvent(priority = EventPriority.LOW)
     public void onChat(ClientChatReceivedEvent event) {
         if (event.getMessage() == null) return;

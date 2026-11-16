@@ -118,6 +118,87 @@ public abstract class ClientPortMc implements io.github.junjun1z.whathitme.core.
         }
     }
 
+    /** Newest chat message already checked by {@link #replaceDeathMessageInChat} */
+    private static Object lastChatChecked;
+
+    /**
+     * Forge 1.19 / 1.19.1 post no chat event for system messages: a custom death message of a server with the mod replaces
+     * the vanilla line after it was added (called every client tick, checks only the messages added since the last call).
+     * GuiMessage is a generic class on 1.19 and a record on 1.19.1+, so the line is changed by reflection.
+     */
+    @SuppressWarnings("unchecked")
+    public static void replaceDeathMessageInChat() {
+        net.minecraft.client.gui.components.ChatComponent chat = mc().gui.getChat();
+        List<Object> list = null;
+        try {
+            for (Field f : net.minecraft.client.gui.components.ChatComponent.class.getDeclaredFields()) {
+                java.lang.reflect.Type t = f.getGenericType();
+                if (!List.class.isAssignableFrom(f.getType()) || !(t instanceof java.lang.reflect.ParameterizedType)) continue;
+                java.lang.reflect.Type a = ((java.lang.reflect.ParameterizedType) t).getActualTypeArguments()[0];
+                if (a instanceof java.lang.reflect.ParameterizedType) a = ((java.lang.reflect.ParameterizedType) a).getRawType();
+                if (a != net.minecraft.client.GuiMessage.class) continue;
+                f.setAccessible(true);
+                list = (List<Object>) f.get(chat);
+                break;
+            }
+        } catch (Throwable ignored) {
+            // no chat list
+        }
+        if (list == null || list.isEmpty() || list.get(0) == lastChatChecked) return;
+        boolean changed = false;
+        for (int i = 0; i < Math.min(10, list.size()); i++) {
+            Object m = list.get(i);
+            if (m == lastChatChecked) break;
+            try {
+                Object r = replaceContent(m);
+                if (r != null) {
+                    list.set(i, r);
+                    changed = true;
+                }
+            } catch (Throwable ignored) {
+                // keep the line
+            }
+        }
+        lastChatChecked = list.get(0);
+        if (changed) chat.rescaleChat();
+    }
+
+    /** The chat line with its custom death message, or null when it is no vanilla death message to replace */
+    private static Object replaceContent(Object m) throws Exception {
+        Class<?> c = m.getClass();
+        if (c.isRecord()) {
+            java.lang.reflect.RecordComponent[] rc = c.getRecordComponents();
+            Object[] args = new Object[rc.length];
+            Class<?>[] types = new Class<?>[rc.length];
+            Txt t = null;
+            for (int i = 0; i < rc.length; i++) {
+                java.lang.reflect.Method acc = rc[i].getAccessor();
+                acc.setAccessible(true);
+                args[i] = acc.invoke(m);
+                types[i] = rc[i].getType();
+                if (t == null && args[i] instanceof Component) {
+                    t = ClientCore.chatReplacement(((Component) args[i]).getString());
+                    if (t != null) args[i] = McText.of(t);
+                }
+            }
+            if (t == null) return null;
+            java.lang.reflect.Constructor<?> k = c.getDeclaredConstructor(types);
+            k.setAccessible(true);
+            return k.newInstance(args);
+        }
+        for (Field f : c.getDeclaredFields()) {
+            if (java.lang.reflect.Modifier.isStatic(f.getModifiers())) continue;
+            f.setAccessible(true);
+            Object v = f.get(m);
+            if (!(v instanceof Component)) continue;
+            Txt t = ClientCore.chatReplacement(((Component) v).getString());
+            if (t == null) return null;
+            f.set(m, McText.of(t));
+            return m;
+        }
+        return null;
+    }
+
     /** The death message of a death screen as JSON (its only Component field), "" when unknown */
     public static String deathMessage(DeathScreen screen) {
         try {
