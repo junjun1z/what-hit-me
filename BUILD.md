@@ -234,7 +234,8 @@ Forge / NeoForge client chat event per version (the driver of the same version a
 | Version | Event | Change the text |
 | --- | --- | --- |
 | Forge 1.7.10, 1.8.9 | `ClientChatReceivedEvent` | public field `message` |
-| Forge 1.9.4 - 1.20.6 | `ClientChatReceivedEvent` (1.19+: also fired for system messages) | `setMessage(...)` |
+| Forge 1.9.4 - 1.20.4 | `ClientChatReceivedEvent` (1.19.2+: also fired for system messages) | `setMessage(...)` |
+| Forge 1.19, 1.19.1, 1.20.6 | no event for system messages (Forge 41 / 42; Forge 50 has the hook commented out) | the line is replaced in the chat list on the client tick (`ClientPortMc.replaceDeathMessageInChat`) |
 | Forge 1.21.1 - 1.21.5 | `SystemMessageReceivedEvent` (server messages no longer use `ClientChatReceivedEvent`) | `setMessage(...)` |
 | Forge 1.21.6+ / 26.x | `SystemMessageReceivedEvent.BUS.addListener` (EventBus 7) | `setMessage(...)` |
 | NeoForge 1.20.2 - 26.x | `ClientChatReceivedEvent` (system messages: `ClientChatReceivedEvent.System`) | `setMessage(...)` |
@@ -282,6 +283,17 @@ Notes from 1.14.4 - 1.17.1 (`versions/<v>` hosts, shared by Fabric and Forge of 
   in 1.14.4 - 1.17.1; these jars accept Fabric Loader 0.12+, so no MixinExtras). The custom message is decided in the `die` HEAD
   mixin (`onDie`, before the recap marks the killing blow) and handed to the redirect; the recap quotes it.
 - Forge: `ClientChatReceivedEvent#setMessage` for the chat line and `ClientPortMc.replaceDeathMessage(DeathScreen)` in `GuiOpenEvent`.
+
+Notes from 1.18.2 - 1.20.6 (`versions/<v>` hosts, shared by every loader of a code version):
+- `TemplateEditorScreen118` / `1192` / `1193` / `1194` / `120` / `1202` / `1206`; 1.18.2 - 1.19.4 draw with `PoseStack`
+  (`Gfx<v>(pose, this)`), 1.20.1 `GuiGraphics` + `renderBackground(g)`, 1.20.2+ `super.render` draws the background and
+  `mouseScrolled` has two deltas. Key repeat: `setSendRepeatsToGui` exists up to 1.19.2 only (1.19.3+ always repeats).
+- Fabric: 1.18.2 / 1.19.2 decide the custom message in the `die` HEAD mixin (`onDeath`) and hand it to a `@Redirect`; 1.19.3+
+  use the 1.21.1 MixinExtras `@ModifyExpressionValue` and store the JSON in `DEATH_MSG` for `AFTER_DEATH`.
+- Forge / NeoForge: `ClientChatReceivedEvent#setMessage` plus the chat list fallback above for Forge 1.19 / 1.19.1 (1.19.2 jar)
+  and Forge 1.20.6. GuiMessage is a generic class on 1.19 and a record on 1.19.1+: the 1.19.2 fallback copies the record through
+  its canonical constructor (records cannot be changed by reflection). Death screen: `ScreenOpenEvent` (1.18.2) /
+  `ScreenEvent.Opening` + `ClientPortMc.replaceDeathMessage`.
 
 ## In-game self-test (development)
 
