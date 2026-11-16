@@ -206,6 +206,67 @@ pack renames / hints) and sends recaps with the extended body (kind byte `| 0x40
 Clients of 1.0 / 1.1 get the old format (armor break lines removed), and a 1.2 client treats display bits it does not get from an old
 server as on. Never reorder `WhmConfig.Flag`: its ordinal is the bit on the wire.
 
+## Porting 1.3.0 features
+
+1.3.0 adds templates for the six outputs, custom death messages (pack `deathMessages`) and the in-game template editor. Everything
+is in the core; the references are Forge 1.12.2 (`loaders/forge_rfg/1.12.2`) and Fabric 1.21.1 (`loaders/fabric/1.21.1`,
+`versions/1.21.1`). Templates themselves need nothing from a version: an unported version already renders pack / personal templates
+(no template configured = the 1.2.0 code path, byte for byte; checked with an old-vs-new render of every output in all 10 languages).
+What a version adds:
+
+| Port method / call | Default | Reference implementation | Feature |
+| --- | --- | --- | --- |
+| `ClientPort.playerName()` | `""` | own player's name | `{player}` on the client |
+| `ClientPort.openTemplateEditor()` | `false` (= `/whm template` prints its usage) | sets a flag; the client tick opens the screen host (like `openConfigScreen`; 1.21.1: `ClientPortMc.tickConfigScreen()` does both) | editor |
+| `ServerPort.replacesDeathMessages()` | `false` | Fabric: `true` (`ServerPortMc.replacesDeathMessagesFlag`, set by the Fabric entry point) | death messages |
+| `ServerCore.customDeathMessage(handle, facts)` | - | Fabric mixin, see below | death messages for everyone |
+| `ClientCore.chatReplacement(plainText)` | - | Forge / NeoForge client chat event: `setMessage(McText.of(txt))` when not null | death messages on modded clients |
+| `ClientCore.deathScreenReplacement(plainText)` | - | Forge 1.12.2: `GuiOpenEvent` of `GuiGameOver`, its only `ITextComponent` field replaced by reflection | death screen text |
+
+Custom death messages: with no `deathMessages` entry nothing is sent and nothing changes. Support matrix: Fabric server with the mod
+replaces the message for everyone (death screen, chat of every player, server log). Forge / NeoForge server with the mod: no event can
+change the vanilla message, so the server sends `Recap.DEATH_MESSAGE` (protocol 3) to modded clients before the vanilla chat line and
+logs `[What Hit Me?] Death message: ...`; the modded client replaces the matching chat line (and the death screen text); players
+without the mod keep the vanilla message.
+
+Forge / NeoForge client chat event per version (the driver of the same version already listens to it):
+
+| Version | Event | Change the text |
+| --- | --- | --- |
+| Forge 1.7.10, 1.8.9 | `ClientChatReceivedEvent` | public field `message` |
+| Forge 1.9.4 - 1.20.6 | `ClientChatReceivedEvent` (1.19+: also fired for system messages) | `setMessage(...)` |
+| Forge 1.21.1 - 1.21.5 | `SystemMessageReceivedEvent` (server messages no longer use `ClientChatReceivedEvent`) | `setMessage(...)` |
+| Forge 1.21.6+ / 26.x | `SystemMessageReceivedEvent.BUS.addListener` (EventBus 7) | `setMessage(...)` |
+| NeoForge 1.20.2 - 26.x | `ClientChatReceivedEvent` (system messages: `ClientChatReceivedEvent.System`) | `setMessage(...)` |
+
+Death screen text: 1.13+ `DeathScreen` keeps it in a final `Component` field (`causeOfDeath`); replace it by reflection in the
+screen-init event (Forge `ScreenEvent.Init.Post`, NeoForge the same) when `deathScreenReplacement` returns a text.
+
+Fabric: a mixin in `ServerPlayer#die(DamageSource)` wraps the `CombatTracker#getDeathMessage()` call (MixinExtras
+`@ModifyExpressionValue`, see `loaders/fabric/1.21.1/.../mixin/DeathMessageMixin.java`) and returns
+`McText.of(ServerCore.customDeathMessage(...))` or the vanilla component. The same target exists in every Fabric version
+(Mojang names, intermediary when remapped; 1.14.4 - 26.3) - verify the call is still in `die` when porting. Also store the
+custom JSON where the loader keeps the death message for `onDeath` (1.21.1: `DEATH_MSG`), so the recap quotes what players saw.
+MixinExtras ships with Fabric Loader 0.15+ (all our Fabric targets require it).
+
+Template editor screen host (`core.client.TemplateEditor`; everything is drawn with `Gfx`, the text fields are core `TextField`s):
+- a screen that creates `new TemplateEditor()`, calls `render(gfx, width, height, mouseX, mouseY)` every frame (after the
+  background) and goes back to its parent when `wantsClose()` is true; `closed()` when the screen is removed;
+- mouse: `mouseDown(button, x, y, shiftDown)`, wheel: `scroll(x, y, delta)`;
+- keys: map the version's key codes to `TemplateEditor.K_*` (backspace, delete, arrows, home, end, enter, tab, escape, A / C / V /
+  X with ctrl) and call `key(k, ctrlDown, shiftDown)`; if it returns false and the character is printable call `typed(char)`
+  (1.12: `keyTyped(char, int)` with LWJGL 2 `Keyboard` codes; 1.13+: `keyPressed` with GLFW codes + `charTyped`);
+- key repeat on (1.12: `Keyboard.enableRepeatEvents(true)`), the game not paused;
+- references: `loaders/forge_rfg/1.12.2/.../GuiTemplateEditor.java`, `versions/1.21.1/.../TemplateEditorScreen121.java`.
+Config screen: a "Templates..." button (`whathitme.config.templates`) that opens the host with the config screen as parent (1.12:
+`WhmGuiFactory.WithTemplates` adds a `GuiButton` to Forge's `GuiConfig`; 1.21.1: `ConfigScreen121` top right).
+
+Self-test: `DevPort.v13()` true runs `V13Plan` (templates of all outputs, death messages, editor) and needs `templateEditorOpen()`
+and `pressConfigTemplatesButton()`. Multiplayer: `whm-tools/v13/mpstep.sh` writes a server pack (summary template + `deathMessages`);
+the driver flag is `dm-custom` on Fabric (replaced for everyone) and `dm-vanilla` on Forge / NeoForge (vanilla client unchanged).
+Protocol 3 (`Packets.PROTOCOL`): `ServerInfo` carries the pack templates and death messages after the protocol 2 part (only for
+clients that said hello with 3); `Recap.DEATH_MESSAGE` = 7.
+
 ## In-game self-test (development)
 
 Build with `-Pselftest`. Use only `build/devlibs/whathitme-selftest.jar` (the mod + self-test, for clients **and test
