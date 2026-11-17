@@ -72,8 +72,69 @@ public final class DeathMessages {
         one.add(killing);
         Snapshot s = new Snapshot(Snapshot.DEATH, killing.time, one, 0, vanillaJson == null ? "" : vanillaJson);
         TemplateVars v = new TemplateVars(f, killing, s, killing.time).player(who);
+        String key = langKey(f.m, template);
+        if (key != null) {
+            // a translation may use %1$s (player), %2$s (attacker) and %3$s (damage name) like vanilla death messages
+            String pattern = f.m.lang().pattern(key);
+            Txt local = pattern == null ? null : Template.renderLine(f.m, positional(pattern), v);
+            if (local == null) local = Txt.lit(pattern == null ? key : who);
+            if (!fallback || f.m.localized) return local;
+            // server text for every client: each client translates the key (resource pack, mod), others get the English text
+            Object[] args = {arg(v, "player"), arg(v, "attacker_name"), arg(v, "damage_name")};
+            return Txt.trFallback(key, local.toPlain(Msg.ENGLISH_LANG).replace("%", "%%"), args);
+        }
         Txt t = Template.renderLine(f.m, template, v);
         return t == null ? Txt.lit(who) : t;
+    }
+
+    /** The key of a "lang:key" message or of a bare translation key this side knows, otherwise null */
+    static String langKey(Msg m, String template) {
+        String t = template == null ? "" : template.trim();
+        if (t.startsWith("lang:")) {
+            String k = t.substring(5).trim();
+            return k.isEmpty() ? null : k;
+        }
+        return !t.isEmpty() && t.indexOf(' ') < 0 && t.indexOf('{') < 0 && t.indexOf('.') > 0 && m.has(t) ? t : null;
+    }
+
+    /** %1$s / %2$s / %3$s (and plain %s in that order) as {player} / {attacker_name} / {damage_name}; %% as % */
+    static String positional(String pattern) {
+        String[] names = {"{player}", "{attacker_name}", "{damage_name}"};
+        StringBuilder sb = new StringBuilder();
+        int auto = 0;
+        for (int i = 0; i < pattern.length(); i++) {
+            char c = pattern.charAt(i);
+            if (c != '%' || i + 1 >= pattern.length()) {
+                sb.append(c);
+                continue;
+            }
+            char n = pattern.charAt(i + 1);
+            if (n == '%') {
+                sb.append('%');
+                i++;
+            } else if (n == 's') {
+                sb.append(auto < names.length ? names[auto] : "");
+                auto++;
+                i++;
+            } else if (n >= '1' && n <= '9' && i + 3 < pattern.length() && pattern.charAt(i + 2) == '$' && pattern.charAt(i + 3) == 's') {
+                int idx = n - '1';
+                sb.append(idx < names.length ? names[idx] : "");
+                i += 3;
+            } else {
+                sb.append(c);
+            }
+        }
+        return sb.toString();
+    }
+
+    private static Txt arg(TemplateVars v, String name) {
+        Txt t = null;
+        try {
+            t = v.get(name, -1);
+        } catch (RuntimeException e) {
+            t = null;
+        }
+        return t == null ? Txt.lit("") : t;
     }
 
     /** A literal JSON text component ({"text": ...}) of a plain message */

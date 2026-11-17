@@ -18,7 +18,7 @@ Add `deathMessages` to any pack file (there is a commented sample in `pack/death
 
 - **Keys** are [match keys](/modpack/match-keys), with the same "most specific wins" priority as `renameMap`.
 - **Values** are one-line [templates](/modpack/templates): every template variable, `{var|fallback}`, `&` colors and `lang:` keys.
-- `lang:` keys are translated where the message is built: on Forge / NeoForge by each modded client (their language), on Fabric by the server, which cannot read resource packs. On Fabric servers write the text directly.
+- `lang:` keys: on Forge / NeoForge each modded client translates the key (its language and resource packs). On Fabric 1.19.4+ the server sends the key as a translation, so every client with the key (a resource pack, a mod) sees its own text, also without What Hit Me?; clients without the key get the English text the server knows, or the key itself when the server does not know it either. Older Fabric versions send the server's English text. In translations use `%1$s` (player), `%2$s` (attacker) and `%3$s` (damage name) like vanilla death messages: `{variables}` are filled only where What Hit Me? renders the text itself.
 - Deaths without a matching key keep the vanilla message. There is no automatic generation for other deaths.
 
 Useful variables: `{player}`, `{name}`, `{attacker_name}`, `{weapon}`, `{damage_name}`, `{dimension}`, `{death_message}` (the vanilla text).
