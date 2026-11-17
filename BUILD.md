@@ -356,7 +356,7 @@ Rule conditions per version:
 | `tag:` | all | 1.7.10 - 1.11.2 entity tags exist from 1.9 (`getTags()`); 1.7.10 / 1.8.9: unsupported unless an equivalent exists |
 | `score:` | all | 1.7.10 - 1.12.2 `Scoreboard#getValueFromObjective` style API; 1.13 - 1.20.2 `hasPlayerScore` / `getOrCreatePlayerScore(name, o).getScore()`; 1.20.3+ `getPlayerScoreInfo` |
 | `stage:` | any version with Game Stages | `GameStageHelper.hasStage(player, String)` by reflection (`core.rules.mods.GameStagesProvider`) |
-| `ftbquests:` | 1.12.2 and 1.16+ | `FtbQuestsProvider`: `com.feed_the_beast` (1.12.2: `getID("#hex")`, `get(int)`, `getData(UUID)`, `isComplete(data)`) or `dev.ftb.mods` (`getOrCreateTeamData(player)`, `get(long)`, `TeamData.isCompleted(obj)`) |
+| `ftbquests:` | 1.12.2 and 1.16+ | `FtbQuestsProvider`: `com.feed_the_beast` (1.12.2: `getID("#hex")`, `get(int)`, `getData(UUID)`, `isComplete(data)`) or `dev.ftb.mods` (`INSTANCE` / `getInstance()`, `getOrCreateTeamData(player)` / `getTeamData(player)`, `get(long)`, `TeamData.isCompleted(obj)`) |
 | `bq:` | 1.12.2, GTNH 1.7.10 | `BetterQuestingProvider`: `QuestingAPI.getAPI(ApiReference.QUEST_DB).getValue(id)` (GTNH fork: the database is a `BiMap<UUID, IQuest>`, so `get(uuid)`), `isComplete(QuestingAPI.getQuestingUUID(player))`; numeric ids (1.12.2) or UUIDs (GTNH fork, dashed or the Base64 form its commands show) |
 | `heracles:` | 1.20 - 1.21.1 | `HeraclesProvider`: `QuestProgressHandler.getProgress(server, uuid).isComplete(id)`; the server comes from a no-arg getter of the player whose type fits (no mapped names). Heracles is now published as "Odyssey Quests" (mod id `heracles`) |
 
@@ -438,6 +438,21 @@ Notes from 1.18.2 - 1.20.6 (`versions/<v>`, `loaders/fabric|forge|forge7_srg|for
   1802.2.8-build.50, Game Stages 8.1.3), NeoForge 1.20.4 (FTB Quests 2004.2.3), Game Stages on Forge 1.19.4 (13.0.1), 1.20.2
   (16.0.1) and 1.20.3 (17.0.1, 1.20.4 jar). Heracles exists only for 1.20 / 1.20.1 in this range; FTB Quests not for 1.20.6.
 - mp script `whm-tools/r118rules13/mp.sh` (servers Fabric 1.18.2, Forge 1.18.2, NeoForge 1.20.4).
+
+Notes from 1.21.1 - 26.3 (`versions/<v>`, `loaders/fabric|forge7|neoforge/<v>`):
+- `versions/<v>`: `AdvancementHolder` and `getPlayerScoreInfo(p, o).value()` on all of them. The server comes from
+  `p.serverLevel().getServer()` (1.21.3 / 1.21.5) or `p.level().getServer()` (1.21.8+); 1.21.9+ entities have no
+  `getScoreboard()`, so the scoreboard is `p.level().getScoreboard()` (1.21.10+ sources); 1.21.11+ `Identifier` instead of
+  `ResourceLocation`; 26.x `entityTags()` instead of `getTags()`; version name `getName()` up to 1.21.5, `name()` from
+  1.21.6 (`WorldVersion`). `translationFallback()` true everywhere.
+- requireClientMod is the hello timeout on all 30 jars: Fabric `ServerPlayConnectionEvents.JOIN`, NeoForge and Forge 1.21.1 -
+  1.21.5 `@SubscribeEvent PlayerEvent.PlayerLoggedInEvent`, Forge 1.21.8+ `PlayerEvent.PlayerLoggedInEvent.BUS.addListener`.
+- Quest mods in this range: FTB Quests 2101.x (1.21.1, Fabric / NeoForge), 2111.x (1.21.11) and 26.1.2.x (26.1 - 26.1.2), all
+  from `maven.ftb.dev` (no Forge builds); Odyssey Quests (Heracles) 2.0.3 only for 1.21.1 (Fabric / NeoForge); Game Stages
+  and Better Questing do not exist for 1.21+. FTB Quests 2111+ dropped `ServerQuestFile.INSTANCE` (`getInstance()`) and
+  `getOrCreateTeamData(Entity)` (`getTeamData(Player)` returns an `Optional`); the provider and `QuestPlan` handle both.
+  26.x FTB Quests no longer needs Architectury.
+- mp script `whm-tools/r121rules13/mp.sh` (1.21.1 servers), quest instances `whm-tools/r121rules13/qinst.sh`, test `q.sh`.
 
 ## In-game self-test (development)
 
