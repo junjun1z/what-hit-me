@@ -78,7 +78,10 @@ public final class DamageRecord {
     public final String dimension;
     /** Environment context / broken armor piece, see {@link Context} ("" = none) */
     public final String context;
-    /** Progression rule result for the reader (server side, per output), null = no rule */
+    /**
+     * Progression rule result for the reader (per output), null = no rule. Records stored on the server carry the
+     * changes script listeners made (name, tip, badges, hidden fields), combined with the rule result when sent.
+     */
     public final RuleMark mark;
 
     public DamageRecord(long time, String damageId, String damageType, String attackerName, String attackerKey, String attackerId,
@@ -149,10 +152,11 @@ public final class DamageRecord {
     /** Smart merge: this record followed by {@code next} from the same source (the first hit's environment is kept) */
     public DamageRecord merge(DamageRecord next) {
         float r = raw < 0 || next.raw < 0 ? -1 : raw + next.raw;
+        RuleMark m = next.mark != null ? next.mark : mark;
         return new DamageRecord(next.time, damageId, damageType, next.attackerName, next.attackerKey, attackerId, next.directName, modId,
             modName, r, actual + next.actual, absorbed + next.absorbed, flags | next.flags, next.distance, next.weaponName, next.weaponKey,
             next.weaponEnchants, next.ownerName, hits + next.hits, next.healthAfter, next.maxHealth, sourceTag, next.weaponId,
-            next.dimension.isEmpty() ? dimension : next.dimension, context.isEmpty() ? next.context : context);
+            next.dimension.isEmpty() ? dimension : next.dimension, context.isEmpty() ? next.context : context, m);
     }
 
     public DamageRecord withFlags(int add) {

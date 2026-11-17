@@ -28,6 +28,13 @@ public final class TemplatePreview {
             DamageRecord.PROJECTILE, 11.8f, "Bow", "", "", "", 1, 12.5f, 20f, "s2", "minecraft:bow", "minecraft:overworld", ""));
         l.add(new DamageRecord(now - 400, "minecraft:explosion.player", "explosion.player", "Creeper", "", "minecraft:creeper", "", "minecraft", "Minecraft",
             22f, 12.5f, 0f, DamageRecord.EXPLOSION | DamageRecord.KILLING, 1.6f, "", "", "", "", 1, 0f, 20f, "s3", "", "minecraft:overworld", ""));
+        // script variables of the server show their name
+        java.util.Map<String, String> vars = new java.util.LinkedHashMap<>();
+        for (String n : io.github.junjun1z.whathitme.core.client.ClientCore.scriptVariables().keySet()) vars.put(n, "[" + n + "]");
+        if (!vars.isEmpty()) {
+            io.github.junjun1z.whathitme.core.data.RuleMark mk = new io.github.junjun1z.whathitme.core.data.RuleMark(0, "", "", vars, null, null);
+            for (int i = 0; i < l.size(); i++) l.set(i, l.get(i).withMark(mk));
+        }
         Gear g = new Gear("minecraft:overworld", 120.5, 64, -38.2, 20f, new Gear.Item[] {null, new Gear.Item("minecraft:iron_chestplate", "", "Iron Chestplate",
             "minecraft", "", false), null, null}, Collections.emptyList());
         return new Snapshot(Snapshot.DEATH, now, l, 2, "", g);

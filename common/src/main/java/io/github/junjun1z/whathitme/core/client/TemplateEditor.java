@@ -67,6 +67,16 @@ public final class TemplateEditor {
         }
     }
 
+    /** The variable list with the server's script variables as an extra group */
+    static List<String> varItems() {
+        Map<String, String> sv = ClientCore.scriptVariables();
+        if (sv.isEmpty()) return VAR_ITEMS;
+        List<String> out = new ArrayList<>(VAR_ITEMS);
+        out.add("#script");
+        for (String n : sv.keySet()) out.add(io.github.junjun1z.whathitme.core.text.Template.SCRIPT + n);
+        return out;
+    }
+
     /** The open editor (self-test), null when none */
     public static volatile TemplateEditor current;
 
@@ -369,7 +379,7 @@ public final class TemplateEditor {
         int d = delta > 0 ? -1 : 1;
         int[] vars = areas.get("varlist");
         if (in(vars, mx, my)) {
-            varScroll = Math.max(0, Math.min(Math.max(0, VAR_ITEMS.size() - varFit), varScroll + d));
+            varScroll = Math.max(0, Math.min(Math.max(0, varItems().size() - varFit), varScroll + d));
         } else {
             lineScroll = Math.max(0, Math.min(Math.max(0, fields.size() - rowsNow), lineScroll + d));
         }
@@ -412,6 +422,10 @@ public final class TemplateEditor {
 
     /** One-line description of a variable */
     public static String describe(String name) {
+        if (TemplateVars.isScript(name)) {
+            String d = ClientCore.scriptVariables().get(name.substring(io.github.junjun1z.whathitme.core.text.Template.SCRIPT.length()));
+            return d == null || d.isEmpty() ? tr("whathitme.var.script") : d;
+        }
         String key = "whathitme.var." + name;
         return Msg.LOCAL.has(key) ? tr(key) : String.valueOf(TemplateVars.KNOWN.get(name));
     }
@@ -525,11 +539,12 @@ public final class TemplateEditor {
         areas.put("varlist", new int[] {varX, varTop, varX + varW, varBottom});
         int fit = Math.max(1, (varBottom - varTop - 4) / VAR_ROW);
         varFit = fit;
-        varScroll = Math.max(0, Math.min(varScroll, Math.max(0, VAR_ITEMS.size() - fit)));
+        List<String> items = varItems();
+        varScroll = Math.max(0, Math.min(varScroll, Math.max(0, items.size() - fit)));
         int vy = varTop + 2;
         String hoveredVar = null;
-        for (int i = varScroll; i < VAR_ITEMS.size() && i < varScroll + fit; i++) {
-            String n = VAR_ITEMS.get(i);
+        for (int i = varScroll; i < items.size() && i < varScroll + fit; i++) {
+            String n = items.get(i);
             if (n.startsWith("#")) {
                 g.text(LegacyText.trim(g, Fmt.GOLD + groupLabel(n.substring(1)), varW - 8), varX + 3, vy + 1, 0xFFFFFF);
                 vy += VAR_ROW;
@@ -546,7 +561,7 @@ public final class TemplateEditor {
             areas.put("var:" + n, a);
             vy += VAR_ROW;
         }
-        scrollBar(g, varX + varW - 3, varTop + 1, varBottom - 1, varScroll, fit, VAR_ITEMS.size());
+        scrollBar(g, varX + varW - 3, varTop + 1, varBottom - 1, varScroll, fit, items.size());
         // preview
         int py = varBottom + 5;
         String sampleLabel = sample ? tr("whathitme.editor.preview.sample") : tr("whathitme.editor.preview.real");
@@ -577,7 +592,7 @@ public final class TemplateEditor {
     public String ruleNote() {
         DamageRecord k = previewData().key();
         io.github.junjun1z.whathitme.core.data.RuleMark mk = k == null ? null : k.mark;
-        if (mk == null) return "";
+        if (mk == null || !mk.isRule()) return "";
         List<String> parts = new ArrayList<>(mk.hiddenNames());
         if (mk.enforced()) parts.add(0, "enforce");
         return Fmt.LIGHT_PURPLE + " - " + tr("whathitme.editor.rule", parts.isEmpty() ? "-" : String.join(", ", parts));

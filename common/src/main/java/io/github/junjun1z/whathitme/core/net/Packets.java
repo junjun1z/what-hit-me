@@ -173,6 +173,8 @@ public final class Packets {
         public List<String> templates = new ArrayList<>();
         /** Pack deathMessages: "match key = template" */
         public List<String> deathMessages = new ArrayList<>();
+        /** Script variables for the template editor: "name\ndescription" */
+        public List<String> scriptVars = new ArrayList<>();
 
         @Override
         public int type() {
@@ -207,6 +209,7 @@ public final class Packets {
             if (!v3) return;
             writeList(o, templates);
             writeList(o, deathMessages);
+            writeList(o, scriptVars);
         }
 
         static ServerInfo read(WireIn in) {
@@ -226,6 +229,7 @@ public final class Packets {
                     i.v3 = true;
                     i.templates = readList(in);
                     i.deathMessages = readList(in);
+                    if (in.remaining() > 0) i.scriptVars = readList(in);
                 }
             }
             return i;

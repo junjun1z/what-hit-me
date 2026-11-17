@@ -37,6 +37,8 @@ import io.github.junjun1z.whathitme.core.net.Packets;
 import io.github.junjun1z.whathitme.core.rules.Conditions;
 import io.github.junjun1z.whathitme.core.rules.Rule;
 import io.github.junjun1z.whathitme.core.rules.RuleEval;
+import io.github.junjun1z.whathitme.core.script.ScriptRegistry;
+import io.github.junjun1z.whathitme.core.script.Scripts;
 import io.github.junjun1z.whathitme.core.text.DeathMessages;
 import io.github.junjun1z.whathitme.core.text.DisplayOptions;
 import io.github.junjun1z.whathitme.core.text.Fmt;
@@ -203,6 +205,8 @@ public final class ServerCore {
         }
         String ctx = hf.attacker == null && commonOn(Flag.ENVIRONMENT) ? environment(p, h, hf, now) : "";
         DamageRecord r = hf.build(now, raw, actual, absorbed, extra, Math.max(0f, healthBefore - actual), max, Safe.get("dimension", p::dimension, ""), ctx);
+        r = Scripts.recorded(p, r);
+        if (r == null) return; // a script cancelled the recording
         DamageRecord stored = h.add(r, mergeMs());
         tracker().catalog.register(r);
         Stats.of(p.uuid()).addDamage(Math.min(taken, Math.max(0f, healthBefore) + absorbed)); // /kill deals Float.MAX_VALUE
@@ -311,6 +315,14 @@ public final class ServerCore {
         }
         Gear gear = Safe.get("reading equipment", () -> gear(p), null);
         Snapshot s = new Snapshot(Snapshot.DEATH, now, recs, key, deathMessageJson == null ? "" : deathMessageJson, gear);
+        final Snapshot before = s;
+        DamageRecord scripted = Safe.get("script death event", () -> Scripts.death(p, before), killing);
+        if (scripted != killing) {
+            h.replace(killing, scripted);
+            recs.set(key, scripted);
+            killing = scripted;
+            s = new Snapshot(Snapshot.DEATH, now, recs, key, s.deathMessage, gear);
+        }
         h.setLastDeath(s);
         h.summaryPending = true;
         h.lastHurtTick = Long.MIN_VALUE; // the respawned player starts without invulnerability frames
@@ -321,8 +333,8 @@ public final class ServerCore {
         Safe.run("death triggers", () -> runTriggers(p, kb, st, now));
         st.save();
         if (tracker().isModded(uid)) send(p, p, Packets.Recap.DEATH, "", 0, 0, s);
-        Safe.run("death message", () -> customDeathMessageToClients(p, kb, s));
         final Snapshot dead = s;
+        Safe.run("death message", () -> customDeathMessageToClients(p, kb, dead));
         ServerPort srv = port;
         if (srv != null && healthAtDeath <= 0.01f) Safe.get("schedule", () -> srv.schedule(() -> Safe.run("revive check", () -> reviveCheck(uid, dead))), false);
     }
@@ -389,7 +401,7 @@ public final class ServerCore {
 
     /** A snapshot as the player it belongs to may see it (rules of that player; a hidden death message gets its built-in text) */
     static Snapshot ruled(Snapshot s, RuleEval e, String victim) {
-        if (s == null || e == null || !e.hasRules()) return s;
+        if (s == null || e == null || !e.needed(s.records)) return s;
         DamageRecord raw = s.key();
         DamageRecord k = raw == null ? null : e.apply(raw);
         String json = "";
@@ -443,11 +455,15 @@ public final class ServerCore {
         ServerPort srv = port;
         if (srv == null) return;
         RuleEval e = RuleEval.of(p);
-        for (PackConfig.DeathTrigger t : TestPreview.matching(WhmConfig.pack, k, e)) {
-            runCommands(srv, p, k, st, now, t.id(), Collections.singletonList(t.command), t.oncePerPlayer, t.cooldownSeconds);
-        }
+        List<PackConfig.DeathTrigger> trig = TestPreview.matching(WhmConfig.pack, k, e);
         Rule r = e.find(k);
-        if (r != null && !r.commands.isEmpty()) runCommands(srv, p, k, st, now, r.id(), r.commands, r.oncePerPlayer, r.cooldownSeconds);
+        if (trig.isEmpty() && (r == null || r.commands.isEmpty())) return;
+        // {script:<name>} in the commands
+        DamageRecord kv = Scripts.withVars(p, k);
+        for (PackConfig.DeathTrigger t : trig) {
+            runCommands(srv, p, kv, st, now, t.id(), Collections.singletonList(t.command), t.oncePerPlayer, t.cooldownSeconds);
+        }
+        if (r != null && !r.commands.isEmpty()) runCommands(srv, p, kv, st, now, r.id(), r.commands, r.oncePerPlayer, r.cooldownSeconds);
     }
 
     private static void runCommands(ServerPort srv, PlayerHandle p, DamageRecord k, Stats st, long now, String id, List<String> commands, boolean once,
@@ -476,6 +492,8 @@ public final class ServerCore {
             PlayerHistory h = tracker().peek(p.uuid());
             if (h == null || !h.summaryPending || h.lastDeath() == null) return;
             h.summaryPending = false;
+            final Snapshot dead = h.lastDeath();
+            Safe.run("script respawn event", () -> Scripts.respawn(p, dead));
             if (tracker().isModded(p.uuid())) return; // that client shows its own (translated) summary
             if ((WhmConfig.common.mask & Flag.RESPAWN_CHAT_SUMMARY.bit()) == 0 || p.chatOff()) return;
             RecapFormatter f = new RecapFormatter(Msg.ENGLISH, options(p, false));
@@ -523,6 +541,7 @@ public final class ServerCore {
         if (key < 0) key = recs.size() - 1;
         Snapshot s = new Snapshot(kind, now, recs, key, "");
         h.addSnapshot(s, c.maxSnapshots);
+        Safe.run("script alert event", () -> Scripts.alert(p, s));
         if (tracker().isModded(p.uuid())) {
             send(p, p, Packets.Recap.ALERT, "", 1, h.snapshots().size(), s);
         } else {
@@ -547,6 +566,7 @@ public final class ServerCore {
 
     public static void serverStarted(ServerPort p) {
         port = p;
+        Safe.run("script registration", ScriptRegistry::rebuild);
         Safe.run("rule warnings", () -> {
             for (String w : ruleWarnings(p)) Platform.log.warn("What Hit Me? " + w, null);
             String dm = deathMessageWarning(p);
@@ -557,6 +577,7 @@ public final class ServerCore {
     /** Problems of the rules / death trigger conditions and of requireClientMod on this server */
     public static List<String> ruleWarnings(ServerPort srv) {
         List<String> out = Conditions.warnings(WhmConfig.pack, srv);
+        out.addAll(ScriptRegistry.failures());
         if (WhmConfig.common.requireClientMod && srv != null && !srv.canRequireClientMod()) {
             String n = srv.platformName();
             out.add("requireClientMod is not supported " + (n.isEmpty() ? "on this version" : "on " + n) + " (players without What Hit Me? can still join)");
@@ -725,6 +746,7 @@ public final class ServerCore {
                     i.templates.add(e.getKey() + "\n" + String.join("\n", e.getValue().lines));
                 }
                 put(i.deathMessages, pack.deathMessages);
+                for (ScriptRegistry.Fn<?> f : ScriptRegistry.variables()) i.scriptVars.add(f.name + "\n" + f.description);
             }
             if (custom) {
                 put(i.hints, c.hintMap);
@@ -840,6 +862,7 @@ public final class ServerCore {
                 for (String w : WhmConfig.pack.warnings) p.send(new Packets.Message(true, "whathitme.reload.warning", w));
                 for (String w : ruleWarnings(srv)) p.send(new Packets.Message(true, "whathitme.reload.warning", w));
                 if (deathMessageWarning(srv) != null) p.send(new Packets.Message(true, "whathitme.reload.dmwarning", platform(srv)));
+                for (String l : ScriptRegistry.summary()) p.send(new Packets.Message(false, "whathitme.reload.scripts", l));
 
                 break;
             default:
@@ -850,6 +873,7 @@ public final class ServerCore {
     /** /whm reload on the server: config files + pack folder, forced catalog rescan */
     private static void reload(ServerPort srv) {
         WhmConfig.reloadCommon();
+        Safe.run("script registration", ScriptRegistry::rebuild);
         CatalogCache.rescan(srv.registries());
         broadcastInfo();
         for (String w : ruleWarnings(srv)) Platform.log.warn("What Hit Me? " + w, null);
@@ -1044,6 +1068,7 @@ public final class ServerCore {
                 for (String w : WhmConfig.pack.warnings) sender.send(m.tr(Fmt.GOLD, "whathitme.reload.warning", w));
                 for (String w : ruleWarnings(srv)) sender.send(m.tr(Fmt.GOLD, "whathitme.reload.warning", w));
                 if (deathMessageWarning(srv) != null) sender.send(m.tr(Fmt.GOLD, "whathitme.reload.dmwarning", platform(srv)));
+                for (String l : ScriptRegistry.summary()) sender.send(m.tr(Fmt.GRAY, "whathitme.reload.scripts", l));
                 break;
             }
             case "template": {

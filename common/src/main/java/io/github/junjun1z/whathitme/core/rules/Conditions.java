@@ -93,6 +93,8 @@ public final class Conditions {
                 return Score.parse(arg) == null ? "expected <objective><op><number> with op one of >= > <= < = (e.g. score:kills>=5)" : null;
             }
         });
+        // conditions registered by scripts through the API
+        BUILTIN.put("script", io.github.junjun1z.whathitme.core.script.Scripts.CONDITION);
         String pkg = Conditions.class.getPackage().getName() + ".mods.";
         MODS.put("stage", new ModEntry("Game Stages", pkg + "GameStagesProvider", "gamestages"));
         MODS.put("ftbquests", new ModEntry("FTB Quests", pkg + "FtbQuestsProvider", "ftbquests"));

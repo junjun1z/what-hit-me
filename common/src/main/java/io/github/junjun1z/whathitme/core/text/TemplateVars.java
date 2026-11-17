@@ -39,7 +39,12 @@ public final class TemplateVars implements Template.Vars {
     }
 
     public static boolean isKnown(String canonicalName) {
-        return KNOWN.containsKey(canonicalName);
+        return KNOWN.containsKey(canonicalName) || isScript(canonicalName);
+    }
+
+    /** {script:<name>}: computed on the server and sent with the record */
+    public static boolean isScript(String canonicalName) {
+        return canonicalName.startsWith(Template.SCRIPT) && canonicalName.length() > Template.SCRIPT.length();
     }
 
     private final RecapFormatter f;
@@ -132,12 +137,20 @@ public final class TemplateVars implements Template.Vars {
     @Override
     public Txt get(String name, int dec) {
         if (extra.containsKey(name)) return extra.get(name);
+        if (isScript(name)) return scriptVar(name.substring(Template.SCRIPT.length()));
         Txt v = snapshotVar(name, dec);
         if (v != null || isSnapshotVar(name)) return v;
         if (name.equals("player")) return str(player);
         if (name.equals("death_message")) return s == null || s.deathMessage.isEmpty() ? null : Txt.json(s.deathMessage);
         if (r == null) return null;
         return recordVar(name, dec);
+    }
+
+    private Txt scriptVar(String n) {
+        DamageRecord k = r != null ? r : s == null ? null : s.key();
+        if (k == null || k.mark == null) return null;
+        String v = k.mark.vars.get(n);
+        return v == null || v.isEmpty() ? null : f.custom(v);
     }
 
     private static boolean isSnapshotVar(String name) {
@@ -239,6 +252,7 @@ public final class TemplateVars implements Template.Vars {
         if (on(Flag.ATTACKER_INVISIBILITY) && r.has(DamageRecord.INVISIBLE)) b.add(m.tr(Fmt.LIGHT_PURPLE, "whathitme.badge.invisible"));
         Txt v = f.vital(r);
         if (v != null) b.add(v);
+        b.addAll(f.scriptBadges(r));
         return join(b, " ");
     }
 

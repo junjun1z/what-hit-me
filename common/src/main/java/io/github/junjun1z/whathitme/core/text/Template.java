@@ -24,6 +24,9 @@ public final class Template {
     /** Editor pseudo output: the pack's deathMessages ("match = template" per line) */
     public static final String DEATH = "deathmessages";
 
+    /** Prefix of script variables: {script:<name>} */
+    public static final String SCRIPT = "script:";
+
     /** Values of the placeholders */
     public interface Vars {
         /**
@@ -92,6 +95,16 @@ public final class Template {
         int bar = spec.indexOf('|');
         String fallback = bar >= 0 ? spec.substring(bar + 1) : null;
         String head = bar >= 0 ? spec.substring(0, bar) : spec;
+        if (head.regionMatches(true, 0, SCRIPT, 0, SCRIPT.length())) {
+            // {script:<name>}: a value a server script computed
+            String n = head.substring(SCRIPT.length());
+            if (n.isEmpty()) return null;
+            for (int k = 0; k < n.length(); k++) {
+                char c = n.charAt(k);
+                if (!Character.isLetterOrDigit(c) && c != '_' && c != '.' && c != '-') return null;
+            }
+            return new Placeholder(i, end + 1, head, -1, fallback);
+        }
         int colon = head.indexOf(':');
         String name = colon >= 0 ? head.substring(0, colon) : head;
         int dec = -1;

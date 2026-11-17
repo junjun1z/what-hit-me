@@ -15,6 +15,7 @@ import io.github.junjun1z.whathitme.core.data.Gear;
 import io.github.junjun1z.whathitme.core.data.MatchKey;
 import io.github.junjun1z.whathitme.core.data.RuleMark;
 import io.github.junjun1z.whathitme.core.data.Snapshot;
+import io.github.junjun1z.whathitme.core.script.Scripts;
 import io.github.junjun1z.whathitme.core.server.PlayerHandle;
 
 /**
@@ -53,6 +54,13 @@ public final class RuleEval {
         return !rules.isEmpty();
     }
 
+    /** Outputs need this evaluator: rules, script variables, or records that scripts changed */
+    public boolean needed(List<DamageRecord> records) {
+        if (!rules.isEmpty() || Scripts.active()) return true;
+        for (DamageRecord r : records) if (r != null && r.mark != null) return true;
+        return false;
+    }
+
     public PlayerHandle player() {
         return player;
     }
@@ -83,17 +91,22 @@ public final class RuleEval {
         return r == null || rules.isEmpty() ? null : find(MatchKey.Target.of(r));
     }
 
-    /** The record as this player may see it: hidden fields removed, the rule result attached */
+    /**
+     * The record as this player may see it: the rule result combined with what scripts changed, the script variable
+     * values attached, hidden fields removed
+     */
     public DamageRecord apply(DamageRecord r) {
-        if (r == null || rules.isEmpty()) return r;
-        Rule rule = find(r);
-        if (rule == null) return r.mark == null ? r : r.withMark(null);
-        RuleMark m = rule.mark();
+        if (r == null) return null;
+        Rule rule = rules.isEmpty() ? null : find(r);
+        RuleMark m = RuleMark.combine(rule == null ? null : rule.mark(), r.mark);
+        Map<String, String> vars = Scripts.variables(player, r);
+        if (!vars.isEmpty()) m = (m == null ? new RuleMark(0, "", "") : m).withVars(vars);
+        if (m == null) return r;
         return m.strip(r).withMark(m);
     }
 
     public List<DamageRecord> apply(List<DamageRecord> list) {
-        if (rules.isEmpty()) return list;
+        if (!needed(list)) return list;
         List<DamageRecord> out = new ArrayList<>(list.size());
         for (DamageRecord r : list) out.add(apply(r));
         return out;
@@ -104,7 +117,7 @@ public final class RuleEval {
      * by {@code hiddenDeathJson} ("" = left out).
      */
     public Snapshot apply(Snapshot s, String hiddenDeathJson) {
-        if (s == null || rules.isEmpty()) return s;
+        if (s == null || !needed(s.records)) return s;
         List<DamageRecord> list = apply(s.records);
         DamageRecord k = s.keyIndex >= 0 && s.keyIndex < list.size() ? list.get(s.keyIndex) : null;
         String dm = s.deathMessage;

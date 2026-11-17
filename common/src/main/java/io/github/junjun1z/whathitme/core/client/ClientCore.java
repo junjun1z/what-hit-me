@@ -147,6 +147,18 @@ public final class ClientCore {
         return serverHasMod && serverInfo != null ? serverTemplates : WhmConfig.pack.templates;
     }
 
+    /** Script variables of the server: name -&gt; description (template editor) */
+    public static Map<String, String> scriptVariables() {
+        Map<String, String> out = new java.util.LinkedHashMap<>();
+        Packets.ServerInfo i = serverHasMod ? serverInfo : null;
+        if (i == null) return out;
+        for (String e : i.scriptVars) {
+            int nl = e.indexOf('\n');
+            out.put(nl < 0 ? e : e.substring(0, nl), nl < 0 ? "" : e.substring(nl + 1));
+        }
+        return out;
+    }
+
     public static Map<String, String> packDeathMessages() {
         return serverHasMod && serverInfo != null ? serverDeathMessages : WhmConfig.pack.deathMessages;
     }

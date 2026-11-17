@@ -140,8 +140,36 @@ public final class RecapFormatter {
     /** A rule's name / hint: template variables of the record, &amp; colors, lang: keys */
     public Txt ruleText(String value, DamageRecord r) {
         if (value.indexOf('{') < 0) return custom(value);
-        Txt t = Template.renderLine(m, value, new TemplateVars(this, r.withMark(null), null, System.currentTimeMillis()));
+        Txt t = Template.renderLine(m, value, new TemplateVars(this, r.withMark(r.mark == null ? null : r.mark.extrasOnly()), null, System.currentTimeMillis()));
         return t == null ? Msg.str("?") : t;
+    }
+
+    /** Badges script listeners added to a record */
+    public List<Txt> scriptBadges(DamageRecord r) {
+        List<Txt> out = new ArrayList<>();
+        if (r == null || r.mark == null) return out;
+        for (String b : r.mark.badges) out.add(scriptText(b, r));
+        return out;
+    }
+
+    /** Lines script death listeners added to the respawn summary */
+    public List<Txt> scriptLines(Snapshot s) {
+        List<Txt> out = new ArrayList<>();
+        DamageRecord k = s == null ? null : s.key();
+        if (k == null || k.mark == null) return out;
+        for (String l : k.mark.lines) {
+            Txt t = l.indexOf('{') < 0 ? custom(l) : Template.renderLine(m, l, new TemplateVars(this, k, s, s.time));
+            if (t != null) out.add(t);
+        }
+        return out;
+    }
+
+    private Txt scriptText(String value, DamageRecord r) {
+        if (value.indexOf('{') < 0) return custom(value);
+        // only the variables: {badges} inside a badge must not recurse
+        RuleMark vars = r.mark.vars.isEmpty() ? null : new RuleMark(0, "", "", r.mark.vars, null, null);
+        Txt t = Template.renderLine(m, value, new TemplateVars(this, r.withMark(vars), null, System.currentTimeMillis()));
+        return t == null ? Msg.str("") : t;
     }
 
     /** The damage id of a record may be shown (not hidden by a rule) */
@@ -323,6 +351,7 @@ public final class RecapFormatter {
         if (o.on(Flag.REFLECTED_BADGE) && r.has(DamageRecord.REFLECTED)) l.add(m.tr(Fmt.YELLOW, "whathitme.badge.reflected"));
         Txt v = vital(r);
         if (v != null) l.add(v);
+        l.addAll(scriptBadges(r));
         l.addAll(environment(r));
         Txt tip = o.on(Flag.HINTS_AND_TIPS) ? tip(r) : null;
         if (tip != null) l.add(m.tr(Fmt.GREEN, "whathitme.hover.tip", tip));
@@ -435,6 +464,7 @@ public final class RecapFormatter {
         if (r.has(DamageRecord.TOTEM)) root.append(" ").append(m.tr(Fmt.GOLD, "whathitme.badge.totem"));
         if (r.has(DamageRecord.HEAVY)) root.append(" ").append(m.tr(Fmt.RED, "whathitme.badge.heavy"));
         if (o.on(Flag.REFLECTED_BADGE) && r.has(DamageRecord.REFLECTED)) root.append(" ").append(m.tr(Fmt.YELLOW, "whathitme.badge.reflected"));
+        for (Txt b : scriptBadges(r)) root.append(" ").append(b);
         if (buttons(r)) root.append(" ").append(copyIdButton(r.damageId)).append(" ").append(muteButton(r.damageId));
         return root;
     }
@@ -536,6 +566,7 @@ public final class RecapFormatter {
         if (o.on(Flag.ATTACKER_INVISIBILITY) && k.has(DamageRecord.INVISIBLE)) name.append(" ").append(m.tr(Fmt.LIGHT_PURPLE, "whathitme.badge.invisible"));
         if (o.on(Flag.ENTITY_OWNER) && !k.ownerName.isEmpty()) name.append(" ").append(m.tr(Fmt.GRAY, "whathitme.line.owner", k.ownerName));
         if (o.on(Flag.REFLECTED_BADGE) && k.has(DamageRecord.REFLECTED)) name.append(" ").append(m.tr(Fmt.YELLOW, "whathitme.badge.reflected"));
+        for (Txt b : scriptBadges(k)) name.append(" ").append(b);
         Txt line = m.tr(Fmt.RED, key, name);
         line.hover(hover(k));
         c.append(line);
@@ -574,7 +605,10 @@ public final class RecapFormatter {
     /** Chat summary after respawning */
     public List<Txt> respawnSummary(Snapshot s) {
         List<Txt> custom = custom(Template.SUMMARY, s.key(), s, s.time, 1);
-        if (custom != null) return custom;
+        if (custom != null) {
+            custom.addAll(scriptLines(s));
+            return custom;
+        }
         List<Txt> out = new ArrayList<>();
         out.add(m.tr(Fmt.GOLD, "whathitme.summary.header"));
         out.add(killingLine(s, "whathitme.summary.killing"));
@@ -591,6 +625,7 @@ public final class RecapFormatter {
             cmd.click(Txt.Click.SUGGEST_COMMAND, "/whm togglechat");
             out.add(m.tr(Fmt.GRAY, "whathitme.summary.toggle", cmd));
         }
+        out.addAll(scriptLines(s));
         out.add(m.tr(Fmt.GOLD, "whathitme.summary.footer"));
         return out;
     }

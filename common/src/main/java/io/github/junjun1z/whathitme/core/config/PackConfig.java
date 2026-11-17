@@ -76,6 +76,8 @@ public final class PackConfig {
     public final List<io.github.junjun1z.whathitme.core.rules.Rule> rules = new ArrayList<>();
     /** Unknown template variables and output names ("file: ...") */
     public final List<String> warnings = new ArrayList<>();
+    /** Parsed files {name, root}, kept to merge the script entries again without reading the files */
+    private final List<Object[]> roots = new ArrayList<>();
 
     public boolean isLocked(String key) {
         return key != null && locked.contains(key.toLowerCase(Locale.ROOT));
@@ -94,7 +96,9 @@ public final class PackConfig {
             for (File f : found) {
                 String name = rel(dir, f);
                 try {
-                    c.merge(Json.parse(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8)), name);
+                    Object root = Json.parse(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
+                    c.merge(root, name);
+                    c.roots.add(new Object[] {name, root});
                     c.files.add(name);
                 } catch (Exception e) {
                     c.errors.add(name + ": " + e.getMessage());
@@ -104,7 +108,40 @@ public final class PackConfig {
         } catch (Throwable t) {
             Platform.log.warn("Could not read the What Hit Me? pack folder", t);
         }
+        c.mergeRuntime();
         return c;
+    }
+
+    /** The pack files merged again with the current script entries (an extra source after the files) */
+    public PackConfig withRuntime() {
+        PackConfig c = new PackConfig();
+        for (Object[] r : roots) {
+            try {
+                c.merge(r[1], (String) r[0]);
+            } catch (Exception e) {
+                c.errors.add(r[0] + ": " + e.getMessage());
+            }
+        }
+        c.roots.addAll(roots);
+        c.files.addAll(files);
+        c.errors.addAll(errors);
+        c.mergeRuntime();
+        return c;
+    }
+
+    /** Entries scripts added through the API ("script:<owner>"); never part of {@link #files} */
+    private void mergeRuntime() {
+        try {
+            for (Object[] r : io.github.junjun1z.whathitme.core.script.ScriptRegistry.packRoots()) {
+                try {
+                    merge(r[1], (String) r[0]);
+                } catch (Exception e) {
+                    errors.add(r[0] + ": " + e.getMessage());
+                }
+            }
+        } catch (Throwable t) {
+            Platform.log.warn("Could not merge the What Hit Me? script entries", t);
+        }
     }
 
     private static String rel(File dir, File f) {
@@ -241,7 +278,8 @@ public final class PackConfig {
             + "  // Progression rules: the server decides per player what a death shows. Evaluated top to bottom, the FIRST matching rule wins.\n"
             + "  // match: a key like renameMap (damage id, @entity, @item:, @dim:, wildcards). if: all of these, any: at least one, unless: none of these.\n"
             + "  // Conditions: advancement:<id>  tag:<scoreboard tag>  score:<objective>>=<n> (also > <= < = !=)  stage:<Game Stages stage>\n"
-            + "  //             ftbquests:<quest or chapter id>  bq:<Better Questing quest id>  heracles:<quest id>   (\"!\" in front negates)\n"
+            + "  //             ftbquests:<quest or chapter id>  bq:<Better Questing quest id>  heracles:<quest id>\n"
+            + "  //             script:<name> (registered by KubeJS / CraftTweaker scripts)   (\"!\" in front negates)\n"
             + "  // name / hint: replace the damage name / tip (template variables, & colors, lang:keys; \"hint\": \"\" = no tip).\n"
             + "  // hide: damage_id, attacker, mod, weapon, death_message, tip, properties, environment, owner, distance, position.\n"
             + "  // Hidden fields are never sent. hide implies \"enforce\": true (personal renames / tips / templates do not apply) unless \"enforce\": false.\n"
