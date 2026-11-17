@@ -26,7 +26,10 @@ def root = new File(rootProject.projectDir, 'common').exists() ? rootProject.pro
 def selftest = project.hasProperty('selftest')
 // script mod bindings of this target (integrations/<name>/): classes loaded only by the script mod itself
 def scriptBindings = ((project.findProperty('script_bindings') ?: '') as String).split(',')*.trim().findAll { !it.isEmpty() }
-scriptBindings.each { b -> apply from: new File(root, "integrations/${b}/deps.gradle"), to: project }
+scriptBindings.each { b ->
+    def deps = new File(root, "integrations/${b}/deps.gradle")
+    if (deps.exists()) apply from: deps, to: project
+}
 sourceSets {
     main {
         java {

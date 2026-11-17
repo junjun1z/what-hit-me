@@ -192,7 +192,8 @@ final class ScriptPlan {
             (Supplier<?>) () -> "rules=" + scriptRules() + " " + ScriptRegistry.registrations());
         t.check("entries made by listeners stay over /whm reload", () -> "WHMT-ALERT-heavy".equals(WhmConfig.pack.renameMap.get("whmt:alert")), null);
         // the script mod's own reload: everything of the scripts is registered again
-        if (Platform.mods.modIds().contains("kubejs")) {
+        // KubeJS and CraftTweaker 1.16.5+ run their server scripts again on /reload (CraftTweaker 1.12.2 does not)
+        if (Platform.mods.modIds().contains("kubejs") || modern && Platform.mods.modIds().contains("crafttweaker")) {
             t.clearChat();
             vanilla("/reload", 200);
             t.check("after /reload: rebuilt once, listener entries gone, top level entries back", () -> scriptRules() == 1 && ScriptRegistry.conditions().size() == 2

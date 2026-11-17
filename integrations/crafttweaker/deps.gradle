@@ -1,0 +1,8 @@
+// CraftTweaker 1.16.5+ (new ZenScript): compile only, never a dependency of the jar.
+// Target property: crafttweaker_version (the loader and Minecraft version are part of the artifact name)
+repositories { maven { url 'https://maven.blamejared.com' } }
+dependencies {
+    def l = project.property('loader') == 'fabric' ? 'fabric' : project.property('loader') == 'neoforge' ? 'neoforge' : 'forge'
+    def cfg = project.property('loader') == 'neoforge' ? 'compileOnly' : 'modCompileOnly'
+    add(cfg, "com.blamejared.crafttweaker:CraftTweaker-${l}-${project.property('mc_version')}:${project.property('crafttweaker_version')}") { transitive = false }
+}
