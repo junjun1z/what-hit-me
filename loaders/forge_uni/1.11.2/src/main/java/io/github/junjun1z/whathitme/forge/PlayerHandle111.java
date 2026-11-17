@@ -8,6 +8,7 @@ import io.github.junjun1z.whathitme.core.data.Entry;
 import io.github.junjun1z.whathitme.core.data.Gear;
 import io.github.junjun1z.whathitme.core.net.Packets;
 import io.github.junjun1z.whathitme.core.server.PlayerHandle;
+import io.github.junjun1z.whathitme.core.text.Msg;
 import io.github.junjun1z.whathitme.core.text.Txt;
 import io.github.junjun1z.whathitme.mc.Facts;
 import io.github.junjun1z.whathitme.mc.McText;
@@ -175,7 +176,7 @@ public class PlayerHandle111 implements PlayerHandle {
 
     @Override
     public boolean disconnect(Txt reason) {
-        p.connection.disconnect(McText.of(reason).getFormattedText());
+        p.connection.disconnect(reason.toLegacy(Msg.ENGLISH.lang())); // getFormattedText is client only
         return true;
     }
 }

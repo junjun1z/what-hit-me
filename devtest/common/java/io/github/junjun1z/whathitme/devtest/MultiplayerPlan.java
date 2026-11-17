@@ -220,6 +220,8 @@ final class MultiplayerPlan {
         t.sleep(10);
         t.cmd("/whm last", "Death Recap", 60);
         t.check("mp rules: tag removed, rule gone", () -> !t.chatHas("WHMT-MP-RULE"), (Supplier<?>) t::chatText);
+        // let the server's chat spam counter go down: the 1.2 checks de-op the player (ops are exempt from the spam kick)
+        t.sleep(160);
     }
 
     /** 1.2 checks; with the server mod the player is de-opped at the end (the test script ops it again) */
