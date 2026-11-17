@@ -11,6 +11,7 @@ function sidebar(p: string, t: Record<string, string>): DefaultTheme.Sidebar {
         { text: t.intro, link: `${p}/guide/` },
         { text: t.install, link: `${p}/guide/getting-started` },
         { text: t.multiplayer, link: `${p}/guide/multiplayer` },
+        { text: t.integrations, link: `${p}/guide/integrations` },
       ],
     },
     {
@@ -62,7 +63,7 @@ function sidebar(p: string, t: Record<string, string>): DefaultTheme.Sidebar {
 }
 
 const en = {
-  start: 'Getting started', intro: 'What is What Hit Me?', install: 'Installation', multiplayer: 'Client, server or both',
+  start: 'Getting started', intro: 'What is What Hit Me?', install: 'Installation', multiplayer: 'Client, server or both', integrations: 'Mod integrations',
   players: 'Player guide', deathScreen: 'Death screen panel', chat: 'Chat summary & alerts', tools: 'History, stats & search',
   settings: 'Settings screen',
   reference: 'Reference', commands: 'Commands', config: 'Configuration files', ids: 'Damage ids & badges',
@@ -75,7 +76,7 @@ const en = {
 }
 
 const ja = {
-  start: 'はじめに', intro: 'What Hit Me? とは', install: 'インストール', multiplayer: 'クライアント・サーバーの組み合わせ',
+  start: 'はじめに', intro: 'What Hit Me? とは', install: 'インストール', multiplayer: 'クライアント・サーバーの組み合わせ', integrations: '他の mod との連携',
   players: 'プレイヤー向け', deathScreen: '死亡画面のパネル', chat: 'チャットの要約と通知', tools: '履歴・統計・検索',
   settings: '設定画面',
   reference: 'リファレンス', commands: 'コマンド一覧', config: '設定ファイル', ids: 'ダメージ ID とバッジ',

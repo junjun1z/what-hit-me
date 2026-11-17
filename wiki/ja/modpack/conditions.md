@@ -37,7 +37,7 @@ KubeJS、CraftTweaker、コマンドブロックからでもルールを動か�
 
 Forge・Fabric・NeoForge で同じです。進捗は 1.12 より前に、エンティティのタグは 1.9 より前に存在しません。非対応の条件は偽になり、`/whm reload` が「not supported on Forge 1.x」と表示します。
 
-## クエスト mod
+## クエスト mod {#quest-mods}
 
 クエスト mod の条件はリフレクションで動きます。**前提 mod になることはありません。** その mod が入っているときだけ動き始め、mod がない場合や API が合わない場合は条件が偽になり、ログに 1 回だけ記録されます。`/whm reload` でも表示されます。
 
