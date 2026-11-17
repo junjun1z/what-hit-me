@@ -74,7 +74,11 @@ final class QuestPlan {
                 List<Object> qs = new ArrayList<>();
                 Method m = file.getClass().getMethod("forAllQuests", Consumer.class);
                 m.invoke(file, (Consumer<Object>) qs::add);
-                if (qs.isEmpty()) return "";
+                if (qs.isEmpty()) {
+                    List<Object> ch = new ArrayList<>();
+                    file.getClass().getMethod("forAllChapters", Consumer.class).invoke(file, (Consumer<Object>) ch::add);
+                    return ch.isEmpty() ? "" : "no quests in " + ch.size() + " chapters";
+                }
                 return (String) qs.get(0).getClass().getMethod("getCodeString").invoke(qs.get(0));
             }
             Class<?> legacy = cls("com.feed_the_beast.ftbquests.quest.ServerQuestFile");
@@ -87,6 +91,18 @@ final class QuestPlan {
             return "error " + e;
         }
         return "";
+    }
+
+    /** FTB Quests 1.12.2: the team id of the player (FTB Library creates one per player) */
+    static String legacyTeam(java.util.UUID player) {
+        try {
+            Class<?> legacy = cls("com.feed_the_beast.ftbquests.quest.ServerQuestFile");
+            Object file = legacy.getField("INSTANCE").get(null);
+            Object data = file.getClass().getMethod("getData", java.util.UUID.class).invoke(file, player);
+            return data == null ? "" : String.valueOf(data.getClass().getMethod("getTeamID").invoke(data));
+        } catch (Throwable e) {
+            return "";
+        }
     }
 
     private static Class<?> cls(String n) {
@@ -129,10 +145,8 @@ final class QuestPlan {
         // ---- FTB Quests: a chapter with quests, its first quest id
         if (mod("ftbquests")) {
             if (modern) {
-                vanilla(() -> "/give @p minecraft:stick", 10);
-                vanilla(() -> "/ftbquests generate_chapter from_player_inventory", 40);
+                vanilla(() -> "/ftbquests generate_chapter from_entire_creative_list", 100);
             } else {
-                vanilla(() -> "/team create whmt", 20);
                 vanilla(() -> "/ftbquests generate_chapter_with_all_items_in_game", 100);
             }
             t.act(() -> {
@@ -140,6 +154,8 @@ final class QuestPlan {
                 t.info("ftb quest id: " + ftbId + " chat: " + t.chatText().replace('\n', '|'));
             });
             t.check("FTB Quests: a quest exists", () -> !ftbId.isEmpty() && !ftbId.startsWith("error"), (Supplier<?>) () -> ftbId);
+            // generated quests can start completed (items already owned): start from a reset
+            vanilla(() -> modern ? "/ftbquests change_progress @p reset " + ftbId : "/ftbquests change_progress reset " + legacyTeam(p.playerId()) + " " + ftbId, 40);
         }
         if (mod("betterquesting")) t.act(() -> t.info("bq quest: " + createBqQuest()));
         t.act(() -> {
@@ -175,9 +191,10 @@ final class QuestPlan {
             test("WHMT-BQ", "Better Questing: quest reset", false);
         }
         if (mod("ftbquests")) {
-            vanilla(() -> modern ? "/ftbquests change_progress @p complete " + ftbId : "/ftbquests change_progress whmt complete " + ftbId, 40);
+            vanilla(() -> modern ? "/ftbquests change_progress @p complete " + ftbId : "/ftbquests change_progress complete " + legacyTeam(p.playerId()) + " " + ftbId, 40);
+            t.act(() -> t.info("change_progress chat: " + t.chatText().replace('\n', '|')));
             test("Name: WHMT-FTBQ", "FTB Quests: ftbquests:<id> completed", true);
-            vanilla(() -> modern ? "/ftbquests change_progress @p reset " + ftbId : "/ftbquests change_progress whmt reset " + ftbId, 40);
+            vanilla(() -> modern ? "/ftbquests change_progress @p reset " + ftbId : "/ftbquests change_progress reset " + legacyTeam(p.playerId()) + " " + ftbId, 40);
             test("WHMT-FTBQ", "FTB Quests: progress reset", false);
         }
         t.act(() -> {
