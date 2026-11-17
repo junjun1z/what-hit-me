@@ -200,6 +200,11 @@ public class DevPort1193 implements DevPort {
     }
 
     @Override
+    public boolean rules13() {
+        return true;
+    }
+
+    @Override
     public boolean templateEditorOpen() {
         return mc().screen instanceof io.github.junjun1z.whathitme.mc.TemplateEditorScreen1193;
     }

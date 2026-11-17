@@ -30,6 +30,28 @@ public final class ServerPortMc implements ServerPort {
         return replacesDeathMessagesFlag;
     }
 
+    /** "Fabric" / "Forge" / "NeoForge", set by the loader ("" = unknown) */
+    public static volatile String loaderName = "";
+    /** Set by a loader that checks requireClientMod (hello timeout through ServerCore.onLogin) */
+    public static volatile boolean requireClientModFlag;
+
+    private static final java.util.Set<String> CONDITIONS = new java.util.HashSet<>(Arrays.asList("advancement", "tag", "score"));
+
+    @Override
+    public java.util.Set<String> builtinConditions() {
+        return CONDITIONS;
+    }
+
+    @Override
+    public String platformName() {
+        return loaderName.isEmpty() ? "" : loaderName + " " + net.minecraft.SharedConstants.getCurrentVersion().getName();
+    }
+
+    @Override
+    public boolean canRequireClientMod() {
+        return requireClientModFlag;
+    }
+
     public ServerPortMc(MinecraftServer server, Function<ServerPlayer, PlayerHandle> wrap) {
         this.server = server;
         this.wrap = wrap;

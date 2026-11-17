@@ -41,6 +41,9 @@ public final class NeoServerEvents {
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
+        ServerPortMc.loaderName = "NeoForge";
+        // hello timeout: the channel is optional, so the handshake cannot refuse with our message
+        ServerPortMc.requireClientModFlag = true;
         port = new ServerPortMc(event.getServer(), NeoPlayer::new);
         ServerCore.serverStarted(port);
         Safe.run("catalog cache", () -> CatalogCache.init(port.registries()));
@@ -134,6 +137,13 @@ public final class NeoServerEvents {
     public void onWorldSave(LevelEvent.Save event) {
         if (!(event.getLevel() instanceof ServerLevel)) return;
         if ("minecraft:overworld".equals(Facts.dimension((ServerLevel) event.getLevel()))) ServerCore.onWorldSave();
+    }
+
+    /** requireClientMod: a client without the mod sends no hello; checked a few seconds after joining */
+    @SubscribeEvent
+    public void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        ServerPlayer p = tracked(event.getEntity());
+        if (p != null) ServerCore.onLogin(new NeoPlayer(p));
     }
 
     @SubscribeEvent
