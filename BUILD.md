@@ -396,8 +396,28 @@ Notes from 1.7.10 - 1.11.2 (`loaders/forge_rfg/1.7.10`, `loaders/forge_uni/<v>`)
   that hit). `MultiplayerPlan.rules13` waits 8 s at the end: the 1.2 checks de-op the player and the earlier commands would
   trigger the vanilla chat spam kick.
 
+Notes from 1.14.4 - 1.17.1 (`versions/<v>`, `loaders/fabric/<v>`, `loaders/forge_arch/<v>`, `loaders/forge/1.17.1`):
+- `versions/<v>` (shared by Fabric and Forge): `server.getAdvancements().getAdvancement(rl)` + `getOrStartProgress(a).isDone()`,
+  `getTags()`, `getScoreboard()` with `hasPlayerScore(name, o)` before `getOrCreatePlayerScore(name, o).getScore()` (no score is
+  created by the check), `connection.disconnect(Component)`; `platformName()` = `ServerPortMc.loaderName + " " +
+  server.getServerVersion()`. `translationFallback()` stays false: `TranslatableComponent` has no fallback before 1.19.4, so the
+  hidden death message is English on Fabric there (modded Forge clients still get it translated through `DEATH_MESSAGE`).
+- requireClientMod is the hello timeout on all nine jars (the Forge channels accept every client, see the 1.14 notes):
+  Forge `PlayerEvent.PlayerLoggedInEvent`, Fabric 1.16.5 / 1.17.1 `ServerPlayConnectionEvents.JOIN`, Fabric 1.14 - 1.16.1 (Fabric
+  API v0 only) an `@Inject` at the end of `PlayerList#placeNewPlayer` in `PlayerListMixin`.
+- Quest mods: FTB Quests 1.16.5 (1605.x, `dev.ftb.mods`) has no `getOrCreateTeamData`, the provider falls back to
+  `getData(Entity)`; FTB Quests 1.15.2 (1502.x, `com.feed_the_beast`) keeps per-player `PlayerData` and completion is
+  `PlayerData.isComplete(QuestObject)`. Self-test (`QuestPlan`): 1605 still has `/ftbquests generate_chapter_with_all_items_in_game`,
+  whose quests are missing from the id map until `refreshIDMap()`; 1502 has no generate command and `change_progress` only acts on
+  the object the player looks at, so the test creates chapter / quest / item task and changes the progress by reflection.
+  Tested: Forge 1.16.5 (Game Stages 7.3.13, FTB Quests 1605.3.7-build.165 with FTB Library 1605.3.5-build.724, FTB Teams
+  1605.2.3-build.40, Item Filters 1605.2.5, Architectury 1.32.68), Fabric 1.16.5 (the same FTB builds for Fabric), Forge 1.15.2
+  (Game Stages 5.0.2, FTB Quests 1502.0.2.252 with FTB GUI Library 1.0.0.14, Item Filters 2.2.0.15), Forge 1.14.4 (Game Stages
+  4.2.15). The FTB 1.16.5 jars are on `maven.ftb.dev` (CurseForge widgets list only some files).
+- mp script `whm-tools/midrules13/mp.sh` (one launch per call: start / client / driver / stop / clean).
+
 Still to test in the port phase: Heracles on 1.20.1 (Forge or Fabric, with Resourceful Lib), FTB Quests 1.20.1 (`dev.ftb.mods`,
-FTB Library + FTB Teams + Architectury), and `advancement:` / `tag:` / `score:` on the remaining jar families (1.14+).
+FTB Library + FTB Teams + Architectury), and `advancement:` / `tag:` / `score:` on the remaining jar families (1.18.2+).
 
 ## In-game self-test (development)
 
