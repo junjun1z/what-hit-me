@@ -6,3 +6,8 @@ out/
 *.iml
 .secrets/
 *.token
+
+# wiki (VitePress)
+wiki/node_modules/
+wiki/.vitepress/dist/
+wiki/.vitepress/cache/
