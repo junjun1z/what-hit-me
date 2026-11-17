@@ -73,12 +73,22 @@ final class QuestPlan {
         }
     }
 
+    /** ServerQuestFile.INSTANCE, or getInstance() since 2111.x */
+    private static Object ftbFile(Class<?> c) throws Exception {
+        try {
+            return c.getField("INSTANCE").get(null);
+        } catch (NoSuchFieldException e) {
+            Object f = c.getMethod("getInstance").invoke(null);
+            return f instanceof java.util.Optional ? ((java.util.Optional<?>) f).orElse(null) : f;
+        }
+    }
+
     /** The code string of the first FTB Quests quest ("" = none) */
     static String firstFtbQuest() {
         try {
             Class<?> modern = cls("dev.ftb.mods.ftbquests.quest.ServerQuestFile");
             if (modern != null) {
-                Object file = modern.getField("INSTANCE").get(null);
+                Object file = ftbFile(modern);
                 List<Object> qs = new ArrayList<>();
                 if (!ftbForAll()) {
                     // 1.16.5 (1605.x): the generate command does not add its quests to the id map; getAllChapters() and their quests lists

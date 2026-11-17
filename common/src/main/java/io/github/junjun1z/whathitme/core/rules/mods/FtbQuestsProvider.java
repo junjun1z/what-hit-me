@@ -35,6 +35,18 @@ public final class FtbQuestsProvider implements ConditionProvider {
         }
     }
 
+    /** ServerQuestFile.INSTANCE, or getInstance() since 2111.x (2101.x: Optional) */
+    private Object modernFile() throws Exception {
+        try {
+            return Reflect.staticField(modern, "INSTANCE");
+        } catch (NoSuchFieldException e) {
+            Method m = Reflect.staticMethod(modern, "getInstance");
+            if (m == null) throw e;
+            Object f = m.invoke(null);
+            return f instanceof java.util.Optional ? ((java.util.Optional<?>) f).orElse(null) : f;
+        }
+    }
+
     private static String strip(String arg) {
         String a = arg == null ? "" : arg.trim();
         return a.startsWith("#") ? a.substring(1) : a;
@@ -44,16 +56,19 @@ public final class FtbQuestsProvider implements ConditionProvider {
     public boolean test(PlayerHandle p, String arg) throws Exception {
         String id = strip(arg);
         if (modern != null) {
-            Object file = Reflect.staticField(modern, "INSTANCE");
+            Object file = modernFile();
             Object player = p.nativePlayer();
             if (file == null || player == null) return false;
             Method data = Reflect.method(file.getClass(), "getOrCreateTeamData", player.getClass());
             // 1.16.5 (1605.x): getData(Entity)
             if (data == null) data = Reflect.method(file.getClass(), "getData", player.getClass());
+            // 2111.x / 26.x: getTeamData(Player) -> Optional
+            if (data == null) data = Reflect.method(file.getClass(), "getTeamData", player.getClass());
             Method get = Reflect.method(file.getClass(), "get", long.class);
             if (data == null || get == null) throw new NoSuchMethodException("ServerQuestFile.getOrCreateTeamData(player) / get(long)");
             Object obj = get.invoke(file, Long.parseUnsignedLong(id, 16));
             Object team = data.invoke(file, player);
+            if (team instanceof java.util.Optional) team = ((java.util.Optional<?>) team).orElse(null);
             if (obj == null || team == null) return false;
             Method done = Reflect.method(team.getClass(), "isCompleted", obj.getClass());
             if (done == null) throw new NoSuchMethodException("TeamData.isCompleted(QuestObject)");
