@@ -88,6 +88,14 @@ final class V13RulesPlan {
         return Fmt.strip(t.chatText()).contains(text);
     }
 
+    /** Lines of the hidden zombie name the attacker nor have [Copy ID] (other records, e.g. thorns by a zombie, may) */
+    private boolean hiddenLinesClean() {
+        for (String l : Fmt.strip(t.chatText()).split("\n")) {
+            if (l.contains("WHMT-HIDDEN") && (l.contains("Zombie") || l.contains("[Copy ID]"))) return false;
+        }
+        return true;
+    }
+
     private String me() {
         return p.playerName();
     }
@@ -136,8 +144,8 @@ final class V13RulesPlan {
         t.srv(Act.HEAL);
         t.hit(Act.ZOMBIE, 2f);
         t.cmd("/whm", "WHMT-HIDDEN", 60);
-        t.check("hidden: no attacker / weapon / id / buttons, personal rename ignored (enforced)", () -> !has("Zombie") && !has("WHMT-PERSONAL")
-            && !has("mob:minecraft:zombie"), (Supplier<?>) t::chatText);
+        t.check("hidden: no attacker / weapon / id / buttons, personal rename ignored (enforced)", () -> hiddenLinesClean() && !has("WHMT-PERSONAL")
+            && !has("mob:minecraft:zombie") && !has("Iron Sword"), (Supplier<?>) t::chatText);
         t.cmd("/whm test mob:minecraft:zombie", "Chat preview", 60);
         t.check("/whm test shows the rule, the hidden fields and the hidden death message", () -> has("Rule: mob:minecraft:zombie")
             && has("Hidden: damage_id, attacker, mod, weapon, death_message") && has("Name: WHMT-HIDDEN") && has("was killed by WHMT-HIDDEN")
@@ -222,7 +230,8 @@ final class V13RulesPlan {
         t.act(p::respawn);
         t.waitFor("respawned", () -> p.health() > 0f && p.noScreen(), 200);
         t.cmd("/whm last", "WHMT-HIDDEN", 60);
-        t.check("/whm last: hidden death message quoted, no attacker", () -> has("was killed by WHMT-HIDDEN") && !has("Zombie"), (Supplier<?>) t::chatText);
+        t.check("/whm last: hidden death message quoted, no attacker", () -> has("was killed by WHMT-HIDDEN") && !has("slain by") && hiddenLinesClean(),
+            (Supplier<?>) t::chatText);
         // ---- editor preview shows the rule result
         t.act(() -> p.command("/whm template"));
         t.waitFor("editor open", () -> p.templateEditorOpen() && TemplateEditor.current != null, 60);
