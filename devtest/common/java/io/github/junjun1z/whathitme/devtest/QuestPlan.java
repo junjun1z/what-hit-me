@@ -136,6 +136,11 @@ final class QuestPlan {
     private static final String FTB_OLD = "com.feed_the_beast.ftbquests.quest.";
 
     /** FTB Quests 1.15.2 (1502.x): no generate command, change_progress only for the quest the player looks at */
+    /** FTB Quests 26.x (pause_progression command is new there) */
+    static boolean ftb26() {
+        return cls("dev.ftb.mods.ftbquests.command.PauseProgressionCommand") != null;
+    }
+
     boolean ftb1502() {
         return modern && cls(FTB_OLD + "ServerQuestFile") != null;
     }
@@ -286,7 +291,13 @@ final class QuestPlan {
         if (mod("ftbquests")) {
             if (modern && ftbForAll()) {
                 t.clearChat();
-                vanilla(() -> "/ftbquests generate_chapter from_entire_creative_list", 100);
+                if (ftb26()) {
+                    // 26.1.2.x: the creative list chapter breaks its create_object_response packet (Byte data) and kicks the player
+                    vanilla(() -> "/give @p minecraft:dirt 1", 20);
+                    vanilla(() -> "/ftbquests generate_chapter from_player_inventory", 100);
+                } else {
+                    vanilla(() -> "/ftbquests generate_chapter from_entire_creative_list", 100);
+                }
                 // 1802 - 2004 still have the old command name
                 t.act(() -> {
                     if (has("Incorrect argument") || has("Unknown")) {
