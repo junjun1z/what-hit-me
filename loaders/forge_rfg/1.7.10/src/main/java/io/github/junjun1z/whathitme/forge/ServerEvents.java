@@ -185,6 +185,12 @@ public final class ServerEvents {
         while ((r = TASKS.poll()) != null) Safe.run("server task", r);
     }
 
+    /** requireClientMod: a client without the mod sends no hello; checked a few seconds after joining */
+    @SubscribeEvent
+    public void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.player instanceof EntityPlayerMP && !(event.player instanceof FakePlayer)) ServerCore.onLogin(new PlayerHandle17((EntityPlayerMP) event.player));
+    }
+
     @SubscribeEvent
     public void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         pending.remove(event.player.getUniqueID());

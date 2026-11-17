@@ -193,12 +193,18 @@ final class MultiplayerPlan {
         t.waitFor("/whm test <void id>", () -> t.chatHas("Chat preview"), 60);
     }
 
+    /** Before 1.9 (no entity tags) the server pack uses "score:whmt_mp>=1" instead of the tag */
     private String tag(boolean add, String tag) {
+        if (!vc.atLeast(1, 9, 0)) return "/scoreboard players set @p " + tag + " " + (add ? 1 : 0);
         return vc.atLeast(1, 13, 0) ? "/tag @p " + (add ? "add " : "remove ") + tag : "/scoreboard players tag @p " + (add ? "add " : "remove ") + tag;
     }
 
     /** 1.3 rules on a dedicated server; the server pack (test script) has a rule "if tag:whmt_mp" named WHMT-MP-RULE */
     private void rules13() {
+        if (!vc.atLeast(1, 9, 0)) {
+            say("/scoreboard objectives add whmt_mp dummy");
+            t.sleep(10);
+        }
         say(tag(false, "whmt_mp"));
         t.sleep(10);
         testVoid();

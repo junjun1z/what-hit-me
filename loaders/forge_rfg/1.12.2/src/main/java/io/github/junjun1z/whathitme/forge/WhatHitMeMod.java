@@ -20,8 +20,6 @@ import net.minecraftforge.fml.common.event.FMLPostInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLPreInitializationEvent;
 import net.minecraftforge.fml.common.event.FMLServerStartingEvent;
 import net.minecraftforge.fml.common.event.FMLServerStoppedEvent;
-import net.minecraftforge.fml.common.network.NetworkCheckHandler;
-import net.minecraftforge.fml.relauncher.Side;
 
 /**
  * What Hit Me? on Forge 1.12.2 - damage history, death recap and debuff list. Works on the client only, on the server
@@ -109,16 +107,5 @@ public class WhatHitMeMod {
     @Mod.EventHandler
     public void serverStopped(FMLServerStoppedEvent event) {
         ServerCore.serverStopped();
-    }
-
-    /**
-     * Replaces acceptableRemoteVersions = "*": any version on either side, or none, except that a server with
-     * requireClientMod refuses clients without What Hit Me? in the handshake (vanilla clients included).
-     */
-    @NetworkCheckHandler
-    public boolean checkRemote(java.util.Map<String, String> mods, Side remote) {
-        if (remote != Side.CLIENT) return true;
-        WhmConfig.Common c = WhmConfig.common;
-        return c == null || !c.requireClientMod || mods.containsKey(Platform.MODID);
     }
 }

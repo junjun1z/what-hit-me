@@ -79,4 +79,23 @@ final class ServerPort111 implements ServerPort {
     public boolean runCommand(String command) {
         return server.getCommandManager().executeCommand(server, command) > 0;
     }
+
+    // no advancements before 1.12
+    private static final java.util.Set<String> CONDITIONS = new java.util.HashSet<>(Arrays.asList("tag", "score"));
+
+    @Override
+    public java.util.Set<String> builtinConditions() {
+        return CONDITIONS;
+    }
+
+    @Override
+    public String platformName() {
+        return "Forge " + server.getMinecraftVersion();
+    }
+
+    /** Hello timeout of ServerCore.onLogin (FML's handshake rejection cannot carry our message) */
+    @Override
+    public boolean canRequireClientMod() {
+        return true;
+    }
 }

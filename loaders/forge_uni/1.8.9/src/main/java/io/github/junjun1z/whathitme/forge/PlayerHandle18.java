@@ -17,6 +17,9 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
+import net.minecraft.scoreboard.Score;
+import net.minecraft.scoreboard.ScoreObjective;
+import net.minecraft.scoreboard.Scoreboard;
 import net.minecraftforge.common.util.Constants;
 
 /** A 1.8 server player for the core. Per-player settings live in the player's persistent NBT. */
@@ -142,5 +145,26 @@ public class PlayerHandle18 implements PlayerHandle {
     @Override
     public double[] position() {
         return new double[] {p.posX, p.posY, p.posZ};
+    }
+
+    @Override
+    public Long score(String objective) {
+        Scoreboard sb = p.getWorldScoreboard();
+        ScoreObjective o = sb.getObjective(objective);
+        if (o == null) return NO_SCORE;
+        String name = p.getName();
+        Score s = (Score) sb.getObjectivesForEntity(name).get(o);
+        return s == null ? NO_SCORE : (long) s.getScorePoints();
+    }
+
+    @Override
+    public Object nativePlayer() {
+        return p;
+    }
+
+    @Override
+    public boolean disconnect(Txt reason) {
+        p.playerNetServerHandler.kickPlayerFromServer(McText.of(reason).getFormattedText());
+        return true;
     }
 }

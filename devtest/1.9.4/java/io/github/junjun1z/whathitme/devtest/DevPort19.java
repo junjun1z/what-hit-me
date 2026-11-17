@@ -191,6 +191,11 @@ final class DevPort19 implements DevPort {
     }
 
     @Override
+    public boolean rules13() {
+        return true;
+    }
+
+    @Override
     public boolean templateEditorOpen() {
         return mc().currentScreen instanceof io.github.junjun1z.whathitme.forge.GuiTemplateEditor;
     }

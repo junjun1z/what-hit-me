@@ -32,11 +32,36 @@ final class V13RulesPlan {
     private final SelfTest t;
     private final DevPort p;
     private final boolean modern;
+    /** advancements exist (1.12+); before, a score stands in for the advancement */
+    private final boolean adv;
+    /** entity tags exist (1.9+); before, a score of the same name stands in for each tag */
+    private final boolean tags;
+    private final boolean villagerId;
 
     V13RulesPlan(SelfTest t) {
         this.t = t;
         this.p = t.port;
-        this.modern = VanillaCommands.of(p.mcVersion()).atLeast(1, 13, 0);
+        VanillaCommands vc = VanillaCommands.of(p.mcVersion());
+        this.modern = vc.atLeast(1, 13, 0);
+        this.adv = vc.atLeast(1, 12, 0);
+        this.tags = vc.atLeast(1, 9, 0);
+        this.villagerId = vc.atLeast(1, 11, 0);
+    }
+
+    static final String[] TAGS = {"whmt_tag", "whmt_dm", "whmt_pro", "whmt_other", "whmt_never"};
+
+    /** The condition of the advancement step */
+    private String advCond() {
+        return adv ? "advancement:" + ADV : "score:whmt_a>=1";
+    }
+
+    private String advCmd(boolean grant) {
+        return adv ? "/advancement " + (grant ? "grant" : "revoke") + " @p only " + ADV : "/scoreboard players set @p whmt_a " + (grant ? 1 : 0);
+    }
+
+    /** A tag condition (score fallback before 1.9) */
+    private String tc(String tag) {
+        return tags ? "tag:" + tag : "score:" + tag + ">=1";
     }
 
     private static void write(File f, String text) {
@@ -49,6 +74,7 @@ final class V13RulesPlan {
     }
 
     private String tag(boolean add, String tag) {
+        if (!tags) return "/scoreboard players set @p " + tag + " " + (add ? 1 : 0);
         return modern ? "/tag @p " + (add ? "add " : "remove ") + tag : "/scoreboard players tag @p " + (add ? "add " : "remove ") + tag;
     }
 
@@ -57,23 +83,24 @@ final class V13RulesPlan {
         t.sleep(10);
     }
 
-    static String rules() {
+    String rules() {
         String zombie = "mob:minecraft:zombie";
         String voidId = SelfTest.id("outOfWorld");
         String fall = SelfTest.id("fall");
         return "{\n \"rules\": [\n"
-            + "  {\"match\": \"" + zombie + "\", \"unless\": [\"advancement:" + ADV + "\"], \"name\": \"&5WHMT-HIDDEN\", \"hint\": \"\",\n"
+            + "  {\"match\": \"" + zombie + "\", \"unless\": [\"" + advCond() + "\"], \"name\": \"&5WHMT-HIDDEN\", \"hint\": \"\",\n"
             + "   \"hide\": [\"damage_id\", \"attacker\", \"mod\", \"weapon\", \"death_message\"], \"commands\": [\"say WHMT-RULECMD {player}\"]},\n"
             + "  {\"match\": \"" + zombie + "\", \"name\": \"WHMT-KNOWN {attacker_name}\", \"hint\": \"WHMT-ZTIP\"},\n"
-            + "  {\"match\": \"" + voidId + "\", \"if\": [\"tag:whmt_tag\"], \"name\": \"WHMT-VOID-TAG\"},\n"
+            + "  {\"match\": \"" + voidId + "\", \"if\": [\"" + tc("whmt_tag") + "\"], \"name\": \"WHMT-VOID-TAG\"},\n"
             + "  {\"match\": \"" + voidId + "\", \"if\": [\"score:whmt_s>=5\"], \"name\": \"WHMT-VOID-SCORE\"},\n"
-            + "  {\"match\": \"" + voidId + "\", \"any\": [\"tag:whmt_dm\", \"tag:whmt_other\"], \"unless\": [\"tag:whmt_never\"], \"hide\": [\"death_message\"]},\n"
-            + "  {\"match\": \"" + fall + "\", \"if\": [\"!tag:whmt_pro\"], \"name\": \"WHMT-FALL\", \"hide\": [\"tip\"], \"enforce\": false},\n"
-            + "  {\"match\": \"minecraft:cactus\", \"if\": [\"nosuch:thing\"], \"name\": \"never\"}\n"
+            + "  {\"match\": \"" + voidId + "\", \"any\": [\"" + tc("whmt_dm") + "\", \"" + tc("whmt_other") + "\"], \"unless\": [\"" + tc("whmt_never") + "\"], \"hide\": [\"death_message\"]},\n"
+            + "  {\"match\": \"" + fall + "\", \"if\": [\"!" + tc("whmt_pro") + "\"], \"name\": \"WHMT-FALL\", \"hide\": [\"tip\"], \"enforce\": false},\n"
+            + "  {\"match\": \"minecraft:cactus\", \"if\": [\"nosuch:thing\"], \"name\": \"never\"}" + (adv ? "" : ",\n"
+            + "  {\"match\": \"minecraft:cactus\", \"if\": [\"advancement:" + ADV + "\"], \"name\": \"never\"}") + "\n"
             + " ],\n"
             + " \"deathTriggers\": [\n"
-            + "  {\"match\": \"" + voidId + "\", \"command\": \"say WHMT-TRIG-IF {player}\", \"if\": [\"tag:whmt_tag\"]},\n"
-            + "  {\"match\": \"" + voidId + "\", \"command\": \"say WHMT-TRIG-UNLESS {player}\", \"unless\": [\"tag:whmt_tag\"]}\n"
+            + "  {\"match\": \"" + voidId + "\", \"command\": \"say WHMT-TRIG-IF {player}\", \"if\": [\"" + tc("whmt_tag") + "\"]},\n"
+            + "  {\"match\": \"" + voidId + "\", \"command\": \"say WHMT-TRIG-UNLESS {player}\", \"unless\": [\"" + tc("whmt_tag") + "\"]}\n"
             + " ]\n}\n";
     }
 
@@ -122,7 +149,17 @@ final class V13RulesPlan {
         t.check("rules sample folder exists and is inert", () -> new File(Platform.whmConfigDir(), "pack/rules/_example.json").isFile() && WhmConfig.pack.rules.isEmpty(),
             (Supplier<?>) () -> WhmConfig.pack.rules);
         // clean progress
-        vanilla("/advancement revoke @p only " + ADV);
+        if (!adv) {
+            vanilla("/scoreboard objectives remove whmt_a");
+            vanilla("/scoreboard objectives add whmt_a dummy");
+        }
+        if (!tags) {
+            for (String s : TAGS) {
+                vanilla("/scoreboard objectives remove " + s);
+                vanilla("/scoreboard objectives add " + s + " dummy");
+            }
+        }
+        vanilla(advCmd(false));
         vanilla(tag(false, "whmt_tag"));
         vanilla(tag(false, "whmt_dm"));
         vanilla(tag(false, "whmt_pro"));
@@ -135,7 +172,11 @@ final class V13RulesPlan {
         t.check("death message warning only where the loader cannot replace it (names version and loader)", () -> ServerCore.port.replacesDeathMessages()
             ? !has("still see the vanilla death message") : has("players without What Hit Me? still see the vanilla death message") && has("On " + ServerCore.port.platformName()),
             (Supplier<?>) t::chatText);
-        t.check("rules loaded", () -> WhmConfig.pack.rules.size() == 7, (Supplier<?>) () -> WhmConfig.pack.rules);
+        if (!adv) {
+            t.check("/whm reload: advancement conditions not supported before 1.12", () -> has("not supported on " + ServerCore.port.platformName()),
+                (Supplier<?>) t::chatText);
+        }
+        t.check("rules loaded", () -> WhmConfig.pack.rules.size() == (adv ? 7 : 8), (Supplier<?>) () -> WhmConfig.pack.rules);
         // ---- hide + enforce (no advancement)
         t.act(() -> {
             WhmConfig.client.putMapEntry("renameMap", "mob:minecraft:zombie", "WHMT-PERSONAL");
@@ -150,13 +191,13 @@ final class V13RulesPlan {
         t.check("/whm test shows the rule, the hidden fields and the hidden death message", () -> has("Rule: mob:minecraft:zombie")
             && has("Hidden: damage_id, attacker, mod, weapon, death_message") && has("Name: WHMT-HIDDEN") && has("was killed by WHMT-HIDDEN")
             && has("WHMT-RULECMD"), (Supplier<?>) t::chatText);
-        t.cmd("/whm test mob:minecraft:zombie --assume advancement:" + ADV, "Chat preview", 60);
-        t.check("--assume: the next rule matches", () -> has("Assumed: advancement:" + ADV) && has("Name: WHMT-KNOWN Zombie") && has("WHMT-ZTIP"),
+        t.cmd("/whm test mob:minecraft:zombie --assume " + advCond(), "Chat preview", 60);
+        t.check("--assume: the next rule matches", () -> has("Assumed: " + advCond()) && has("Name: WHMT-KNOWN Zombie") && has("WHMT-ZTIP"),
             (Supplier<?>) t::chatText);
         t.cmd("/whm search zombie", "Search", 60);
-        t.check("search: entries whose rule hides the id are left out", () -> !has("mob:minecraft:zombie ") && !has("minecraft:zombie (") && has("zombie_villager"), (Supplier<?>) t::chatText);
+        t.check("search: entries whose rule hides the id are left out", () -> !has("mob:minecraft:zombie ") && !has("minecraft:zombie (") && has(villagerId ? "zombie_villager" : "zombie_"), (Supplier<?>) t::chatText);
         // ---- advancement reveals old entries too
-        vanilla("/advancement grant @p only " + ADV);
+        vanilla(advCmd(true));
         t.cmd("/whm", "WHMT-PERSONAL", 60);
         t.check("advancement done: next rule, not enforced -> personal rename wins, old record revealed", () -> !has("WHMT-HIDDEN"), (Supplier<?>) t::chatText);
         t.act(() -> {
@@ -201,7 +242,7 @@ final class V13RulesPlan {
         t.waitFor("respawned", () -> p.health() > 0f && p.noScreen(), 200);
         vanilla(tag(false, "whmt_dm"));
         // ---- killed by the hidden zombie
-        vanilla("/advancement revoke @p only " + ADV);
+        vanilla(advCmd(false));
         t.srv(Act.HEAL);
         t.sleep(80); // respawn invulnerability (60 ticks) blocks mob damage
         t.clearChat();
@@ -253,9 +294,13 @@ final class V13RulesPlan {
                 throw new RuntimeException(e);
             }
         });
-        vanilla("/advancement revoke @p only " + ADV);
+        vanilla(advCmd(false));
         vanilla(tag(false, "whmt_pro"));
         vanilla("/scoreboard objectives remove whmt_s");
+        if (!adv) vanilla("/scoreboard objectives remove whmt_a");
+        if (!tags) {
+            for (String s : TAGS) vanilla("/scoreboard objectives remove " + s);
+        }
         t.cmd("/whm reload", "reloaded", 60);
         t.waitFor("rules gone after clean up", () -> WhmConfig.pack.rules.isEmpty(), 60);
     }

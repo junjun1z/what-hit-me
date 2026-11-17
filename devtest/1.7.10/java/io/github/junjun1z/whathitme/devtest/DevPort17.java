@@ -200,6 +200,11 @@ final class DevPort17 implements DevPort {
     }
 
     @Override
+    public boolean rules13() {
+        return true;
+    }
+
+    @Override
     public boolean templateEditorOpen() {
         return mc().currentScreen instanceof io.github.junjun1z.whathitme.forge.GuiTemplateEditor;
     }
@@ -267,11 +272,17 @@ final class DevPort17 implements DevPort {
                 p.worldObj.getGameRules().setOrCreateGameRule("doDaylightCycle", "false");
                 p.worldObj.getGameRules().setOrCreateGameRule("doMobSpawning", "false");
                 p.worldObj.getGameRules().setOrCreateGameRule("keepInventory", "true");
+                // food regeneration in the tick between a hit and its deferred read hides that hit
+                p.worldObj.getGameRules().setOrCreateGameRule("naturalRegeneration", "false");
                 p.worldObj.setWorldTime(6000);
                 p.setGameType(WorldSettings.GameType.SURVIVAL);
                 p.clearActivePotions();
                 p.setHealth(p.getMaxHealth());
                 p.inventory.clearInventory(null, -1);
+                // mobs of earlier runs get their AI back when the world is loaded again (creepers explode)
+                for (Object o : new java.util.ArrayList<Object>(p.worldObj.loadedEntityList)) {
+                    if (o instanceof net.minecraft.entity.monster.EntityMob) ((net.minecraft.entity.Entity) o).setDead();
+                }
                 break;
             case SPAWN_MOBS: {
                 zombie = new EntityZombie(p.worldObj);

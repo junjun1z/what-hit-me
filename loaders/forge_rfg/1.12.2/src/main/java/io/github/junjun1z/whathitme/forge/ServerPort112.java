@@ -83,7 +83,7 @@ final class ServerPort112 implements ServerPort {
         return "Forge 1.12.2";
     }
 
-    /** The handshake check of WhatHitMeMod.checkRemote */
+    /** Hello timeout of ServerCore.onLogin (FML's handshake rejection cannot carry our message) */
     @Override
     public boolean canRequireClientMod() {
         return true;

@@ -98,6 +98,12 @@ public final class ServerEvents {
         ServerCore.onRespawn(new PlayerHandle112((EntityPlayerMP) event.player));
     }
 
+    /** requireClientMod: a client without the mod sends no hello; checked a few seconds after joining */
+    @SubscribeEvent
+    public void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        if (event.player instanceof EntityPlayerMP && !(event.player instanceof FakePlayer)) ServerCore.onLogin(new PlayerHandle112((EntityPlayerMP) event.player));
+    }
+
     @SubscribeEvent
     public void onLogout(PlayerEvent.PlayerLoggedOutEvent event) {
         ServerCore.onLogout(event.player.getUniqueID());

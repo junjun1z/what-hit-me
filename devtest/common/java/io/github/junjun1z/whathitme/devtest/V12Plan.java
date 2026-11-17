@@ -198,6 +198,9 @@ final class V12Plan {
                 + "   {\"match\": \"minecraft:magic\", \"command\": \"scoreboard objectives add whmonce dummy\", \"oncePerPlayer\": true}\n"
                 + " ]\n}\n");
         });
+        // the oncePerPlayer command fails (and is not counted) when an earlier run left the objective
+        t.act(() -> p.say("/scoreboard objectives remove whmonce"));
+        t.sleep(10);
         t.cmd("/whm reload", "reloaded", 60);
         t.sleep(10);
         t.check("pack files merged in path order (b overrides a)", () -> "PackB".equals(WhmConfig.pack.renameMap.get("minecraft:magic"))

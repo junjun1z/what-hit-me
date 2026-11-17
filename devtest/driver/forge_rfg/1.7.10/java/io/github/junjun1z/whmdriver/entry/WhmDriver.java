@@ -6,7 +6,9 @@ import io.github.junjun1z.whmdriver.DriverPort;
 import java.io.File;
 
 import net.minecraft.client.Minecraft;
+import net.minecraft.client.gui.GuiDisconnected;
 import net.minecraft.client.gui.GuiGameOver;
+import net.minecraft.util.IChatComponent;
 import net.minecraftforge.client.event.ClientChatReceivedEvent;
 import net.minecraftforge.common.MinecraftForge;
 import cpw.mods.fml.common.Loader;
@@ -36,6 +38,24 @@ public class WhmDriver implements DriverPort {
 
     private static Minecraft mc() {
         return Minecraft.getMinecraft();
+    }
+
+    @Override
+    public String disconnectReason() {
+        Object s = mc().currentScreen;
+        if (!(s instanceof GuiDisconnected)) return "";
+        StringBuilder sb = new StringBuilder();
+        for (java.lang.reflect.Field f : GuiDisconnected.class.getDeclaredFields()) {
+            try {
+                f.setAccessible(true);
+                Object v = f.get(s);
+                if (v instanceof IChatComponent) sb.append(((IChatComponent) v).getUnformattedText()).append(' ');
+            } catch (Throwable ignored) {
+                // next field
+            }
+        }
+        String r = sb.toString().trim();
+        return r.isEmpty() ? "?" : r;
     }
 
     @Override
