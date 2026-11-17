@@ -24,6 +24,9 @@ tasks.withType(JavaCompile).configureEach {
 // repository root (also when used from the nested legacy/ and oldforge/ builds)
 def root = new File(rootProject.projectDir, 'common').exists() ? rootProject.projectDir : rootProject.projectDir.parentFile
 def selftest = project.hasProperty('selftest')
+// script mod bindings of this target (integrations/<name>/): classes loaded only by the script mod itself
+def scriptBindings = ((project.findProperty('script_bindings') ?: '') as String).split(',')*.trim().findAll { !it.isEmpty() }
+scriptBindings.each { b -> apply from: new File(root, "integrations/${b}/deps.gradle"), to: project }
 sourceSets {
     main {
         java {
@@ -33,6 +36,7 @@ sourceSets {
             srcDir new File(root, "versions/${codeVersion}/src/main/java")
             // loader entry point, events, networking, commands
             srcDir new File(root, "loaders/${loader}/${codeVersion}/src/main/java")
+            scriptBindings.each { b -> srcDir new File(root, "integrations/${b}/java") }
             // development self-test and the "client without the mod" driver, only with -Pselftest (never in release jars)
             if (selftest) {
                 srcDir new File(root, 'devtest/common/java')
@@ -45,6 +49,7 @@ sourceSets {
         resources {
             srcDir new File(root, 'common/src/main/resources')
             srcDir new File(root, "loaders/${loader}/${codeVersion}/src/main/resources")
+            scriptBindings.each { b -> srcDir new File(root, "integrations/${b}/resources") }
         }
     }
 }

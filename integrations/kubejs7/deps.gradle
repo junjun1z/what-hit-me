@@ -1,0 +1,7 @@
+// KubeJS 7 (Minecraft 1.21.x, NeoForge): compile only, never a dependency of the jar.
+// Target properties: kubejs_version, rhino_version
+repositories { maven { url 'https://maven.latvian.dev/releases' } }
+dependencies {
+    compileOnly("dev.latvian.mods:kubejs-neoforge:${project.property('kubejs_version')}") { transitive = false }
+    compileOnly("dev.latvian.mods:rhino:${project.property('rhino_version')}") { transitive = false }
+}

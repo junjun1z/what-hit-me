@@ -60,6 +60,15 @@ public final class SelfTest {
 
     /** Plans the common modes; returns false when the mode is not a common one */
     public boolean planCommon() {
+        if (mode.equals("scripts")) {
+            // script integration (test instance with KubeJS / CraftTweaker and the test script, or without a script mod)
+            new ScriptPlan(this).plan();
+            return true;
+        }
+        if (mode.equals("mp-scripts")) {
+            new ScriptPlan(this).planMp();
+            return true;
+        }
         if (mode.equals("mp-two")) {
             new MultiplayerPlan(this).planTwo();
             return true;

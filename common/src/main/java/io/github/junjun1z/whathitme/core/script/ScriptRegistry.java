@@ -52,6 +52,9 @@ public final class ScriptRegistry {
         void fail(String kind, Throwable t) {
             if (failed) return;
             failed = true;
+            synchronized (LOCK) {
+                RECENT_FAILS.add("script " + kind + " \"" + name + "\" (" + owner + ") failed, see the log");
+            }
             Platform.log.warn("What Hit Me? script " + kind + " \"" + name + "\" (" + owner + ") failed and counts as "
                 + ("variable".equals(kind) ? "empty" : "condition".equals(kind) ? "false" : "not run") + " (logged once)", t);
         }
@@ -81,6 +84,9 @@ public final class ScriptRegistry {
     private static final List<Entry> ENTRIES = new ArrayList<>();
     private static final Map<String, Runnable> HOOKS = new LinkedHashMap<>();
     private static final Map<String, Boolean> FAILED_HOOKS = new LinkedHashMap<>();
+    /** Failures since the last rebuild, and those reported by the last rebuild (a rebuild makes new functions) */
+    private static final java.util.Set<String> RECENT_FAILS = new java.util.LinkedHashSet<>();
+    private static final List<String> REPORTED_FAILS = new ArrayList<>();
     /** > 0 while hooks run: registrations are marked as made by a hook */
     private static int inHook;
     private static volatile boolean applyScheduled;
@@ -176,10 +182,50 @@ public final class ScriptRegistry {
 
     public static void rule(String owner, Map<String, Object> rule) {
         if (rule == null) return;
+        @SuppressWarnings("unchecked")
+        Map<String, Object> r = (Map<String, Object>) plain(rule);
         synchronized (LOCK) {
-            ENTRIES.add(new Entry(owner(owner), "rule", Json.str(rule.get("match"), "*"), new LinkedHashMap<>(rule), inHook > 0));
+            ENTRIES.add(new Entry(owner(owner), "rule", Json.str(r.get("match"), "*"), r, inHook > 0));
         }
         entriesChanged();
+    }
+
+    /**
+     * A script value as plain JSON data: maps, lists (also arrays), strings (any CharSequence), numbers, booleans. Script
+     * engines hand over their own map / list / string types.
+     */
+    public static Object plain(Object v) {
+        if (v == null || v instanceof String || v instanceof Boolean) return v;
+        if (v instanceof CharSequence || v instanceof Character) return v.toString();
+        if (v instanceof Number) return ((Number) v).doubleValue();
+        if (v instanceof Map) {
+            Map<String, Object> out = new LinkedHashMap<>();
+            for (Map.Entry<?, ?> e : ((Map<?, ?>) v).entrySet()) out.put(String.valueOf(e.getKey()), plain(e.getValue()));
+            return out;
+        }
+        List<Object> out = new ArrayList<>();
+        if (v instanceof Iterable) {
+            for (Object o : (Iterable<?>) v) out.add(plain(o));
+            return out;
+        }
+        if (v.getClass().isArray()) {
+            int n = java.lang.reflect.Array.getLength(v);
+            for (int i = 0; i < n; i++) out.add(plain(java.lang.reflect.Array.get(v, i)));
+            return out;
+        }
+        return v.toString();
+    }
+
+    /** Template lines from a script value: a list / array of lines or one text with line breaks */
+    public static List<String> lines(Object v) {
+        Object p = plain(v);
+        List<String> out = new ArrayList<>();
+        if (p instanceof List) {
+            for (Object o : (List<?>) p) out.add(o == null ? "" : o.toString());
+        } else if (p != null) {
+            for (String l : p.toString().split("\n", -1)) out.add(l);
+        }
+        return out;
     }
 
     public static void rule(String owner, String json) {
@@ -238,6 +284,9 @@ public final class ScriptRegistry {
             LISTENERS.removeIf(f -> f.hook);
             ENTRIES.removeIf(x -> x.hook);
             FAILED_HOOKS.clear();
+            REPORTED_FAILS.clear();
+            REPORTED_FAILS.addAll(RECENT_FAILS);
+            RECENT_FAILS.clear();
             hooks = new ArrayList<>(HOOKS.entrySet());
             inHook++;
         }
@@ -467,12 +516,14 @@ public final class ScriptRegistry {
         return out;
     }
 
-    /** Failed functions and hooks (one line each) */
+    /** Functions that failed since the rebuild before the last one, and failed hooks (one line each) */
     public static List<String> failures() {
-        List<String> out = new ArrayList<>();
-        for (WhmRegistration r : registrations()) {
-            if (r.failed) out.add("script " + r.kind + " \"" + r.name + "\" (" + r.owner + ") failed, see the log");
+        java.util.Set<String> out = new java.util.LinkedHashSet<>();
+        synchronized (LOCK) {
+            out.addAll(REPORTED_FAILS);
+            out.addAll(RECENT_FAILS);
+            for (String h : FAILED_HOOKS.keySet()) out.add("script register hook of " + h + " failed, see the log");
         }
-        return out;
+        return new ArrayList<>(out);
     }
 }

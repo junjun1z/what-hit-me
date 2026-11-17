@@ -59,6 +59,13 @@ final class V13RulesPlan {
         return adv ? "/advancement " + (grant ? "grant" : "revoke") + " @p only " + ADV : "/scoreboard players set @p whmt_a " + (grant ? 1 : 0);
     }
 
+    /** Rules of the pack files (a script test instance adds rules through the API) */
+    static int fileRules() {
+        int n = 0;
+        for (io.github.junjun1z.whathitme.core.rules.Rule r : WhmConfig.pack.rules) if (!r.source.startsWith("script:")) n++;
+        return n;
+    }
+
     /** A tag condition (score fallback before 1.9) */
     private String tc(String tag) {
         return tags ? "tag:" + tag : "score:" + tag + ">=1";
@@ -146,7 +153,7 @@ final class V13RulesPlan {
     void plan() {
         File rulesFile = new File(Platform.whmConfigDir(), "pack/test13r/rules.json");
         t.act(() -> t.info("v13 rules section"));
-        t.check("rules sample folder exists and is inert", () -> new File(Platform.whmConfigDir(), "pack/rules/_example.json").isFile() && WhmConfig.pack.rules.isEmpty(),
+        t.check("rules sample folder exists and is inert", () -> new File(Platform.whmConfigDir(), "pack/rules/_example.json").isFile() && fileRules() == 0,
             (Supplier<?>) () -> WhmConfig.pack.rules);
         // clean progress
         if (!adv) {
@@ -176,7 +183,7 @@ final class V13RulesPlan {
             t.check("/whm reload: advancement conditions not supported before 1.12", () -> has("not supported on " + ServerCore.port.platformName()),
                 (Supplier<?>) t::chatText);
         }
-        t.check("rules loaded", () -> WhmConfig.pack.rules.size() == (adv ? 7 : 8), (Supplier<?>) () -> WhmConfig.pack.rules);
+        t.check("rules loaded", () -> fileRules() == (adv ? 7 : 8), (Supplier<?>) () -> WhmConfig.pack.rules);
         // ---- hide + enforce (no advancement)
         t.act(() -> {
             WhmConfig.client.putMapEntry("renameMap", "mob:minecraft:zombie", "WHMT-PERSONAL");
@@ -302,6 +309,6 @@ final class V13RulesPlan {
             for (String s : TAGS) vanilla("/scoreboard objectives remove " + s);
         }
         t.cmd("/whm reload", "reloaded", 60);
-        t.waitFor("rules gone after clean up", () -> WhmConfig.pack.rules.isEmpty(), 60);
+        t.waitFor("rules gone after clean up", () -> fileRules() == 0, 60);
     }
 }
