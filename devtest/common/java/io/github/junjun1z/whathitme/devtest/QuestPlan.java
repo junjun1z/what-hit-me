@@ -63,8 +63,14 @@ final class QuestPlan {
     }
 
     private static Object field(Object o, String name) throws Exception {
-        Field f = o.getClass().getField(name);
-        return f.get(o);
+        try {
+            return o.getClass().getField(name).get(o);
+        } catch (NoSuchFieldException e) {
+            // 1902: private list with a getter
+            Field f = o.getClass().getDeclaredField(name);
+            f.setAccessible(true);
+            return f.get(o);
+        }
     }
 
     /** The code string of the first FTB Quests quest ("" = none) */
@@ -81,6 +87,12 @@ final class QuestPlan {
                         for (Object q : (List<?>) field(ch, "quests")) return (String) q.getClass().getMethod("getCodeString").invoke(q);
                     }
                     return "";
+                }
+                // 1802 - 2004: the generate command does not add its quests to the id map either
+                try {
+                    file.getClass().getMethod("refreshIDMap").invoke(file);
+                } catch (NoSuchMethodException ignored) {
+                    // newer builds keep the map up to date
                 }
                 Method m = file.getClass().getMethod("forAllQuests", Consumer.class);
                 m.invoke(file, (Consumer<Object>) qs::add);
@@ -103,7 +115,7 @@ final class QuestPlan {
         return "";
     }
 
-    /** FTB Quests 1.18+ (forAllQuests, generate_chapter from_entire_creative_list); 1.16.5 has neither */
+    /** FTB Quests 1.18+ (forAllQuests; generate_chapter from_entire_creative_list from 2101); 1.16.5 has neither */
     static boolean ftbForAll() {
         Class<?> c = cls("dev.ftb.mods.ftbquests.quest.ServerQuestFile");
         if (c == null) return false;
@@ -239,17 +251,40 @@ final class QuestPlan {
         }
     }
 
+    private static final String HER_ID = "whmt_quest";
+
     void plan() {
         File rules = new File(Platform.whmConfigDir(), "pack/testq/rules.json");
+        // Heracles loads config/heracles/quests/*.json with the world; an empty object is a quest with defaults
+        if (mod("heracles")) t.act(() -> {
+            try {
+                File q = new File(Platform.configDir, "heracles/quests/" + HER_ID + ".json");
+                q.getParentFile().mkdirs();
+                Files.write(q.toPath(), "{}".getBytes(StandardCharsets.UTF_8));
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
+        // the first client resource reload must finish first (FTB Quests 2001 Fabric: theme loaded there, NPE on sync otherwise)
+        t.sleep(300);
         t.loadWorld("whm_quests");
         t.waitFor("server info received (server has the mod)", () -> ClientCore.serverHasMod, 400);
         t.srv(DevPort.Act.SETUP);
         t.sleep(40);
-        t.act(() -> t.info("mods: stage=" + mod("gamestages") + " bq=" + mod("betterquesting") + " ftbquests=" + mod("ftbquests")));
+        t.act(() -> t.info("mods: stage=" + mod("gamestages") + " bq=" + mod("betterquesting") + " ftbquests=" + mod("ftbquests") + " heracles=" + mod("heracles")));
         // ---- FTB Quests: a chapter with quests, its first quest id
         if (mod("ftbquests")) {
             if (modern && ftbForAll()) {
+                t.clearChat();
                 vanilla(() -> "/ftbquests generate_chapter from_entire_creative_list", 100);
+                // 1802 - 2004 still have the old command name
+                t.act(() -> {
+                    if (has("Incorrect argument") || has("Unknown")) {
+                        t.info("send /ftbquests generate_chapter_with_all_items_in_game");
+                        p.say("/ftbquests generate_chapter_with_all_items_in_game");
+                    }
+                });
+                t.sleep(100);
             } else if (ftb1502()) {
                 t.act(() -> t.info("ftb 1502 quest: " + createFtb1502Quest()));
             } else {
@@ -271,6 +306,7 @@ final class QuestPlan {
             r.append("{\"match\": \"").append(gen).append("\", \"if\": [\"bq:").append(bqUuids() ? BQ_UUID.toString() : String.valueOf(BQ_ID)).append("\"], \"name\": \"WHMT-BQ\"},\n");
             // GTNH: the Base64 form the quest book and commands show
             if (bqUuids()) r.append("{\"match\": \"").append(SelfTest.id("magic")).append("\", \"if\": [\"bq:").append(bqCommandId()).append("\"], \"name\": \"WHMT-BQ64\"},\n");
+            r.append("{\"match\": \"").append(gen).append("\", \"if\": [\"heracles:").append(HER_ID).append("\"], \"name\": \"WHMT-HER\"},\n");
             r.append("{\"match\": \"").append(gen).append("\", \"if\": [\"ftbquests:").append(ftbId.isEmpty() ? "0" : ftbId).append("\"], \"name\": \"WHMT-FTBQ\"}\n");
             r.append("]}\n");
             try {
@@ -283,8 +319,9 @@ final class QuestPlan {
         t.cmd("/whm reload", "reloaded", 60);
         t.act(() -> t.info("reload chat: " + t.chatText().replace('\n', '|')));
         t.check("no provider warnings for installed mods", () -> (!mod("gamestages") || !has("Game Stages is not installed")) && !has("provider failed")
-            && (!mod("ftbquests") || !has("FTB Quests is not installed")) && (!mod("betterquesting") || !has("Better Questing is not installed")),
+            && (!mod("ftbquests") || !has("FTB Quests is not installed")) && (!mod("betterquesting") || !has("Better Questing is not installed")) && (!mod("heracles") || !has("Heracles API")),
             (Supplier<?>) t::chatText);
+        if (mod("heracles")) vanilla(() -> "/heracles reset " + HER_ID + " " + p.playerName(), 30);
         test("Rule: none matches", "nothing done yet: no rule", true);
         if (mod("gamestages")) {
             vanilla(() -> "/gamestage add " + p.playerName() + " whmt_stage", 20);
@@ -311,6 +348,13 @@ final class QuestPlan {
             test("Name: WHMT-FTBQ", "FTB Quests: ftbquests:<id> completed", true);
             ftbProgress(false);
             test("WHMT-FTBQ", "FTB Quests: progress reset", false);
+        }
+        if (mod("heracles")) {
+            vanilla(() -> "/heracles complete " + HER_ID + " " + p.playerName(), 30);
+            t.act(() -> t.info("heracles complete chat: " + t.chatText().replace('\n', '|')));
+            test("Name: WHMT-HER", "Heracles: heracles:<id> completed", true);
+            vanilla(() -> "/heracles reset " + HER_ID + " " + p.playerName(), 30);
+            test("WHMT-HER", "Heracles: quest reset", false);
         }
         t.act(() -> {
             rules.delete();
