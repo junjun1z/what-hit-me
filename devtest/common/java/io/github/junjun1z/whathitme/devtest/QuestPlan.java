@@ -74,6 +74,14 @@ final class QuestPlan {
             if (modern != null) {
                 Object file = modern.getField("INSTANCE").get(null);
                 List<Object> qs = new ArrayList<>();
+                if (!ftbForAll()) {
+                    // 1.16.5 (1605.x): the generate command does not add its quests to the id map; getAllChapters() and their quests lists
+                    file.getClass().getMethod("refreshIDMap").invoke(file);
+                    for (Object ch : (List<?>) file.getClass().getMethod("getAllChapters").invoke(file)) {
+                        for (Object q : (List<?>) field(ch, "quests")) return (String) q.getClass().getMethod("getCodeString").invoke(q);
+                    }
+                    return "";
+                }
                 Method m = file.getClass().getMethod("forAllQuests", Consumer.class);
                 m.invoke(file, (Consumer<Object>) qs::add);
                 if (qs.isEmpty()) {
@@ -93,6 +101,74 @@ final class QuestPlan {
             return "error " + e;
         }
         return "";
+    }
+
+    /** FTB Quests 1.18+ (forAllQuests, generate_chapter from_entire_creative_list); 1.16.5 has neither */
+    static boolean ftbForAll() {
+        Class<?> c = cls("dev.ftb.mods.ftbquests.quest.ServerQuestFile");
+        if (c == null) return false;
+        for (Method m : c.getMethods()) if (m.getName().equals("forAllQuests")) return true;
+        return false;
+    }
+
+    private static final String FTB_OLD = "com.feed_the_beast.ftbquests.quest.";
+
+    /** FTB Quests 1.15.2 (1502.x): no generate command, change_progress only for the quest the player looks at */
+    boolean ftb1502() {
+        return modern && cls(FTB_OLD + "ServerQuestFile") != null;
+    }
+
+    private static void newId(Object o, Object file) throws Exception {
+        o.getClass().getField("id").set(o, file.getClass().getMethod("newID").invoke(file));
+        o.getClass().getMethod("onCreated").invoke(o);
+    }
+
+    /** FTB Quests 1.15.2: a chapter with one quest and an empty item task, made by reflection; the quest code */
+    static String createFtb1502Quest() {
+        try {
+            Object file = cls(FTB_OLD + "ServerQuestFile").getField("INSTANCE").get(null);
+            Class<?> chapter = cls(FTB_OLD + "Chapter"), quest = cls(FTB_OLD + "Quest");
+            Object ch = chapter.getConstructor(cls(FTB_OLD + "QuestFile")).newInstance(file);
+            newId(ch, file);
+            Object q = quest.getConstructor(chapter).newInstance(ch);
+            newId(q, file);
+            newId(cls(FTB_OLD + "task.ItemTask").getConstructor(quest).newInstance(q), file);
+            file.getClass().getMethod("refreshIDMap").invoke(file);
+            return (String) q.getClass().getMethod("getCodeString").invoke(q);
+        } catch (Throwable e) {
+            return "error " + e;
+        }
+    }
+
+    /** FTB Quests 1.15.2: quest.changeProgress(file.getData(player), COMPLETE / RESET) */
+    static String ftb1502Progress(java.util.UUID player, String code, boolean complete) {
+        try {
+            Object file = cls(FTB_OLD + "ServerQuestFile").getField("INSTANCE").get(null);
+            Object id = file.getClass().getMethod("getID", Object.class).invoke(file, "#" + code);
+            Object q = file.getClass().getMethod("get", int.class).invoke(file, id);
+            Object data = file.getClass().getMethod("getData", java.util.UUID.class).invoke(file, player);
+            Class<?> cp = cls(FTB_OLD + "ChangeProgress");
+            for (Method m : q.getClass().getMethods()) {
+                if (m.getName().equals("changeProgress") && m.getParameterCount() == 2) {
+                    m.invoke(q, data, cp.getField(complete ? "COMPLETE" : "RESET").get(null));
+                    return "ok";
+                }
+            }
+            return "no changeProgress";
+        } catch (Throwable e) {
+            return "error " + e;
+        }
+    }
+
+    /** Completes / resets the FTB Quests quest ftbId for the player */
+    private void ftbProgress(boolean complete) {
+        if (ftb1502()) {
+            t.act(() -> t.info("ftb 1502 progress " + complete + ": " + ftb1502Progress(p.playerId(), ftbId, complete)));
+            t.sleep(20);
+            return;
+        }
+        String c = complete ? "complete " : "reset ";
+        vanilla(() -> modern ? "/ftbquests change_progress @p " + c + ftbId : "/ftbquests change_progress " + c + legacyTeam(p.playerId()) + " " + ftbId, 40);
     }
 
     /** FTB Quests 1.12.2: the team id of the player (FTB Library creates one per player) */
@@ -172,8 +248,10 @@ final class QuestPlan {
         t.act(() -> t.info("mods: stage=" + mod("gamestages") + " bq=" + mod("betterquesting") + " ftbquests=" + mod("ftbquests")));
         // ---- FTB Quests: a chapter with quests, its first quest id
         if (mod("ftbquests")) {
-            if (modern) {
+            if (modern && ftbForAll()) {
                 vanilla(() -> "/ftbquests generate_chapter from_entire_creative_list", 100);
+            } else if (ftb1502()) {
+                t.act(() -> t.info("ftb 1502 quest: " + createFtb1502Quest()));
             } else {
                 vanilla(() -> "/ftbquests generate_chapter_with_all_items_in_game", 100);
             }
@@ -183,7 +261,7 @@ final class QuestPlan {
             });
             t.check("FTB Quests: a quest exists", () -> !ftbId.isEmpty() && !ftbId.startsWith("error"), (Supplier<?>) () -> ftbId);
             // generated quests can start completed (items already owned): start from a reset
-            vanilla(() -> modern ? "/ftbquests change_progress @p reset " + ftbId : "/ftbquests change_progress reset " + legacyTeam(p.playerId()) + " " + ftbId, 40);
+            ftbProgress(false);
         }
         if (mod("betterquesting")) t.act(() -> t.info("bq quest: " + createBqQuest()));
         t.act(() -> {
@@ -228,10 +306,10 @@ final class QuestPlan {
             test("WHMT-BQ", "Better Questing: quest reset", false);
         }
         if (mod("ftbquests")) {
-            vanilla(() -> modern ? "/ftbquests change_progress @p complete " + ftbId : "/ftbquests change_progress complete " + legacyTeam(p.playerId()) + " " + ftbId, 40);
+            ftbProgress(true);
             t.act(() -> t.info("change_progress chat: " + t.chatText().replace('\n', '|')));
             test("Name: WHMT-FTBQ", "FTB Quests: ftbquests:<id> completed", true);
-            vanilla(() -> modern ? "/ftbquests change_progress @p reset " + ftbId : "/ftbquests change_progress reset " + legacyTeam(p.playerId()) + " " + ftbId, 40);
+            ftbProgress(false);
             test("WHMT-FTBQ", "FTB Quests: progress reset", false);
         }
         t.act(() -> {

@@ -9,8 +9,9 @@ import io.github.junjun1z.whathitme.core.server.ServerPort;
 
 /**
  * ftbquests:&lt;quest or chapter id&gt; (the hex id FTB Quests shows, "#" optional) - completed by the player's team.
- * FTB Quests 1.16+ (dev.ftb.mods): ServerQuestFile.INSTANCE.getOrCreateTeamData(player).isCompleted(file.get(id)).
- * FTB Quests 1.12.2 (com.feed_the_beast): ServerQuestFile.INSTANCE.get(file.getID(text)).isComplete(file.getData(uuid)).
+ * FTB Quests 1.16+ (dev.ftb.mods): ServerQuestFile.INSTANCE.getOrCreateTeamData(player).isCompleted(file.get(id)) (1.16.5: getData(player)).
+ * FTB Quests 1.12.2 (com.feed_the_beast): ServerQuestFile.INSTANCE.get(file.getID(text)).isComplete(file.getData(uuid))
+ * (1.15.2: file.getData(uuid).isComplete(quest)).
  */
 public final class FtbQuestsProvider implements ConditionProvider {
 
@@ -47,6 +48,8 @@ public final class FtbQuestsProvider implements ConditionProvider {
             Object player = p.nativePlayer();
             if (file == null || player == null) return false;
             Method data = Reflect.method(file.getClass(), "getOrCreateTeamData", player.getClass());
+            // 1.16.5 (1605.x): getData(Entity)
+            if (data == null) data = Reflect.method(file.getClass(), "getData", player.getClass());
             Method get = Reflect.method(file.getClass(), "get", long.class);
             if (data == null || get == null) throw new NoSuchMethodException("ServerQuestFile.getOrCreateTeamData(player) / get(long)");
             Object obj = get.invoke(file, Long.parseUnsignedLong(id, 16));
@@ -67,8 +70,11 @@ public final class FtbQuestsProvider implements ConditionProvider {
             Object team = data.invoke(file, p.uuid());
             if (obj == null || team == null) return false;
             Method done = Reflect.method(obj.getClass(), "isComplete", team.getClass());
-            if (done == null) throw new NoSuchMethodException("QuestObject.isComplete(QuestData)");
-            return Reflect.truth(done.invoke(obj, team));
+            if (done != null) return Reflect.truth(done.invoke(obj, team));
+            // 1.15.2 (1502.x): PlayerData.isComplete(QuestObject)
+            done = Reflect.method(team.getClass(), "isComplete", obj.getClass());
+            if (done == null) throw new NoSuchMethodException("QuestObject.isComplete(QuestData) / PlayerData.isComplete(QuestObject)");
+            return Reflect.truth(done.invoke(team, obj));
         }
         return false;
     }
