@@ -41,6 +41,9 @@ public final class ForgeServerEvents {
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
+        ServerPortMc.loaderName = "Forge";
+        // hello timeout: the channel is optional, so the handshake cannot refuse with our message
+        ServerPortMc.requireClientModFlag = true;
         port = new ServerPortMc(event.getServer(), ForgePlayer::new);
         ServerCore.serverStarted(port);
         Safe.run("catalog cache", () -> CatalogCache.init(port.registries()));
@@ -134,6 +137,13 @@ public final class ForgeServerEvents {
     public void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer) || event.isEndConquered()) return;
         ServerCore.onRespawn(new ForgePlayer((ServerPlayer) event.getEntity()));
+    }
+
+    /** requireClientMod: a client without the mod sends no hello; checked a few seconds after joining */
+    @SubscribeEvent
+    public void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        ServerPlayer p = tracked(event.getEntity());
+        if (p != null) ServerCore.onLogin(new ForgePlayer(p));
     }
 
     @SubscribeEvent

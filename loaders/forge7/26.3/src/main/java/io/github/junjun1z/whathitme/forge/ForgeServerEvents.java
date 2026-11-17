@@ -42,6 +42,9 @@ public final class ForgeServerEvents {
 
     static void register() {
         ServerStartingEvent.BUS.addListener(event -> {
+            ServerPortMc.loaderName = "Forge";
+            // hello timeout: the channel is optional, so the handshake cannot refuse with our message
+            ServerPortMc.requireClientModFlag = true;
             port = new ServerPortMc(event.getServer(), ForgePlayer::new);
             ServerCore.serverStarted(port);
             Safe.run("catalog cache", () -> CatalogCache.init(port.registries()));
@@ -121,6 +124,11 @@ public final class ForgeServerEvents {
         LevelEvent.Save.BUS.addListener(event -> {
             if (!(event.getLevel() instanceof ServerLevel)) return;
             if ("minecraft:overworld".equals(Facts.dimension((ServerLevel) event.getLevel()))) ServerCore.onWorldSave();
+        });
+        // requireClientMod: a client without the mod sends no hello; checked a few seconds after joining
+        PlayerEvent.PlayerLoggedInEvent.BUS.addListener(event -> {
+            ServerPlayer p = tracked(event.getEntity());
+            if (p != null) ServerCore.onLogin(new ForgePlayer(p));
         });
         PlayerEvent.PlayerLoggedOutEvent.BUS.addListener(event -> ServerCore.onLogout(event.getEntity().getUUID()));
     }

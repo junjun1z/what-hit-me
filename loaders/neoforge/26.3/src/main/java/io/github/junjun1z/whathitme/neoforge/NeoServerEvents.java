@@ -47,6 +47,9 @@ public final class NeoServerEvents {
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
+        ServerPortMc.loaderName = "NeoForge";
+        // hello timeout: the channel is optional, so the handshake cannot refuse with our message
+        ServerPortMc.requireClientModFlag = true;
         port = new ServerPortMc(event.getServer(), NeoPlayer::new);
         // dedicated server: JSON texts use its registries (the client sets its own supplier)
         if (!FMLEnvironment.getDist().isClient()) McText.registries = event.getServer()::registryAccess;
@@ -156,6 +159,13 @@ public final class NeoServerEvents {
     public void onRespawn(PlayerEvent.PlayerRespawnEvent event) {
         if (!(event.getEntity() instanceof ServerPlayer) || event.isEndConquered()) return;
         ServerCore.onRespawn(new NeoPlayer((ServerPlayer) event.getEntity()));
+    }
+
+    /** requireClientMod: a client without the mod sends no hello; checked a few seconds after joining */
+    @SubscribeEvent
+    public void onLogin(PlayerEvent.PlayerLoggedInEvent event) {
+        ServerPlayer p = tracked(event.getEntity());
+        if (p != null) ServerCore.onLogin(new NeoPlayer(p));
     }
 
     @SubscribeEvent

@@ -90,4 +90,38 @@ public abstract class McPlayer implements PlayerHandle {
     public double[] position() {
         return new double[] {p.getX(), p.getY(), p.getZ()};
     }
+
+    @Override
+    public Boolean hasAdvancement(String id) {
+        net.minecraft.resources.Identifier rl = net.minecraft.resources.Identifier.tryParse(id);
+        net.minecraft.server.MinecraftServer s = p.level().getServer();
+        if (rl == null || s == null) return false;
+        net.minecraft.advancements.AdvancementHolder a = s.getAdvancements().get(rl);
+        return a != null && p.getAdvancements().getOrStartProgress(a).isDone();
+    }
+
+    @Override
+    public Boolean hasTag(String tag) {
+        return p.entityTags().contains(tag);
+    }
+
+    @Override
+    public Long score(String objective) {
+        net.minecraft.world.scores.Scoreboard sb = p.level().getScoreboard();
+        net.minecraft.world.scores.Objective o = sb.getObjective(objective);
+        if (o == null) return NO_SCORE;
+        net.minecraft.world.scores.ReadOnlyScoreInfo i = sb.getPlayerScoreInfo(p, o);
+        return i == null ? NO_SCORE : (long) i.value();
+    }
+
+    @Override
+    public Object nativePlayer() {
+        return p;
+    }
+
+    @Override
+    public boolean disconnect(Txt reason) {
+        p.connection.disconnect(McText.of(reason));
+        return true;
+    }
 }

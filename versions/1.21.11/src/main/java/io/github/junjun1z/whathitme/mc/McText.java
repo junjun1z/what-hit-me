@@ -48,7 +48,7 @@ public final class McText {
                     if (a[i] instanceof Txt) a[i] = of((Txt) a[i]);
                     else a[i] = String.valueOf(a[i]);
                 }
-                c = Component.translatable(t.text, a);
+                c = t.fallback() != null ? Component.translatableWithFallback(t.text, t.fallback(), a) : Component.translatable(t.text, a);
                 break;
             }
             case JSON: {

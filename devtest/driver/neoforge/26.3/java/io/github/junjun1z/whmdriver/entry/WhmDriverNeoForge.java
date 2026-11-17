@@ -41,6 +41,31 @@ public class WhmDriverNeoForge implements DriverPort {
     }
 
     @Override
+    public String disconnectReason() {
+        Object s = screen();
+        if (!(s instanceof net.minecraft.client.gui.screens.DisconnectedScreen)) return "";
+        StringBuilder sb = new StringBuilder();
+        texts(s, net.minecraft.client.gui.screens.DisconnectedScreen.class, sb, 0);
+        String r = sb.toString().trim();
+        return r.isEmpty() ? "?" : r;
+    }
+
+    /** Component fields of the screen and of records it holds (DisconnectionDetails) */
+    private static void texts(Object o, Class<?> c, StringBuilder sb, int depth) {
+        for (java.lang.reflect.Field f : c.getDeclaredFields()) {
+            if (java.lang.reflect.Modifier.isStatic(f.getModifiers())) continue;
+            try {
+                f.setAccessible(true);
+                Object v = f.get(o);
+                if (v instanceof net.minecraft.network.chat.Component) sb.append(((net.minecraft.network.chat.Component) v).getString()).append(' ');
+                else if (v != null && depth == 0 && v.getClass().isRecord()) texts(v, v.getClass(), sb, 1);
+            } catch (Throwable ignored) {
+                // next field
+            }
+        }
+    }
+
+    @Override
     public String mcVersion() {
         return MC;
     }
