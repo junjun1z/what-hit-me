@@ -65,7 +65,7 @@ public interface ServerPort {
         return false;
     }
 
-    /** requireClientMod works on this loader (Forge: handshake, Fabric: {@code ServerCore.onLogin} + disconnect) */
+    /** requireClientMod works on this loader (newer Forge / NeoForge: handshake; Fabric, old Forge: {@code ServerCore.onLogin} + disconnect) */
     default boolean canRequireClientMod() {
         return false;
     }

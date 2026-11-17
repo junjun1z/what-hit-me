@@ -338,13 +338,13 @@ New port methods (all optional, default in brackets):
 | `ServerPort.builtinConditions()` | empty | `{advancement, tag, score}` | same | which built-ins work; reload warning |
 | `ServerPort.platformName()` | `""` | `"Forge 1.12.2"` | `loaderName + " " + SharedConstants.getCurrentVersion().getName()` (`ServerPortMc.loaderName` set by each loader entry) | death message warning, reload warnings |
 | `ServerPort.translationFallback()` | `false` | `false` | `true` (`McText.of`: `Component.translatableWithFallback` when `Txt.fallback()` is set) | hidden death message translated for modded clients on Fabric; 1.19.4+ only |
-| `ServerPort.canRequireClientMod()` | `false` | `true` (handshake) | `ServerPortMc.requireClientModFlag` (set by the Fabric entry) | requireClientMod; reload warns when false |
+| `ServerPort.canRequireClientMod()` | `false` | `true` (hello timeout) | `ServerPortMc.requireClientModFlag` (set by the Fabric entry) | requireClientMod; reload warns when false |
 
 Loader calls:
 
 | What | Forge 1.12.2 (reference) | Newer Forge / NeoForge (port phase) | Fabric 1.21.1 (reference) |
 | --- | --- | --- | --- |
-| requireClientMod | `@NetworkCheckHandler checkRemote(mods, side)` on the `@Mod` class: remote side CLIENT, `requireClientMod` on and no `whathitme` in the mod list = refused (replaces `acceptableRemoteVersions = "*"`, vanilla clients are refused too). FML shows its own "Mod rejections" text | the channel's version check at handshake: Forge 1.13 - 1.20.1 `NetworkRegistry.newSimpleChannel(..., clientAcceptedVersions, serverAcceptedVersions)` with the server predicate `v -> !requireClientMod or v is our protocol` (`NetworkRegistry.ABSENT` / `ACCEPTVANILLA` refused); Forge 1.20.2+ `ChannelBuilder.serverAcceptedVersions(...)`; NeoForge `PayloadRegistrar.optional()` only when off (`registrar.versioned(...)` without `optional()` makes it required, decided when the payloads are registered, so read the config there). If the handshake cannot be decided dynamically, use the Fabric way | `ServerPlayConnectionEvents.JOIN` -> `ServerCore.onLogin(handle)`; the core starts a 5 s daemon timer, then `ServerPort.schedule` checks on the server thread whether a hello arrived and calls `disconnect(ServerCore.requiredText())` |
+| requireClientMod | the Fabric way (hello timeout): `PlayerEvent.PlayerLoggedInEvent` -> `ServerCore.onLogin(handle)`, `disconnect` kicks with our text. Same on Forge 1.7.10 - 1.11.2. Not the FML handshake: a `@NetworkCheckHandler` can refuse, but FML then shows only "Server Mod rejections: What Hit Me?: Failed mod's custom NetworkCheckHandler", and the player must get a readable message (coordinator decision) | the channel's version check at handshake: Forge 1.13 - 1.20.1 `NetworkRegistry.newSimpleChannel(..., clientAcceptedVersions, serverAcceptedVersions)` with the server predicate `v -> !requireClientMod or v is our protocol` (`NetworkRegistry.ABSENT` / `ACCEPTVANILLA` refused); Forge 1.20.2+ `ChannelBuilder.serverAcceptedVersions(...)`; NeoForge `PayloadRegistrar.optional()` only when off (`registrar.versioned(...)` without `optional()` makes it required, decided when the payloads are registered, so read the config there). If the handshake cannot be decided dynamically, use the Fabric way | `ServerPlayConnectionEvents.JOIN` -> `ServerCore.onLogin(handle)`; the core starts a 5 s daemon timer, then `ServerPort.schedule` checks on the server thread whether a hello arrived and calls `disconnect(ServerCore.requiredText())` |
 | Death message warning | nothing to do (`replacesDeathMessages()` false: logged on start and reload, shown in `/whm reload`) | same | never shown (`replacesDeathMessages()` true) |
 | Hidden death message | Forge path of 1.3.0 death messages (server sends `DEATH_MESSAGE`, `who` = `name + "\n" + choice`, modded client renders it translated) | same | the death message mixin gets `Txt.trFallback(...)` from `ServerCore.customDeathMessage`; only return it as fallback-translation where `translationFallback()` is true (1.19.4+), else English |
 
@@ -357,7 +357,7 @@ Rule conditions per version:
 | `score:` | all | 1.7.10 - 1.12.2 `Scoreboard#getValueFromObjective` style API; 1.13 - 1.20.2 `hasPlayerScore` / `getOrCreatePlayerScore(name, o).getScore()`; 1.20.3+ `getPlayerScoreInfo` |
 | `stage:` | any version with Game Stages | `GameStageHelper.hasStage(player, String)` by reflection (`core.rules.mods.GameStagesProvider`) |
 | `ftbquests:` | 1.12.2 and 1.16+ | `FtbQuestsProvider`: `com.feed_the_beast` (1.12.2: `getID("#hex")`, `get(int)`, `getData(UUID)`, `isComplete(data)`) or `dev.ftb.mods` (`getOrCreateTeamData(player)`, `get(long)`, `TeamData.isCompleted(obj)`) |
-| `bq:` | 1.12.2, GTNH 1.7.10 | `BetterQuestingProvider`: `QuestingAPI.getAPI(ApiReference.QUEST_DB).getValue(id)`, `isComplete(QuestingAPI.getQuestingUUID(player))`; numeric ids (1.12.2) or UUIDs (GTNH fork, dashed or Base64) |
+| `bq:` | 1.12.2, GTNH 1.7.10 | `BetterQuestingProvider`: `QuestingAPI.getAPI(ApiReference.QUEST_DB).getValue(id)` (GTNH fork: the database is a `BiMap<UUID, IQuest>`, so `get(uuid)`), `isComplete(QuestingAPI.getQuestingUUID(player))`; numeric ids (1.12.2) or UUIDs (GTNH fork, dashed or the Base64 form its commands show) |
 | `heracles:` | 1.19.2 - 1.21.1 | `HeraclesProvider`: `QuestProgressHandler.getProgress(server, uuid).isComplete(id)`; the server comes from a no-arg getter of the player whose type fits (no mapped names). Heracles is now published as "Odyssey Quests" (mod id `heracles`) |
 
 The providers need `nativePlayer()`; a provider is created only when its mod id is loaded (`Platform.mods.modIds()`), any
@@ -375,13 +375,29 @@ puts a rule per installed quest mod on `minecraft:generic` and checks `/whm test
 FTB Quests a generated chapter (1.12.2 `/ftbquests generate_chapter_with_all_items_in_game`, 1.16+ `/ftbquests generate_chapter
 from_entire_creative_list`), its first quest id by reflection, reset first (generated quests can start completed), then
 `/ftbquests change_progress complete|reset <team> <id>` (1.12.2, team = the player's FTB Library team) or `change_progress @p
-complete|reset <id>` (1.16+). Tested: 1.12.2 (Game Stages 2.0.123, Better Questing 3.5.329, FTB Quests 1202.9.0.15) and Fabric
-1.21.1 (FTB Quests 2101.1.38 with FTB Library 2101.1.39, FTB Teams 2101.1.12, Architectury 13.0.12). Forge 1.12.2 refuses a
-client without the mod with FML's own text ("Server Mod rejections: What Hit Me?: Failed mod's custom NetworkCheckHandler").
+complete|reset <id>` (1.16+). Tested: 1.12.2 (Game Stages 2.0.123, Better Questing 3.5.329, FTB Quests 1202.9.0.15), Fabric
+1.21.1 (FTB Quests 2101.1.38 with FTB Library 2101.1.39, FTB Teams 2101.1.12, Architectury 13.0.12) and Forge 1.7.10 with the
+GTNH Better Questing fork 3.9.2-GTNH alone (instance `WhmTest_1.7.10_BQ`; its `after:gtnhlib` is optional): a quest with a fixed
+UUID created by `createNew(UUID)`, rule `bq:<dashed uuid>` plus `bq:<Base64>` on a second id, `/bq_admin complete|reset <Base64>
+<player>` (the Base64 from `UuidConverter.encodeUuid`). Forge 1.7.10 - 1.12.2 refuse a client without the mod after the hello
+timeout with "This server requires the What Hit Me? mod on your client (any version). Install it and join again."
+
+Notes from 1.7.10 - 1.11.2 (`loaders/forge_rfg/1.7.10`, `loaders/forge_uni/<v>`):
+- `tag:` from 1.9 (`Entity#getTags()`); 1.7.10 / 1.8.9 have no entity tags, so `builtinConditions()` is `{score}` there and
+  `{tag, score}` on 1.9 - 1.11.2; `advancement:` is unsupported on all of them (reload: "not supported on Forge 1.x").
+- `score`: `getWorldScoreboard().getObjective(o)` + `getObjectivesForEntity(name).get(o)` (1.7.10: `func_96510_d`), no score
+  created by the check. `platformName()` = `"Forge " + server.getMinecraftVersion()` (the real patch version).
+- `disconnect`: 1.7.10 / 1.8.9 / 1.9.4 `kickPlayerFromServer(String)`, 1.10.2 / 1.11.2 `connection.disconnect(String)`, with
+  `Txt.toLegacy(Msg.ENGLISH.lang())`: `IChatComponent#getFormattedText` is client only (NoSuchMethodError on a server).
+- Self-test: before 1.12 a score `whmt_a` stands in for the advancement, before 1.9 scores of the same names stand in for the
+  tags (`V13RulesPlan`, `MultiplayerPlan.rules13`; server pack `score:whmt_mp>=1`, script `whm-tools/oldrules13/mp.sh`).
+  1.7.10 world: mobs of earlier runs get their AI back when the world loads again (no NoAI before 1.8), so `SETUP` removes
+  every `EntityMob`, and turns off `naturalRegeneration` (a regeneration in the tick between a hit and its deferred read hid
+  that hit). `MultiplayerPlan.rules13` waits 8 s at the end: the 1.2 checks de-op the player and the earlier commands would
+  trigger the vanilla chat spam kick.
 
 Still to test in the port phase: Heracles on 1.20.1 (Forge or Fabric, with Resourceful Lib), FTB Quests 1.20.1 (`dev.ftb.mods`,
-FTB Library + FTB Teams + Architectury), the GTNH Better Questing fork on 1.7.10 (UUID quest ids; a test instance with only BQ and
-its dependencies, never the user's GTNH instance), and `advancement:` / `tag:` / `score:` on every jar family.
+FTB Library + FTB Teams + Architectury), and `advancement:` / `tag:` / `score:` on the remaining jar families (1.14+).
 
 ## In-game self-test (development)
 

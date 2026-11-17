@@ -588,15 +588,15 @@ public final class ServerCore {
         return Msg.ENGLISH.text("whathitme.reload.dmwarning", platform(srv));
     }
 
-    // ---- requireClientMod (loaders without a handshake check, e.g. Fabric)
+    // ---- requireClientMod (loaders without a usable handshake check: Fabric, Forge 1.7.10 - 1.12.2)
 
     /** Seconds a client has to say hello before requireClientMod disconnects it */
     static final int HELLO_WAIT_SECONDS = 5;
     private static java.util.Timer helloTimer;
 
     /**
-     * A player joined (loaders that check requireClientMod themselves: Fabric). When requireClientMod is on, a client that did
-     * not say hello within a few seconds is disconnected. One timer task per join, nothing per tick.
+     * A player joined (loaders that check requireClientMod here: Fabric, Forge 1.7.10 - 1.12.2). When requireClientMod is on,
+     * a client that did not say hello within a few seconds is disconnected. One timer task per join, nothing per tick.
      */
     public static void onLogin(PlayerHandle p) {
         Safe.run("login", () -> {
