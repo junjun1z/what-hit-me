@@ -10,14 +10,14 @@ What Hit Me? works with every mod out of the box: damage from any mod is recorde
 | **Better Questing** | Rules can check quest completion (`bq:`), including the GTNH fork | 1.12.2, 1.7.10 (GTNH fork) | <Badge type="tip" text="1.3.0+" /> | [Conditions & quest mods](/modpack/conditions#quest-mods) |
 | **Heracles / Odyssey Quests** | Rules can check quest completion (`heracles:`) | 1.20 - 1.21.1 | <Badge type="tip" text="1.3.0+" /> | [Conditions & quest mods](/modpack/conditions#quest-mods) |
 | **Game Stages** | Rules can check stages (`stage:`) | 1.12.2 - 1.20.x (Forge) | <Badge type="tip" text="1.3.0+" /> | [Conditions & quest mods](/modpack/conditions#quest-mods) |
-| **KubeJS** | Scripts can add conditions, template variables, events and entries | planned | <Badge type="warning" text="planned" /> | [Script integration](/modpack/scripts) |
-| **CraftTweaker** | Same as KubeJS, in ZenScript | planned | <Badge type="warning" text="planned" /> | [Script integration](/modpack/scripts) |
-| **MineTweaker 3** | Same as above on 1.7.10 | planned | <Badge type="warning" text="planned" /> | [Script integration](/modpack/scripts) |
+| **KubeJS** | Scripts add rule conditions (`script:`), template variables (`{script:}`), event listeners and runtime entries | 1.20.1 (Forge, Fabric), 1.21.1 (NeoForge); more versions in progress | <Badge type="tip" text="1.3.0+" /> | [Script integration](/modpack/scripts) |
+| **CraftTweaker** | Same as KubeJS, in ZenScript (`mods.whathitme.WhatHitMe`) | 1.12.2, 1.20.1 (Forge); more versions in progress | <Badge type="tip" text="1.3.0+" /> | [Script integration](/modpack/scripts) |
+| **MineTweaker 3** | Same as above on 1.7.10 (also the GTNH fork) | 1.7.10 | <Badge type="warning" text="planned" /> | [Script integration](/modpack/scripts) |
 | **Mod Menu** | Opens the What Hit Me? settings screen from the mod list (Fabric) | every Fabric version | ✔ | [Settings screen](/player/settings) |
 | **Any mod with damage** | Damage ids and attackers of every mod are recorded; the scanner lists them before anyone gets hurt | all | ✔ | [Scanner](/modpack/scanner), [Damage ids](/reference/damage-ids) |
 
-::: tip Works with scripts today
-Even before the dedicated script integration, KubeJS / CraftTweaker scripts can drive What Hit Me?: set a scoreboard tag or score from a script and check it in a rule with `tag:` / `score:`, or let a [death trigger](/modpack/death-triggers) run a command your script listens to. See [Script integration](/modpack/scripts).
+::: tip Works with scripts on every version
+Where no binding exists yet, scripts can still drive What Hit Me?: set a scoreboard tag or score from a script and check it in a rule with `tag:` / `score:`, or let a [death trigger](/modpack/death-triggers) run a command your script listens to. See [Script integration](/modpack/scripts).
 :::
 
 ## How the integrations work

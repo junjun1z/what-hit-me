@@ -31,7 +31,7 @@ When you add a page, add it in both languages and to both sidebars (`sidebar()` 
 Markers used in the pages:
 
 - `<Badge type="tip" text="1.3.0+" />`: feature new in 1.3.0
-- `<Badge type="warning" text="planned" />` (Japanese: `予定`): planned, not implemented yet (`modpack/scripts.md`, `modpack/pack-editor.md`)
+- `<Badge type="warning" text="planned" />` (Japanese: `予定`): planned, not implemented yet (`modpack/pack-editor.md`)
 
 ## Deploying on Vercel
 

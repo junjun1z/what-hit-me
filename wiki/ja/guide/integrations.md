@@ -10,14 +10,14 @@ What Hit Me? は、何も設定しなくてもすべての mod と一緒に使�
 | **Better Questing** | クエストの達成を条件にできる（`bq:`）。GTNH 版にも対応 | 1.12.2、1.7.10（GTNH 版） | <Badge type="tip" text="1.3.0+" /> | [条件とクエスト mod](/ja/modpack/conditions#quest-mods) |
 | **Heracles / Odyssey Quests** | クエストの達成を条件にできる（`heracles:`） | 1.20 〜 1.21.1 | <Badge type="tip" text="1.3.0+" /> | [条件とクエスト mod](/ja/modpack/conditions#quest-mods) |
 | **Game Stages** | ステージを条件にできる（`stage:`） | 1.12.2 〜 1.20.x（Forge） | <Badge type="tip" text="1.3.0+" /> | [条件とクエスト mod](/ja/modpack/conditions#quest-mods) |
-| **KubeJS** | スクリプトで独自の条件・テンプレート変数・イベント・設定を追加できる | 予定 | <Badge type="warning" text="予定" /> | [スクリプト連携](/ja/modpack/scripts) |
-| **CraftTweaker** | KubeJS と同じことを ZenScript で | 予定 | <Badge type="warning" text="予定" /> | [スクリプト連携](/ja/modpack/scripts) |
-| **MineTweaker 3** | 同じことを 1.7.10 で | 予定 | <Badge type="warning" text="予定" /> | [スクリプト連携](/ja/modpack/scripts) |
+| **KubeJS** | スクリプトでルール条件（`script:`）、テンプレート変数（`{script:}`）、イベント、実行時の設定を追加できる | 1.20.1（Forge、Fabric）、1.21.1（NeoForge）。ほかのバージョンは対応中 | <Badge type="tip" text="1.3.0+" /> | [スクリプト連携](/ja/modpack/scripts) |
+| **CraftTweaker** | KubeJS と同じことを ZenScript で（`mods.whathitme.WhatHitMe`） | 1.12.2、1.20.1（Forge）。ほかのバージョンは対応中 | <Badge type="tip" text="1.3.0+" /> | [スクリプト連携](/ja/modpack/scripts) |
+| **MineTweaker 3** | 同じことを 1.7.10 で（GTNH 版も） | 1.7.10 | <Badge type="warning" text="予定" /> | [スクリプト連携](/ja/modpack/scripts) |
 | **Mod Menu** | mod 一覧から What Hit Me? の設定画面を開ける（Fabric） | Fabric の全バージョン | ✔ | [設定画面](/ja/player/settings) |
 | **ダメージを与えるすべての mod** | どの mod のダメージ ID や攻撃者も記録。スキャナーなら誰も被弾していないうちに一覧を出せる | 全バージョン | ✔ | [スキャナー](/ja/modpack/scanner)、[ダメージ ID](/ja/reference/damage-ids) |
 
-::: tip スクリプトとは今でも組み合わせられます
-専用のスクリプト連携ができる前でも、KubeJS や CraftTweaker から What Hit Me? を動かせます。スクリプトでスコアボードのタグやスコアを設定し、ルールの `tag:` / `score:` で判定する方法です。[死亡トリガー](/ja/modpack/death-triggers)でスクリプト側のコマンドを実行することもできます。詳しくは[スクリプト連携](/ja/modpack/scripts)を見てください。
+::: tip どのバージョンでもスクリプトと組み合わせられます
+専用の連携がまだないバージョンでも、KubeJS や CraftTweaker から What Hit Me? を動かせます。スクリプトでスコアボードのタグやスコアを設定し、ルールの `tag:` / `score:` で判定する方法です。[死亡トリガー](/ja/modpack/death-triggers)でスクリプト側のコマンドを実行することもできます。詳しくは[スクリプト連携](/ja/modpack/scripts)を見てください。
 :::
 
 ## 連携のしくみ

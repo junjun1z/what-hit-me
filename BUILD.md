@@ -45,6 +45,7 @@ CurseForge through `tools/publish.py` (one upload per `publish.json` entry; Modr
 | `legacy/targets/<mc>-forge/gradle.properties` | Targets that need RetroFuturaGradle (1.12.2), ForgeGradle 7 or Architectury Loom. |
 | `oldforge/targets/<mc>-forge/gradle.properties` | Forge 1.8.9 - 1.11.2 (Unimined). Forge 1.7.10 lives in `legacy/` (RetroFuturaGradle, like 1.12.2). |
 | `gradle/<loader>.gradle` | Build logic per loader: `fabric`, `forge` (MDG legacy, Forge 1.17 - 1.20.1), `neoforge`, `forge7`, `forge7_srg`, `forge_arch`, `forge_rfg`, `forge_uni`. `common.gradle` is shared by all. |
+| `integrations/<name>/` | Script mod bindings (KubeJS, CraftTweaker): `java/`, `resources/`, `deps.gradle` (compile only). A target lists its bindings in `script_bindings`; see "Porting 1.3.0 scripts". |
 | `devtest/` | In-game self-test and the "client without the mod" driver, compiled **only** with `-Pselftest`. |
 
 Each target's `gradle.properties`: `loader` (= `gradle/<loader>.gradle`), `loader_name` (published name, e.g. `forge`
@@ -465,6 +466,105 @@ Notes from 1.21.1 - 26.3 (`versions/<v>`, `loaders/fabric|forge7|neoforge/<v>`):
   `%n$s` are filled. Tested on the 1.21.1 servers with a client resource pack: Fabric driver + mp-mod, Forge mp-mod.
 - mp script `whm-tools/r121rules13/mp.sh` (1.21.1 servers), quest instances `whm-tools/r121rules13/qinst.sh`, test `q.sh`,
   client resource pack for the `lang:` check `lang.sh`.
+
+## Porting 1.3.0 scripts
+
+Script integration (section F of 1.3.0) is a public API in the core plus thin bindings per script mod. The API
+(`io.github.junjun1z.whathitme.api`, Java 8, no Minecraft classes) and its wiring (`core.script`: `ScriptRegistry`,
+`Scripts`, `ScriptReads`, `ScriptViews`) need nothing from a version: every jar already evaluates `script:` conditions,
+computes `{script:}` variables, fires the events and merges runtime entries. A version only gets a binding when a script
+mod exists for it. Without the script mod nothing loads and `script:` conditions are false with a reload warning.
+
+How it works:
+
+| Part | Where | Notes |
+| --- | --- | --- |
+| `script:<name>` | `Conditions` built-in provider `script` -> `ScriptRegistry.test` | unknown names: false + `/whm reload` warning (`checkArg`) |
+| `{script:<name>}` | `RuleEval.apply` computes every registered variable per record and player (`Scripts.variables`) into the record's `RuleMark.vars` | `RuleMark` bit `EXTRA` (protocol 3): vars, badges, summary lines follow on the wire; `TemplateVars` reads them on the client |
+| Events | `ServerCore.damage` (`damageRecorded`, before `h.add`), `death` (before the snapshot is stored), `onRespawn`, `prevented` (alerts) | listener changes are a `RuleMark` stored on the server record (merge keeps it), combined with the rule result when sent (`RuleMark.combine`: rule wins for name / tip, hide bits add up) |
+| Runtime entries | `PackConfig.withRuntime()` / `load()` merge `ScriptRegistry.packRoots()` after the files (source `script:<owner>`) | applied on the next server tick (`ServerPort.schedule`) and broadcast with `ServerInfo` |
+| Editor list | `ServerInfo.scriptVars` (protocol 3, after the death messages) -> `ClientCore.scriptVariables()` -> `TemplateEditor` group "script" | the sample death shows `[name]` |
+| Lifecycle | registrations made inside a register hook are removed by `ScriptRegistry.rebuild()` (server start, `/whm reload`); others stay until `clear(owner)` | the binding clears its owner when its scripts reload |
+| Pack editor (G) | `WhatHitMeApi.registrations()` (kind, owner, name, value, fromHook, failed); pack rules / entries from scripts have the source `script:<owner>` | show them read only |
+
+Adding a binding for a version:
+
+1. Find the script mod version (matrix below) and its Maven coordinates (KubeJS / Rhino `https://maven.latvian.dev/releases`,
+   group `dev.latvian.mods`; CraftTweaker `https://maven.blamejared.com`, `com.blamejared.crafttweaker:CraftTweaker-<loader>-<mc>`,
+   1.12.2 `CraftTweaker2:CraftTweaker2-MC1120-Main` + `CraftTweaker2-API` + `ZenScript`).
+2. In the target's `gradle.properties`: `script_bindings=<dirs>` (comma list of `integrations/<dir>`) and the version
+   properties the binding's `deps.gradle` reads. `gradle/common.gradle` adds `integrations/<dir>/java` and `resources` to
+   the target and applies `integrations/<dir>/deps.gradle` (compile only, `transitive = false`; `modCompileOnly` on Loom
+   and MDG legacy so the jar is remapped, `compileOnly` on NeoForge).
+3. Reuse a binding directory when the script mod's API is the same; otherwise copy the nearest one and change only the
+   script mod calls. Binding classes must only be loaded by the script mod (KubeJS: `kubejs.plugins.txt`; CraftTweaker:
+   annotation scan of `@ZenRegister` / `@CraftTweakerPlugin`), never referenced from the loader code.
+4. Test (below), then add the version to the wiki tables (`wiki/modpack/scripts.md`, `wiki/guide/integrations.md`, both languages).
+
+Bindings so far:
+
+| Directory | Script mod | Targets | Entry / reload hooks |
+| --- | --- | --- | --- |
+| `kubejs` | shared KubeJS classes (`WhatHitMeJS` global, `PlayerPredicate`, `PlayerValue`) | with `kubejs6` / `kubejs7` | - |
+| `kubejs7` | KubeJS 7 (2101.7.x) | 1.21.1-neoforge | `KubeJSPlugin` (interface): `registerEvents(EventGroupRegistry)`, `registerBindings` (server only), `beforeScriptsLoaded` -> `clear("kubejs")`, `afterScriptsLoaded` -> `rebuild()`. Events implement `KubeEvent`; `damageRecorded` needs `.hasResult()` or `event.cancel()` is only logged |
+| `kubejs6` | KubeJS 6 (2001.6.x) | 1.20.1-forge, 1.20.1-fabric | `KubeJSPlugin` (class): `registerEvents()` -> `GROUP.register()`, `registerBindings(BindingsEvent)` runs before the server scripts (also on `/reload`) -> `clear`, `onServerReload()` after them -> `rebuild()`. Events extend `EventJS` |
+| `crafttweaker112` | CraftTweaker 1.12.2 (4.1.20) | 1.12.2-forge | `@ZenRegister @ZenClass("mods.whathitme.WhatHitMe")` static methods, functional interfaces as `@ZenClass` interfaces; scripts run once at game start (no reload), `onRegister` hooks are rebuilt by `/whm reload`. ZenScript map literals are `IAny`, not `IData`: rules are JSON text |
+| `crafttweaker` | CraftTweaker 14.x (new ZenScript, `@ZenCodeType`) | 1.20.1-forge | `@CraftTweakerPlugin("whathitme:main")`; `IListenerRegistrationHandler.onExecuteRun` is called **after** each run, so the binding marks the run as ended and the first top-level registration of the next run clears the old ones (calls made from inside What Hit Me? callbacks do not count). Players are the Minecraft `Player` (CraftTweaker native type) |
+
+Test (scripts in `whm-tools/script13/`):
+
+- Instances `WhmTest_<mc>_<Loader>_Scripts` (KubeJS) / `WhmTest_<mc>_<Loader>_CrT_Scripts` (CraftTweaker): `inst.sh <source> <new> <jars>`;
+  rename a new instance folder away and back once so Prism sees it. Runtime jars from Modrinth (`mr.py`) or CurseForge (`../quest13/cf.py`).
+- `run.sh <instance> <target> scripts <script> <dir>`: copies the test script (`scripts/kubejs/whm_test.js` to `kubejs/server_scripts`,
+  `scripts/crafttweaker112/whm_test.zs` or `scripts/crafttweaker/whm_test.zs` to `scripts`) and runs `ScriptPlan` (flag `scripts`):
+  registrations listed by `/whm reload`, `script:` conditions true / false / throwing, register-event rule and rename, top-level
+  entry, `{script:whmt_var}` in a pack line template, `damageRecorded` name / badge / cancel, alert, death summary line and tip,
+  respawn reads (lastDeath, history, stats, test), no duplicates after two `/whm reload`, and the script mod's `/reload`
+  (KubeJS, CraftTweaker 1.16.5+). The test script acts only while the player has the tag `whmt_ev`, so `sp` in the same instance
+  must also pass (`run.sh <instance> <target> sp <script> <dir>`).
+- Without the script mod (a plain instance): `run.sh <instance> <target> scripts` checks the reload warning and that nothing changes,
+  plus a normal `sp`.
+- Multiplayer: server with the script mod and the test script, server pack with the line template
+  `{name} {badges} WHMV:{script:whmt_var|none}`, modded client with flag `mp-scripts` (`ScriptPlan.planMp`: the variable list
+  arrives in `ServerInfo`, the client has no registrations of its own, the history line shows `WHMV:V-fall`).
+- Offline: `sc.sh` (`ScriptCheck`: API, rules, variables on the wire, runtime entries, hooks, events), `golden.sh` (built-in
+  outputs of HEAD vs the working tree must stay identical without scripts).
+
+Script mods per Minecraft version and loader (Modrinth / CurseForge, November 2026). "Binding" = directory to use or the
+new one the port phase has to write:
+
+| Minecraft | Our targets | KubeJS | CraftTweaker / MineTweaker |
+| --- | --- | --- | --- |
+| 1.7.10 | forge | - | MineTweaker 3 3.0.10B (CurseForge `minetweaker3`), CraftTweaker 3.1.0 legacy (`crafttweaker`, MineTweaker API); GTNH fork `GTNewHorizons/CraftTweaker` 3.5.0 (GitHub releases): new binding `minetweaker3` (`minetweaker.*` API, ZenScript 1.x), check the fork separately |
+| 1.8.9 | forge | - | CraftTweaker 3.1.0 legacy (MineTweaker API): `minetweaker3` binding |
+| 1.9.4 | forge | - | CraftTweaker 3.0.9: `minetweaker3` |
+| 1.10.2, 1.11.2 | forge | - | CraftTweaker 3.1.0 legacy: `minetweaker3` |
+| 1.12.2 | forge | KubeJS 1.1.0.65 (old KubeJS, different API; low priority) | CraftTweaker 4.1.20.718: `crafttweaker112` (done) |
+| 1.14.4 | fabric, forge | Forge 2.2.0.29 (old `events.listen` API) | Forge 5.0.1.202 (new API, early): check against `crafttweaker` |
+| 1.15.2 | fabric, forge | Forge 1502.3.0.19 (old API) | Forge 6.0.0.45 |
+| 1.16.1 | fabric | Fabric 1.5.3 (CurseForge `kubejs-fabric`, old API) | - |
+| 1.16.5 | fabric, forge | Forge 1605.3.19-build.299, Fabric 1605.3.19-build.299 (`kubejs-fabric` project): KubeJS 3, `onEvent` style: new binding `kubejs3` (close to `kubejs5`) | Forge 7.1.2.534 |
+| 1.17.1 | fabric, forge | Fabric 1701.3.10 (unfinished port) | Forge / Fabric 8.0.0+36 |
+| 1.18.2 | fabric, forge | Forge / Fabric 1802.5.5-build.569 (KubeJS 5, `onEvent`): new binding `kubejs5` | Forge 9.1.213, Fabric 9.1.211 |
+| 1.19.2 | fabric, forge | Forge / Fabric 1902.6.2-build.73 (KubeJS 6, event groups): `kubejs6` should fit | Forge / Fabric 10.1.56 |
+| 1.19.3 | fabric, forge | - | Forge / Fabric 11.0.4 |
+| 1.19.4 | fabric, forge | - | Forge / Fabric 12.0.3 |
+| 1.20.1 | fabric, forge (+NeoForge 1.20.1) | Forge / Fabric 2001.6.5-build.26: `kubejs6` (done) | Forge / Fabric 14.0.60: `crafttweaker` (done on Forge; Fabric: check how CraftTweaker Fabric finds `@ZenRegister` classes) |
+| 1.20.2 | fabric, forge | - | Forge / Fabric / NeoForge 15.0.11 |
+| 1.20.4 | fabric, forge, neoforge | NeoForge 2004.7.0-build.26 (KubeJS 7 beta): check against `kubejs7` | Forge / Fabric / NeoForge 17.0.20 (16.0.9 for 1.20.3) |
+| 1.20.6 | fabric, forge, neoforge | - | Fabric / NeoForge 19.0.13 (no Forge) |
+| 1.21.1 | fabric, forge, neoforge | NeoForge 2101.7.2-build.381: `kubejs7` (done); no Fabric / Forge build | Fabric / NeoForge 21.0.38 |
+| 1.21.3 - 1.21.11 | fabric, forge, neoforge | - | - |
+| 26.1.2 | fabric, forge, neoforge | NeoForge 26.1.2-8.0.8 (KubeJS 8): new binding `kubejs8` | - |
+| 26.2, 26.3 | fabric, forge, neoforge | - | - |
+
+Notes for the port phase:
+- KubeJS 2101 also lists Minecraft 1.21 (NeoForge); KubeJS 2001 is also marked for NeoForge 1.20.1 (runs with the Forge jar).
+- Rhino versions: 2101.2.7-build.81+ (KubeJS 7, pom), 2001.2.3-build.10 (1.20.1), 1902.2.3, 1802.2.1; KubeJS 6 needs Architectury at run time.
+- The test scripts use `damage.damageType` (msgId), which is the same on every version, and `WhatHitMe.check(player, "tag:...")`
+  so they need no version-specific player API.
+- Mixed packs: KubeJS and CraftTweaker can be installed together; each registers under its own owner (`kubejs`, `crafttweaker`).
+  Test them in separate instances (the test scripts use the same names).
 
 ## In-game self-test (development)
 

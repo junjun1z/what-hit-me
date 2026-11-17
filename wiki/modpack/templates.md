@@ -143,6 +143,7 @@ A variable whose display switch is off (in either file, or masked by the server)
 | `{killing}` | `☠` when this is the killing blow | |
 | `{tip}` | Counter-measure tip | `showHints` |
 | `{player}` | Player name | |
+| `{script:<name>}` | Value of a script variable, computed on the server ([script integration](/modpack/scripts)) | |
 
 ### Summary, alert and copy
 

@@ -15,7 +15,9 @@
 - サンプルフォルダー `pack/templates/`、`pack/deathmessages/`、`pack/rules/` を追加。
 - 通信プロトコル 3。1.0 - 1.2 のクライアントとサーバーも引き続き動作。
 
-1.3.0 で予定しているが、まだ実装されていないもの：[スクリプト連携](/ja/modpack/scripts)と[ゲーム内 pack エディター](/ja/modpack/pack-editor)。
+- [スクリプト連携](/ja/modpack/scripts)：KubeJS と CraftTweaker のスクリプトから `script:` 条件、`{script:}` テンプレート変数、イベント、実行時の設定を追加（公開 Java API `io.github.junjun1z.whathitme.api`）。
+
+1.3.0 で予定しているが、まだ実装されていないもの：[ゲーム内 pack エディター](/ja/modpack/pack-editor)。
 
 ## 1.2.0
 

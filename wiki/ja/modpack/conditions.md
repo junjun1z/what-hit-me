@@ -19,12 +19,13 @@
 | `ftbquests:<id>` | そのクエストかチャプターをプレイヤーのチームが達成している（FTB Quests 1.15.2 はプレイヤー個人）。FTB Quests が表示する 16 進数の ID。`#` は省略可 | `ftbquests:1A2B3C4D5E6F7081` |
 | `bq:<id>` | Better Questing のクエストを達成している。1.12.2：数字。GTNH 版（1.7.10）：クエストの UUID（ハイフン付き、またはコマンドが表示する Base64 形式） | `bq:42` |
 | `heracles:<id>` | Heracles / Odyssey Quests のクエストを達成している | `heracles:kill_the_lich` |
+| `script:<name>` | KubeJS / CraftTweaker のスクリプトが登録した条件（[スクリプト連携](/ja/modpack/scripts)）。未登録の名前は偽で、`/whm reload` で警告 | `script:veteran` |
 | `!<条件>` | その条件が偽 | `!tag:veteran` |
 
 リストの組み合わせ方：`if` をすべて満たし、**かつ** `any` を（書いてあれば）少なくとも 1 つ満たし、**かつ** `unless` をどれも満たさないこと。
 
 ::: tip スクリプト mod を今すぐ使うには
-KubeJS、CraftTweaker、コマンドブロックからでもルールを動かせます。**スコアボードタグ**や**スコア**を設定させて、`tag:` / `score:` の条件で読み取ってください。スクリプトとの直接の連携は[予定](/ja/modpack/scripts)しています。
+KubeJS、CraftTweaker、コマンドブロックからでもルールを動かせます。**スコアボードタグ**や**スコア**を設定させて、`tag:` / `score:` の条件で読み取ってください。連携があるバージョンでは、スクリプトが `script:` 条件を直接登録できます（[スクリプト連携](/ja/modpack/scripts)）。
 :::
 
 ## Minecraft のバージョンごとの組み込み条件

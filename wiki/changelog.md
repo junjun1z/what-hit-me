@@ -15,7 +15,9 @@ The full changelog is in [CHANGELOG.md on GitHub](https://github.com/junjun1z/wh
 - New sample folders `pack/templates/`, `pack/deathmessages/`, `pack/rules/`.
 - Network protocol 3; 1.0 - 1.2 clients and servers keep working.
 
-Planned for 1.3.0 but not implemented yet: [script integration](/modpack/scripts) and the [in-game pack editor](/modpack/pack-editor).
+- [Script integration](/modpack/scripts): KubeJS and CraftTweaker scripts add `script:` conditions, `{script:}` template variables, event listeners and runtime entries (public Java API `io.github.junjun1z.whathitme.api`).
+
+Planned for 1.3.0 but not implemented yet: the [in-game pack editor](/modpack/pack-editor).
 
 ## 1.2.0
 

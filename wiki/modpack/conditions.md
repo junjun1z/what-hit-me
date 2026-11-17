@@ -19,12 +19,13 @@ Conditions are used by [progression rules](/modpack/rules) (`if`, `any`, `unless
 | `ftbquests:<id>` | The quest or chapter is completed by the player's team (FTB Quests 1.15.2: by the player). The hex id FTB Quests shows; `#` is optional. | `ftbquests:1A2B3C4D5E6F7081` |
 | `bq:<id>` | The Better Questing quest is complete. 1.12.2: a number. GTNH fork (1.7.10): the quest UUID, dashed or in the Base64 form its commands show. | `bq:42` |
 | `heracles:<id>` | The Heracles / Odyssey Quests quest is complete | `heracles:kill_the_lich` |
+| `script:<name>` | A condition registered by a KubeJS / CraftTweaker script ([script integration](/modpack/scripts)); unknown names are false with a `/whm reload` warning | `script:veteran` |
 | `!<condition>` | The condition is false | `!tag:veteran` |
 
 How the lists combine: all of `if` **and** at least one of `any` (when given) **and** none of `unless`.
 
-::: tip Script mods today
-KubeJS, CraftTweaker and command blocks can already drive rules: let them set a **scoreboard tag** or **score**, and use `tag:` / `score:` conditions. Direct script integration is [planned](/modpack/scripts).
+::: tip Script mods on every version
+KubeJS, CraftTweaker and command blocks can drive rules on every version: let them set a **scoreboard tag** or **score**, and use `tag:` / `score:` conditions. Where a binding exists, scripts register `script:` conditions directly ([script integration](/modpack/scripts)).
 :::
 
 ## Built-in conditions per Minecraft version
