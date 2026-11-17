@@ -358,7 +358,7 @@ Rule conditions per version:
 | `stage:` | any version with Game Stages | `GameStageHelper.hasStage(player, String)` by reflection (`core.rules.mods.GameStagesProvider`) |
 | `ftbquests:` | 1.12.2 and 1.16+ | `FtbQuestsProvider`: `com.feed_the_beast` (1.12.2: `getID("#hex")`, `get(int)`, `getData(UUID)`, `isComplete(data)`) or `dev.ftb.mods` (`getOrCreateTeamData(player)`, `get(long)`, `TeamData.isCompleted(obj)`) |
 | `bq:` | 1.12.2, GTNH 1.7.10 | `BetterQuestingProvider`: `QuestingAPI.getAPI(ApiReference.QUEST_DB).getValue(id)` (GTNH fork: the database is a `BiMap<UUID, IQuest>`, so `get(uuid)`), `isComplete(QuestingAPI.getQuestingUUID(player))`; numeric ids (1.12.2) or UUIDs (GTNH fork, dashed or the Base64 form its commands show) |
-| `heracles:` | 1.19.2 - 1.21.1 | `HeraclesProvider`: `QuestProgressHandler.getProgress(server, uuid).isComplete(id)`; the server comes from a no-arg getter of the player whose type fits (no mapped names). Heracles is now published as "Odyssey Quests" (mod id `heracles`) |
+| `heracles:` | 1.20 - 1.21.1 | `HeraclesProvider`: `QuestProgressHandler.getProgress(server, uuid).isComplete(id)`; the server comes from a no-arg getter of the player whose type fits (no mapped names). Heracles is now published as "Odyssey Quests" (mod id `heracles`) |
 
 The providers need `nativePlayer()`; a provider is created only when its mod id is loaded (`Platform.mods.modIds()`), any
 reflection problem makes the condition false and is logged once (`Conditions.evaluate`).
@@ -416,8 +416,28 @@ Notes from 1.14.4 - 1.17.1 (`versions/<v>`, `loaders/fabric/<v>`, `loaders/forge
   4.2.15). The FTB 1.16.5 jars are on `maven.ftb.dev` (CurseForge widgets list only some files).
 - mp script `whm-tools/midrules13/mp.sh` (one launch per call: start / client / driver / stop / clean).
 
-Still to test in the port phase: Heracles on 1.20.1 (Forge or Fabric, with Resourceful Lib), FTB Quests 1.20.1 (`dev.ftb.mods`,
-FTB Library + FTB Teams + Architectury), and `advancement:` / `tag:` / `score:` on the remaining jar families (1.18.2+).
+Notes from 1.18.2 - 1.20.6 (`versions/<v>`, `loaders/fabric|forge|forge7_srg|forge7|neoforge/<v>`):
+- `versions/<v>`: 1.18.2 - 1.20.1 like the 1.14 notes; 1.20.2+ `server.getAdvancements().get(rl)` (`AdvancementHolder`);
+  1.20.6 `getPlayerScoreInfo(p, o).value()`. `versions/1.20.2` also builds the 1.20.3 / 1.20.4 targets, whose scoreboard takes a
+  `ScoreHolder`: the score methods are found by signature (`(String, Objective)` -> boolean / `Score`, or `(ScoreHolder,
+  Objective)` -> `ReadOnlyScoreInfo`, the interface without setters), no names, so it works with intermediary and SRG names too.
+  `platformName()` = loader + `SharedConstants.getCurrentVersion().getName()` (the real version, e.g. "NeoForge 1.20.4").
+- `translationFallback()` true on 1.19.4+ (`Component.translatableWithFallback` exists from 1.19.4, not in 1.19.3).
+- requireClientMod is the hello timeout on all 17 jars: the Forge / NeoForge channels are optional (vanilla clients must be
+  able to join without it), so a handshake requirement cannot be switched by the config. Forge / NeoForge
+  `PlayerEvent.PlayerLoggedInEvent`, Fabric `ServerPlayConnectionEvents.JOIN`.
+- Quest mods (`QuestPlan`, script `whm-tools/r118rules13/q.sh`): FTB Quests 1802 - 2004 still have the old
+  `generate_chapter_with_all_items_in_game` (the test falls back to it) and need `refreshIDMap()` before the generated quests
+  can be found by id; 1902 keeps the chapter quest list private. Heracles reads `config/heracles/quests/*.json` when the world
+  loads (`{}` is a valid quest), `/heracles complete|reset <quest> <player>`. FTB Quests 2001 on Fabric needs the first client
+  resource reload to finish before a world loads (quest theme), so `QuestPlan` waits 15 s. Tested: Forge 1.20.1 (FTB Quests
+  2001.4.22 + FTB Library 2001.2.13 + FTB Teams 2001.3.2 + Item Filters 2001.1.0-build.59 + Architectury 9.2.14, Heracles 1.1.13
+  + Resourceful Lib 2.1.29, Game Stages 15.0.2 + Bookshelf 20.2.15), Fabric 1.20.1 (the same FTB / Heracles builds for Fabric),
+  NeoForge 1.20.1 with the Forge jars (Heracles only: FTB Library 2001 needs Forge 47.3), Forge / Fabric 1.19.2 (FTB Quests
+  1902.5.10-build.497, Game Stages 11.1.4), Forge / Fabric 1.18.2 (FTB Quests 1802.3.16-build.479 + Item Filters
+  1802.2.8-build.50, Game Stages 8.1.3), NeoForge 1.20.4 (FTB Quests 2004.2.3), Game Stages on Forge 1.19.4 (13.0.1), 1.20.2
+  (16.0.1) and 1.20.3 (17.0.1, 1.20.4 jar). Heracles exists only for 1.20 / 1.20.1 in this range; FTB Quests not for 1.20.6.
+- mp script `whm-tools/r118rules13/mp.sh` (servers Fabric 1.18.2, Forge 1.18.2, NeoForge 1.20.4).
 
 ## In-game self-test (development)
 
