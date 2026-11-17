@@ -210,7 +210,9 @@ final class ScriptPlan {
         t.act(() -> t.autoRespawn = true);
         t.waitFor("server info received (server has the mod)", () -> ClientCore.serverHasMod, 400);
         t.check("server sent its script variable list", () -> ClientCore.scriptVariables().containsKey("whmt_var"), (Supplier<?>) ClientCore::scriptVariables);
-        t.check("the client itself has no script registrations", () -> ScriptRegistry.registrations().isEmpty(), (Supplier<?>) ScriptRegistry::registrations);
+        // KubeJS on the client adds its bridge listeners, but no script runs there in multiplayer
+        t.check("the client itself has no script variables / conditions", () -> !ScriptRegistry.hasVariables() && ScriptRegistry.conditions().isEmpty(),
+            (Supplier<?>) ScriptRegistry::registrations);
         vanilla("/gamemode survival", 5);
         vanilla(vc.effectClear(), 5);
         vanilla(vc.effect("instant_health", 1, 10), 20);
