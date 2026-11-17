@@ -39,6 +39,24 @@ public class WhmDriverForge implements DriverPort {
     }
 
     @Override
+    public String disconnectReason() {
+        Object s = mc().screen;
+        if (!(s instanceof net.minecraft.client.gui.screens.DisconnectedScreen)) return "";
+        StringBuilder sb = new StringBuilder();
+        for (java.lang.reflect.Field f : net.minecraft.client.gui.screens.DisconnectedScreen.class.getDeclaredFields()) {
+            try {
+                f.setAccessible(true);
+                Object v = f.get(s);
+                if (v instanceof net.minecraft.network.chat.Component) sb.append(((net.minecraft.network.chat.Component) v).getString()).append(' ');
+            } catch (Throwable ignored) {
+                // next field
+            }
+        }
+        String r = sb.toString().trim();
+        return r.isEmpty() ? "?" : r;
+    }
+
+    @Override
     public String mcVersion() {
         return "1.16.5";
     }

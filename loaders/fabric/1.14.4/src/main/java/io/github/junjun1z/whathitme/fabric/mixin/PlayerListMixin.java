@@ -11,13 +11,18 @@ import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.server.players.PlayerList;
 import net.minecraft.world.level.dimension.DimensionType;
 
-/** Respawn and logout of a player (no Fabric API events on this version). */
+/** Login, respawn and logout of a player (no Fabric API events on this version). */
 @Mixin(PlayerList.class)
 public abstract class PlayerListMixin {
 
     @Inject(method = "respawn", at = @At("RETURN"))
     private void whathitme$respawn(ServerPlayer player, DimensionType dimension, boolean alive, CallbackInfoReturnable<ServerPlayer> cir) {
         WhatHitMeFabric.onRespawn(cir.getReturnValue(), alive);
+    }
+
+    @Inject(method = "placeNewPlayer", at = @At("TAIL"))
+    private void whathitme$login(net.minecraft.network.Connection connection, ServerPlayer player, CallbackInfo ci) {
+        WhatHitMeFabric.onLogin(player);
     }
 
     @Inject(method = "remove", at = @At("HEAD"))

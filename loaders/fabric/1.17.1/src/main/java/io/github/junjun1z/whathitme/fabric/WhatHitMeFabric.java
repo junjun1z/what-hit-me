@@ -87,6 +87,8 @@ public final class WhatHitMeFabric implements ModInitializer {
         Platform.configDir = FabricLoader.getInstance().getConfigDir().toFile();
         WhmConfig.init(Platform.configDir, FabricLoader.getInstance().getEnvironmentType() == EnvType.CLIENT, CfgFile::new);
         ServerPortMc.replacesDeathMessagesFlag = true;
+        ServerPortMc.requireClientModFlag = true;
+        ServerPortMc.loaderName = "Fabric";
         ServerPlayNetworking.registerGlobalReceiver(FabricNet.ID, (server, player, handler, buf, sender) -> {
             Packets.Packet p = FabricNet.read(buf);
             if (p == null || !Packets.serverbound(p.type())) return;
@@ -113,6 +115,8 @@ public final class WhatHitMeFabric implements ModInitializer {
             if (player instanceof ServerPlayer && !world.isClientSide && entity != null) ServerCore.onPlayerAttack(player.getUUID(), entity.getUUID().toString());
             return InteractionResult.PASS;
         });
+        // requireClientMod: a client without the mod sends no hello; checked a few seconds after joining
+        ServerPlayConnectionEvents.JOIN.register((handler, sender, server) -> ServerCore.onLogin(new FabricPlayer(handler.player)));
         ServerPlayConnectionEvents.DISCONNECT.register((handler, server) -> ServerCore.onLogout(handler.player.getUUID()));
     }
 
