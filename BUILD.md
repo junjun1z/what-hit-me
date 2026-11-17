@@ -369,6 +369,16 @@ writes a server pack with a `tag:whmt_mp` rule (`MultiplayerPlan.rules13`), runs
 then mp-mod / driver flag `kicked` with `requireClientMod=true` (the driver expects a disconnect screen naming What Hit Me?), and
 greps the server log for the death message warning (Forge / NeoForge: present in run a, absent in run b; Fabric: never).
 
+Quest providers in game: `QuestPlan` (self-test flag `quests`, script `whm-tools/quest13/q.sh <instance>`, fresh world `whm_quests`)
+puts a rule per installed quest mod on `minecraft:generic` and checks `/whm test` before / after the progress: Game Stages
+`/gamestage add|remove <player> <stage>`; Better Questing quest 9001 created by reflection, `/bq_admin complete|reset 9001 <player>`;
+FTB Quests a generated chapter (1.12.2 `/ftbquests generate_chapter_with_all_items_in_game`, 1.16+ `/ftbquests generate_chapter
+from_entire_creative_list`), its first quest id by reflection, reset first (generated quests can start completed), then
+`/ftbquests change_progress complete|reset <team> <id>` (1.12.2, team = the player's FTB Library team) or `change_progress @p
+complete|reset <id>` (1.16+). Tested: 1.12.2 (Game Stages 2.0.123, Better Questing 3.5.329, FTB Quests 1202.9.0.15) and Fabric
+1.21.1 (FTB Quests 2101.1.38 with FTB Library 2101.1.39, FTB Teams 2101.1.12, Architectury 13.0.12). Forge 1.12.2 refuses a
+client without the mod with FML's own text ("Server Mod rejections: What Hit Me?: Failed mod's custom NetworkCheckHandler").
+
 Still to test in the port phase: Heracles on 1.20.1 (Forge or Fabric, with Resourceful Lib), FTB Quests 1.20.1 (`dev.ftb.mods`,
 FTB Library + FTB Teams + Architectury), the GTNH Better Questing fork on 1.7.10 (UUID quest ids; a test instance with only BQ and
 its dependencies, never the user's GTNH instance), and `advancement:` / `tag:` / `score:` on every jar family.

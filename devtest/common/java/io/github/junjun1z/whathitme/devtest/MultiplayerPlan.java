@@ -186,20 +186,26 @@ final class MultiplayerPlan {
         t.sleep(20);
     }
 
+    /** /whm test of the void id, made when the step runs (the id mapping is installed after the plan is built) */
+    private void testVoid() {
+        t.clearChat();
+        t.act(() -> p.command("/whm test " + SelfTest.id("outOfWorld")));
+        t.waitFor("/whm test <void id>", () -> t.chatHas("Chat preview"), 60);
+    }
+
     private String tag(boolean add, String tag) {
         return vc.atLeast(1, 13, 0) ? "/tag @p " + (add ? "add " : "remove ") + tag : "/scoreboard players tag @p " + (add ? "add " : "remove ") + tag;
     }
 
     /** 1.3 rules on a dedicated server; the server pack (test script) has a rule "if tag:whmt_mp" named WHMT-MP-RULE */
     private void rules13() {
-        String voidId = SelfTest.id("outOfWorld");
         say(tag(false, "whmt_mp"));
         t.sleep(10);
-        t.cmd("/whm test " + voidId, "Chat preview", 60);
+        testVoid();
         t.check("mp rules: no tag, no rule", () -> t.chatHas("Rule: none matches"), (Supplier<?>) t::chatText);
         say(tag(true, "whmt_mp"));
         t.sleep(10);
-        t.cmd("/whm test " + voidId, "Chat preview", 60);
+        testVoid();
         t.check("mp rules: tag condition of the dedicated server player", () -> t.chatHas("Name: WHMT-MP-RULE") && t.chatHas("Hidden: attacker"),
             (Supplier<?>) t::chatText);
         t.cmd("/whm last", "WHMT-MP-RULE", 60);
