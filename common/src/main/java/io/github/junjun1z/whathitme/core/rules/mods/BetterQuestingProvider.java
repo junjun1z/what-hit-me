@@ -65,6 +65,8 @@ public final class BetterQuestingProvider implements ConditionProvider {
         Object db = getApi.invoke(null, key);
         if (db == null) return false;
         Method get = Reflect.method(db.getClass(), "getValue", id instanceof Integer ? int.class : UUID.class);
+        // GTNH fork: the quest database is a BiMap<UUID, IQuest>
+        if (get == null && id instanceof UUID) get = Reflect.method(db.getClass(), "get", UUID.class);
         if (get == null) throw new NoSuchMethodException("quest database getValue(" + (id instanceof Integer ? "int" : "UUID") + ")");
         Object quest = get.invoke(db, id);
         if (quest == null) return false;

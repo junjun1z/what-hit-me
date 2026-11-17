@@ -23,6 +23,8 @@ import io.github.junjun1z.whmdriver.VanillaCommands;
 final class QuestPlan {
 
     static final int BQ_ID = 9001;
+    /** Quest id of the GTNH fork (1.7.10), where quest ids are UUIDs */
+    static final java.util.UUID BQ_UUID = java.util.UUID.fromString("6c1f6a3e-9b0d-4c55-8f7e-1d2a3b4c5d6e");
 
     private final SelfTest t;
     private final DevPort p;
@@ -113,8 +115,34 @@ final class QuestPlan {
         }
     }
 
-    /** Creates Better Questing quest BQ_ID (no tasks) */
+    /** The GTNH fork of Better Questing (UUID quest ids) */
+    static boolean bqUuids() {
+        return cls("betterquesting.api2.storage.IUuidDatabase") != null;
+    }
+
+    /** The quest id as Better Questing's commands write it (GTNH: Base64 of the UUID) */
+    static String bqCommandId() {
+        if (!bqUuids()) return String.valueOf(BQ_ID);
+        try {
+            return (String) cls("betterquesting.api.utils.UuidConverter").getMethod("encodeUuid", java.util.UUID.class).invoke(null, BQ_UUID);
+        } catch (Throwable e) {
+            return "error " + e;
+        }
+    }
+
+    /** Creates Better Questing quest BQ_ID / BQ_UUID (no tasks) */
     static String createBqQuest() {
+        if (bqUuids()) {
+            try {
+                Object db = Class.forName("betterquesting.api.api.QuestingAPI").getMethod("getAPI", Class.forName("betterquesting.api.api.ApiKey"))
+                    .invoke(null, Class.forName("betterquesting.api.api.ApiReference").getField("QUEST_DB").get(null));
+                if (((java.util.Map<?, ?>) db).get(BQ_UUID) != null) return "exists";
+                db.getClass().getMethod("createNew", java.util.UUID.class).invoke(db, BQ_UUID);
+                return "created " + BQ_UUID;
+            } catch (Throwable e) {
+                return "error " + e;
+            }
+        }
         try {
             Class<?> api = Class.forName("betterquesting.api.api.QuestingAPI");
             Object key = Class.forName("betterquesting.api.api.ApiReference").getField("QUEST_DB").get(null);
@@ -162,7 +190,9 @@ final class QuestPlan {
             StringBuilder r = new StringBuilder("{\"rules\": [\n");
             String gen = SelfTest.id("generic");
             r.append("{\"match\": \"").append(gen).append("\", \"if\": [\"stage:whmt_stage\"], \"name\": \"WHMT-STAGE\"},\n");
-            r.append("{\"match\": \"").append(gen).append("\", \"if\": [\"bq:").append(BQ_ID).append("\"], \"name\": \"WHMT-BQ\"},\n");
+            r.append("{\"match\": \"").append(gen).append("\", \"if\": [\"bq:").append(bqUuids() ? BQ_UUID.toString() : String.valueOf(BQ_ID)).append("\"], \"name\": \"WHMT-BQ\"},\n");
+            // GTNH: the Base64 form the quest book and commands show
+            if (bqUuids()) r.append("{\"match\": \"").append(SelfTest.id("magic")).append("\", \"if\": [\"bq:").append(bqCommandId()).append("\"], \"name\": \"WHMT-BQ64\"},\n");
             r.append("{\"match\": \"").append(gen).append("\", \"if\": [\"ftbquests:").append(ftbId.isEmpty() ? "0" : ftbId).append("\"], \"name\": \"WHMT-FTBQ\"}\n");
             r.append("]}\n");
             try {
@@ -185,9 +215,16 @@ final class QuestPlan {
             test("WHMT-STAGE", "Game Stages: stage removed", false);
         }
         if (mod("betterquesting")) {
-            vanilla(() -> "/bq_admin complete " + BQ_ID + " " + p.playerName(), 30);
-            test("Name: WHMT-BQ", "Better Questing: bq:" + BQ_ID + " completed", true);
-            vanilla(() -> "/bq_admin reset " + BQ_ID + " " + p.playerName(), 30);
+            vanilla(() -> "/bq_admin complete " + bqCommandId() + " " + p.playerName(), 30);
+            t.act(() -> t.info("bq complete chat: " + t.chatText().replace('\n', '|')));
+            test("Name: WHMT-BQ", "Better Questing: bq:<id> completed", true);
+            if (bqUuids()) {
+                t.clearChat();
+                t.act(() -> p.command("/whm test " + SelfTest.id("magic")));
+                t.waitFor("/whm test magic", () -> has("Chat preview"), 80);
+                t.check("Better Questing (GTNH): bq:<Base64 id> completed", () -> has("Name: WHMT-BQ64"), (Supplier<?>) () -> t.chatText());
+            }
+            vanilla(() -> "/bq_admin reset " + bqCommandId() + " " + p.playerName(), 30);
             test("WHMT-BQ", "Better Questing: quest reset", false);
         }
         if (mod("ftbquests")) {
