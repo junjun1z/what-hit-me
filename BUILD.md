@@ -452,7 +452,19 @@ Notes from 1.21.1 - 26.3 (`versions/<v>`, `loaders/fabric|forge7|neoforge/<v>`):
   and Better Questing do not exist for 1.21+. FTB Quests 2111+ dropped `ServerQuestFile.INSTANCE` (`getInstance()`) and
   `getOrCreateTeamData(Entity)` (`getTeamData(Player)` returns an `Optional`); the provider and `QuestPlan` handle both.
   26.x FTB Quests no longer needs Architectury.
-- mp script `whm-tools/r121rules13/mp.sh` (1.21.1 servers), quest instances `whm-tools/r121rules13/qinst.sh`, test `q.sh`.
+- Quest self-test: Heracles and FTB Quests 2101 in one instance break FTB's `generate_chapter from_entire_creative_list`
+  (no quests, or "An unexpected error occurred"), so they are tested in separate instances. FTB Quests 26.1.2.10 kicks the
+  player after a creative list chapter (its `create_object_response_message` cannot encode Byte data), so `QuestPlan` gives one
+  dirt and uses `generate_chapter from_player_inventory` on 26.x. Tested: NeoForge / Fabric 1.21.1 (FTB Quests 2101.1.39 +
+  FTB Library 2101.1.40 + FTB Teams 2101.1.12 + Architectury 13.0.12; Odyssey Quests 2.0.3 + Resourceful Lib 3.0.12),
+  NeoForge / Fabric 1.21.11 (FTB Quests 2111.1.5 + Library / Teams 2111.1.1 + Architectury 19.0.1), NeoForge / Fabric 26.1.2
+  (FTB Quests 26.1.2.10 + Library 26.1.2.12 + Teams 26.1.2.5).
+- deathMessages `lang:<key>` on Fabric 1.19.4+: `DeathMessages.render` sends the key as a translation with the server's
+  English text as fallback and the arguments player / attacker / damage name (`%1$s` / `%2$s` / `%3$s`), so a resource pack
+  translates it for every client; where What Hit Me? renders it (modded Forge / NeoForge clients, older Fabric) the same
+  `%n$s` are filled. Tested on the 1.21.1 servers with a client resource pack: Fabric driver + mp-mod, Forge mp-mod.
+- mp script `whm-tools/r121rules13/mp.sh` (1.21.1 servers), quest instances `whm-tools/r121rules13/qinst.sh`, test `q.sh`,
+  client resource pack for the `lang:` check `lang.sh`.
 
 ## In-game self-test (development)
 
