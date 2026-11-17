@@ -70,4 +70,22 @@ final class ServerPort112 implements ServerPort {
     public boolean runCommand(String command) {
         return server.getCommandManager().executeCommand(server, command) > 0;
     }
+
+    private static final java.util.Set<String> CONDITIONS = new java.util.HashSet<>(Arrays.asList("advancement", "tag", "score"));
+
+    @Override
+    public java.util.Set<String> builtinConditions() {
+        return CONDITIONS;
+    }
+
+    @Override
+    public String platformName() {
+        return "Forge 1.12.2";
+    }
+
+    /** The handshake check of WhatHitMeMod.checkRemote */
+    @Override
+    public boolean canRequireClientMod() {
+        return true;
+    }
 }

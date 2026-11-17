@@ -41,6 +41,7 @@ public final class ForgeServerEvents {
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
+        ServerPortMc.loaderName = "Forge";
         port = new ServerPortMc(event.getServer(), ForgePlayer::new);
         ServerCore.serverStarted(port);
         Safe.run("catalog cache", () -> CatalogCache.init(port.registries()));

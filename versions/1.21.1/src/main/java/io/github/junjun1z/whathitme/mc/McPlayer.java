@@ -6,7 +6,13 @@ import java.util.UUID;
 import io.github.junjun1z.whathitme.core.data.Entry;
 import io.github.junjun1z.whathitme.core.server.PlayerHandle;
 import io.github.junjun1z.whathitme.core.text.Txt;
+import net.minecraft.advancements.AdvancementHolder;
+import net.minecraft.resources.ResourceLocation;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.scores.Objective;
+import net.minecraft.world.scores.ReadOnlyScoreInfo;
+import net.minecraft.world.scores.Scoreboard;
 import net.minecraft.world.item.ItemStack;
 import net.minecraft.world.item.Items;
 
@@ -89,5 +95,39 @@ public abstract class McPlayer implements PlayerHandle {
     @Override
     public double[] position() {
         return new double[] {p.getX(), p.getY(), p.getZ()};
+    }
+
+    @Override
+    public Boolean hasAdvancement(String id) {
+        ResourceLocation rl = ResourceLocation.tryParse(id);
+        MinecraftServer s = p.getServer();
+        if (rl == null || s == null) return false;
+        AdvancementHolder a = s.getAdvancements().get(rl);
+        return a != null && p.getAdvancements().getOrStartProgress(a).isDone();
+    }
+
+    @Override
+    public Boolean hasTag(String tag) {
+        return p.getTags().contains(tag);
+    }
+
+    @Override
+    public Long score(String objective) {
+        Scoreboard sb = p.getScoreboard();
+        Objective o = sb.getObjective(objective);
+        if (o == null) return NO_SCORE;
+        ReadOnlyScoreInfo i = sb.getPlayerScoreInfo(p, o);
+        return i == null ? NO_SCORE : (long) i.value();
+    }
+
+    @Override
+    public Object nativePlayer() {
+        return p;
+    }
+
+    @Override
+    public boolean disconnect(Txt reason) {
+        p.connection.disconnect(McText.of(reason));
+        return true;
     }
 }

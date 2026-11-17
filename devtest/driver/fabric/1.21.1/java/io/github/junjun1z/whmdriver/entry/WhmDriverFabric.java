@@ -10,6 +10,8 @@ import net.fabricmc.fabric.api.client.message.v1.ClientReceiveMessageEvents;
 import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.gui.screens.DeathScreen;
+import net.minecraft.client.gui.screens.DisconnectedScreen;
+import net.minecraft.network.chat.Component;
 
 /** Development only: the Fabric 1.21.1 part of the "client without What Hit Me?" driver ({@link DriverPlan}). */
 public class WhmDriverFabric implements ClientModInitializer, DriverPort {
@@ -34,6 +36,31 @@ public class WhmDriverFabric implements ClientModInitializer, DriverPort {
 
     private static Minecraft mc() {
         return Minecraft.getInstance();
+    }
+
+    @Override
+    public String disconnectReason() {
+        Object s = mc().screen;
+        if (!(s instanceof DisconnectedScreen)) return "";
+        StringBuilder sb = new StringBuilder();
+        texts(s, DisconnectedScreen.class, sb, 0);
+        String r = sb.toString().trim();
+        return r.isEmpty() ? "?" : r;
+    }
+
+    /** Component fields of the screen and of records it holds (DisconnectionDetails) */
+    private static void texts(Object o, Class<?> c, StringBuilder sb, int depth) {
+        for (java.lang.reflect.Field f : c.getDeclaredFields()) {
+            if (java.lang.reflect.Modifier.isStatic(f.getModifiers())) continue;
+            try {
+                f.setAccessible(true);
+                Object v = f.get(o);
+                if (v instanceof Component) sb.append(((Component) v).getString()).append(' ');
+                else if (v != null && depth == 0 && v.getClass().isRecord()) texts(v, v.getClass(), sb, 1);
+            } catch (Throwable ignored) {
+                // next field
+            }
+        }
     }
 
     @Override

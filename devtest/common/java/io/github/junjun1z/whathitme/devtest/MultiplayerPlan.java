@@ -181,8 +181,33 @@ final class MultiplayerPlan {
         if (serverMod) t.cmd("/whm server history", "Damage History", 60);
         t.cmd("/whm reload", "reloaded", 40);
         if (!serverMod) t.act(() -> WhmConfig.common.set("historySize", "50"));
+        if (serverMod && p.rules13()) rules13();
         if (p.v12()) v12(serverMod);
         t.sleep(20);
+    }
+
+    private String tag(boolean add, String tag) {
+        return vc.atLeast(1, 13, 0) ? "/tag @p " + (add ? "add " : "remove ") + tag : "/scoreboard players tag @p " + (add ? "add " : "remove ") + tag;
+    }
+
+    /** 1.3 rules on a dedicated server; the server pack (test script) has a rule "if tag:whmt_mp" named WHMT-MP-RULE */
+    private void rules13() {
+        String voidId = SelfTest.id("outOfWorld");
+        say(tag(false, "whmt_mp"));
+        t.sleep(10);
+        t.cmd("/whm test " + voidId, "Chat preview", 60);
+        t.check("mp rules: no tag, no rule", () -> t.chatHas("Rule: none matches"), (Supplier<?>) t::chatText);
+        say(tag(true, "whmt_mp"));
+        t.sleep(10);
+        t.cmd("/whm test " + voidId, "Chat preview", 60);
+        t.check("mp rules: tag condition of the dedicated server player", () -> t.chatHas("Name: WHMT-MP-RULE") && t.chatHas("Hidden: attacker"),
+            (Supplier<?>) t::chatText);
+        t.cmd("/whm last", "WHMT-MP-RULE", 60);
+        t.check("mp rules: the earlier death is shown with the rule now (evaluated per output)", () -> t.chatHas("WHMT-MP-RULE"), (Supplier<?>) t::chatText);
+        say(tag(false, "whmt_mp"));
+        t.sleep(10);
+        t.cmd("/whm last", "Death Recap", 60);
+        t.check("mp rules: tag removed, rule gone", () -> !t.chatHas("WHMT-MP-RULE"), (Supplier<?>) t::chatText);
     }
 
     /** 1.2 checks; with the server mod the player is de-opped at the end (the test script ops it again) */

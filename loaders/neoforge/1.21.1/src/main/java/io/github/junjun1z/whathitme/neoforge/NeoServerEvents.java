@@ -44,6 +44,7 @@ public final class NeoServerEvents {
 
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
+        ServerPortMc.loaderName = "NeoForge";
         port = new ServerPortMc(event.getServer(), NeoPlayer::new);
         // dedicated server: JSON texts use its registries (the client sets its own supplier)
         if (!FMLEnvironment.dist.isClient()) McText.registries = event.getServer()::registryAccess;

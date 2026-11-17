@@ -221,6 +221,7 @@ public final class PackConfig {
         {"triggers/_example.json", "{\n"
             + "  // Server commands run (with console permission) when a death matches. Placeholders: {player} {x} {y} {z} {damage} (health points of the killing blow).\n"
             + "  // oncePerPlayer: only the first matching death of each player. cooldownSeconds: per player.\n"
+            + "  // if / any / unless: progression conditions of the dead player, like in rules (e.g. \"unless\": [\"tag:veteran\"]).\n"
             + "  \"deathTriggers\": [\n"
             + "    // { \"match\": \"minecraft:lava\", \"command\": \"say {player} fell into lava at {x} {y} {z}\", \"oncePerPlayer\": true, \"cooldownSeconds\": 0 }\n"
             + "  ]\n"
@@ -236,8 +237,24 @@ public final class PackConfig {
             + "    // \"*@twilightforest:lich\": \"{player} was outsmarted by the Lich\"\n"
             + "  }\n"
             + "}\n"},
+        {"rules/_example.json", "{\n"
+            + "  // Progression rules: the server decides per player what a death shows. Evaluated top to bottom, the FIRST matching rule wins.\n"
+            + "  // match: a key like renameMap (damage id, @entity, @item:, @dim:, wildcards). if: all of these, any: at least one, unless: none of these.\n"
+            + "  // Conditions: advancement:<id>  tag:<scoreboard tag>  score:<objective>>=<n> (also > <= < = !=)  stage:<Game Stages stage>\n"
+            + "  //             ftbquests:<quest or chapter id>  bq:<Better Questing quest id>  heracles:<quest id>   (\"!\" in front negates)\n"
+            + "  // name / hint: replace the damage name / tip (template variables, & colors, lang:keys; \"hint\": \"\" = no tip).\n"
+            + "  // hide: damage_id, attacker, mod, weapon, death_message, tip, properties, environment, owner, distance, position.\n"
+            + "  // Hidden fields are never sent. hide implies \"enforce\": true (personal renames / tips / templates do not apply) unless \"enforce\": false.\n"
+            + "  // commands: server commands run on a matching death (placeholders like deathTriggers; oncePerPlayer / cooldownSeconds work too).\n"
+            + "  // Check with /whm test <damage_id> [entity] --as <player> --assume <condition>.\n"
+            + "  \"rules\": [\n"
+            + "    // { \"match\": \"*@twilightforest:lich\", \"unless\": [\"advancement:twilightforest:progress_lich\"],\n"
+            + "    //   \"name\": \"&k???\", \"hint\": \"\", \"hide\": [\"damage_id\", \"attacker\", \"mod\", \"weapon\", \"death_message\"] },\n"
+            + "    // { \"match\": \"minecraft:lava\", \"if\": [\"score:deaths>=3\"], \"hint\": \"Carry a water bucket!\" }\n"
+            + "  ]\n"
+            + "}\n"},
         {"custom/_example.json", "{\n"
-            + "  // Any file may contain any of the keys renameMap, hintMap, defaultIgnoredDamageIds, lockedFeatures, deathTriggers, templates, deathMessages.\n"
+            + "  // Any file may contain any of the keys renameMap, hintMap, defaultIgnoredDamageIds, lockedFeatures, deathTriggers, templates, deathMessages, rules.\n"
             + "  // Files are read in alphabetical path order; later files override earlier entries.\n"
             + "}\n"},
     };

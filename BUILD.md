@@ -310,6 +310,69 @@ Notes from 1.21.1 - 26.3 (`versions/<v>` hosts, shared by every loader of a code
   the payload arrived (`deathMessageArrived()` from `ForgeClient.onPacket`). NeoForge keeps the order (event only).
 - Death screen: `ScreenEvent.Opening` + `ClientPortMc.replaceDeathMessage` on Forge and NeoForge.
 
+## Porting 1.3.0 rules
+
+Progression rules (pack `rules`, conditions on `deathTriggers`, `requireClientMod`) live in the core (`core.rules`, `ServerCore`,
+`RecapFormatter`); the references are Forge 1.12.2 (`loaders/forge_rfg/1.12.2`) and Fabric 1.21.1 (`versions/1.21.1`,
+`loaders/fabric/1.21.1`). An unported version already evaluates rules: matching, `name` / `hint` / `hide`, `commands`, the hidden
+death message and `/whm test --as / --assume` need nothing from a version. Only the condition sources and the client check are
+per version; without them `advancement:` / `tag:` / `score:` count as false and `/whm reload` says "not supported on <version>".
+
+How it works: the server never stores rule results. Whenever it builds an output for a player (recap packet, respawn summary,
+alerts, `/whm` history / last / snapshot / inspect, search / dump entries, template preview, custom death message) it creates a
+`RuleEval` for the player the records belong to (inspect: the inspected player; `/whm test --as`: that player), applies the
+first matching rule to each record (`RuleMark.strip` empties the hidden fields, the `RuleMark` is attached) and sends that.
+Protocol 3 records carry the mark (Recap kind bit `0x20`, `DamageRecord.writeMark`); 1.2 clients get the stripped record only.
+Clients only display: `RecapFormatter.ruleName` / `tip` / `idShown`, `DisplayOptions.template(output, record)` (an enforced rule
+skips the personal layers). Client-only installs never evaluate rules.
+
+New port methods (all optional, default in brackets):
+
+| Port method | Default | 1.12.2 | 1.21.1 | Used for |
+| --- | --- | --- | --- | --- |
+| `PlayerHandle.hasAdvancement(id)` | `null` (unsupported) | `server.getAdvancementManager().getAdvancement(new ResourceLocation(id))` + `p.getAdvancements().getProgress(a).isDone()` | `server.getAdvancements().get(rl)` + `getOrStartProgress(holder).isDone()` (1.20.2+ `AdvancementHolder`) | `advancement:` |
+| `PlayerHandle.hasTag(tag)` | `null` | `p.getTags().contains(tag)` | same | `tag:` |
+| `PlayerHandle.score(objective)` | `null`; `NO_SCORE` = no score | `getWorldScoreboard()`, `getObjective`, `entityHasObjective` + `getOrCreateScore(name, o).getScorePoints()` | `getScoreboard().getObjective`, `getPlayerScoreInfo(p, o).value()` (1.20.3+; older: `hasPlayerScore` / `getOrCreatePlayerScore(name, o).getScore()`) | `score:` |
+| `PlayerHandle.nativePlayer()` | `null` | the `EntityPlayerMP` | the `ServerPlayer` | quest mod providers (reflection) |
+| `PlayerHandle.disconnect(Txt)` | `false` | `p.connection.disconnect(McText.of(t))` | same | requireClientMod (hello timeout) |
+| `ServerPort.builtinConditions()` | empty | `{advancement, tag, score}` | same | which built-ins work; reload warning |
+| `ServerPort.platformName()` | `""` | `"Forge 1.12.2"` | `loaderName + " " + SharedConstants.getCurrentVersion().getName()` (`ServerPortMc.loaderName` set by each loader entry) | death message warning, reload warnings |
+| `ServerPort.translationFallback()` | `false` | `false` | `true` (`McText.of`: `Component.translatableWithFallback` when `Txt.fallback()` is set) | hidden death message translated for modded clients on Fabric; 1.19.4+ only |
+| `ServerPort.canRequireClientMod()` | `false` | `true` (handshake) | `ServerPortMc.requireClientModFlag` (set by the Fabric entry) | requireClientMod; reload warns when false |
+
+Loader calls:
+
+| What | Forge 1.12.2 (reference) | Newer Forge / NeoForge (port phase) | Fabric 1.21.1 (reference) |
+| --- | --- | --- | --- |
+| requireClientMod | `@NetworkCheckHandler checkRemote(mods, side)` on the `@Mod` class: remote side CLIENT, `requireClientMod` on and no `whathitme` in the mod list = refused (replaces `acceptableRemoteVersions = "*"`, vanilla clients are refused too). FML shows its own "Mod rejections" text | the channel's version check at handshake: Forge 1.13 - 1.20.1 `NetworkRegistry.newSimpleChannel(..., clientAcceptedVersions, serverAcceptedVersions)` with the server predicate `v -> !requireClientMod or v is our protocol` (`NetworkRegistry.ABSENT` / `ACCEPTVANILLA` refused); Forge 1.20.2+ `ChannelBuilder.serverAcceptedVersions(...)`; NeoForge `PayloadRegistrar.optional()` only when off (`registrar.versioned(...)` without `optional()` makes it required, decided when the payloads are registered, so read the config there). If the handshake cannot be decided dynamically, use the Fabric way | `ServerPlayConnectionEvents.JOIN` -> `ServerCore.onLogin(handle)`; the core starts a 5 s daemon timer, then `ServerPort.schedule` checks on the server thread whether a hello arrived and calls `disconnect(ServerCore.requiredText())` |
+| Death message warning | nothing to do (`replacesDeathMessages()` false: logged on start and reload, shown in `/whm reload`) | same | never shown (`replacesDeathMessages()` true) |
+| Hidden death message | Forge path of 1.3.0 death messages (server sends `DEATH_MESSAGE`, `who` = `name + "\n" + choice`, modded client renders it translated) | same | the death message mixin gets `Txt.trFallback(...)` from `ServerCore.customDeathMessage`; only return it as fallback-translation where `translationFallback()` is true (1.19.4+), else English |
+
+Rule conditions per version:
+
+| Prefix | Versions | Notes |
+| --- | --- | --- |
+| `advancement:` | 1.12+ | 1.7.10 - 1.11.2: unsupported (keep the default; reload warning). 1.12 - 1.20.1 `Advancement`, 1.20.2+ `AdvancementHolder` |
+| `tag:` | all | 1.7.10 - 1.11.2 entity tags exist from 1.9 (`getTags()`); 1.7.10 / 1.8.9: unsupported unless an equivalent exists |
+| `score:` | all | 1.7.10 - 1.12.2 `Scoreboard#getValueFromObjective` style API; 1.13 - 1.20.2 `hasPlayerScore` / `getOrCreatePlayerScore(name, o).getScore()`; 1.20.3+ `getPlayerScoreInfo` |
+| `stage:` | any version with Game Stages | `GameStageHelper.hasStage(player, String)` by reflection (`core.rules.mods.GameStagesProvider`) |
+| `ftbquests:` | 1.12.2 and 1.16+ | `FtbQuestsProvider`: `com.feed_the_beast` (1.12.2: `getID("#hex")`, `get(int)`, `getData(UUID)`, `isComplete(data)`) or `dev.ftb.mods` (`getOrCreateTeamData(player)`, `get(long)`, `TeamData.isCompleted(obj)`) |
+| `bq:` | 1.12.2, GTNH 1.7.10 | `BetterQuestingProvider`: `QuestingAPI.getAPI(ApiReference.QUEST_DB).getValue(id)`, `isComplete(QuestingAPI.getQuestingUUID(player))`; numeric ids (1.12.2) or UUIDs (GTNH fork, dashed or Base64) |
+| `heracles:` | 1.19.2 - 1.21.1 | `HeraclesProvider`: `QuestProgressHandler.getProgress(server, uuid).isComplete(id)`; the server comes from a no-arg getter of the player whose type fits (no mapped names). Heracles is now published as "Odyssey Quests" (mod id `heracles`) |
+
+The providers need `nativePlayer()`; a provider is created only when its mod id is loaded (`Platform.mods.modIds()`), any
+reflection problem makes the condition false and is logged once (`Conditions.evaluate`).
+
+Self-test: `DevPort.rules13()` true runs `V13RulesPlan` after V13Plan (sp; flag `sp-rules` runs only this section). It uses vanilla
+commands for tags / scores / advancements (`/scoreboard players tag` before 1.13, `/tag` after). Multiplayer: `whm-tools/quest13/mp.sh`
+writes a server pack with a `tag:whmt_mp` rule (`MultiplayerPlan.rules13`), runs mp-mod / driver with `requireClientMod=false`,
+then mp-mod / driver flag `kicked` with `requireClientMod=true` (the driver expects a disconnect screen naming What Hit Me?), and
+greps the server log for the death message warning (Forge / NeoForge: present in run a, absent in run b; Fabric: never).
+
+Still to test in the port phase: Heracles on 1.20.1 (Forge or Fabric, with Resourceful Lib), FTB Quests 1.20.1 (`dev.ftb.mods`,
+FTB Library + FTB Teams + Architectury), the GTNH Better Questing fork on 1.7.10 (UUID quest ids; a test instance with only BQ and
+its dependencies, never the user's GTNH instance), and `advancement:` / `tag:` / `score:` on every jar family.
+
 ## In-game self-test (development)
 
 Build with `-Pselftest`. Use only `build/devlibs/whathitme-selftest.jar` (the mod + self-test, for clients **and test

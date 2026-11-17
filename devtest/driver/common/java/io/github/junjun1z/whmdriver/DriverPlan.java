@@ -33,6 +33,7 @@ public final class DriverPlan {
         this.cmd = VanillaCommands.of(port.mcVersion());
         this.mode = mode;
         if (mode.equals("two")) planSecondPlayer();
+        else if (mode.contains("kicked")) planKicked();
         else plan();
     }
 
@@ -117,6 +118,21 @@ public final class DriverPlan {
         sleep(400); // stay online while the op inspects
         steps.add(() -> {
             ok("no raw translation keys in chat", !all().contains("whathitme."));
+            return true;
+        });
+    }
+
+    /** 1.3 requireClientMod: the server refuses this client (no What Hit Me?) with a readable message */
+    private void planKicked() {
+        autoRespawn = false;
+        final int[] wait = {20 * 90};
+        steps.add(() -> !port.disconnectReason().isEmpty() || --wait[0] <= 0);
+        sleep(10);
+        steps.add(() -> {
+            String r = port.disconnectReason();
+            log.add("[INFO] disconnect screen: " + r);
+            ok("requireClientMod: refused with a message that names What Hit Me?", r.contains("What Hit Me?"));
+            ok("no raw translation keys in the reason", !r.contains("whathitme."));
             return true;
         });
     }

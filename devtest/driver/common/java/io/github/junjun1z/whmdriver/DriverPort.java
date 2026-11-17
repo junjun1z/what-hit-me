@@ -21,4 +21,9 @@ public interface DriverPort {
     void say(String text);
 
     void quit();
+
+    /** Text of the disconnect screen when the client was refused / kicked ("" = not on that screen) */
+    default String disconnectReason() {
+        return "";
+    }
 }

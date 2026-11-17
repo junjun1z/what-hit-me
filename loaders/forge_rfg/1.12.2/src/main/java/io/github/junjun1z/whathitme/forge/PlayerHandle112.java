@@ -13,12 +13,17 @@ import io.github.junjun1z.whathitme.mc.Facts;
 import io.github.junjun1z.whathitme.mc.McText;
 import io.github.junjun1z.whathitme.mc.Registries112;
 import net.minecraft.entity.player.EntityPlayer;
+import net.minecraft.advancements.Advancement;
 import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.init.Items;
 import net.minecraft.item.ItemStack;
 import net.minecraft.nbt.NBTTagCompound;
 import net.minecraft.nbt.NBTTagList;
 import net.minecraft.nbt.NBTTagString;
+import net.minecraft.scoreboard.ScoreObjective;
+import net.minecraft.scoreboard.Scoreboard;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.util.ResourceLocation;
 import net.minecraftforge.common.util.Constants;
 
 /** A 1.12 server player for the core. Per-player settings live in the player's persistent NBT. */
@@ -148,5 +153,37 @@ public class PlayerHandle112 implements PlayerHandle {
     @Override
     public double[] position() {
         return new double[] {p.posX, p.posY, p.posZ};
+    }
+
+    @Override
+    public Boolean hasAdvancement(String id) {
+        MinecraftServer s = p.getServer();
+        if (s == null) return false;
+        Advancement a = s.getAdvancementManager().getAdvancement(new ResourceLocation(id));
+        return a != null && p.getAdvancements().getProgress(a).isDone();
+    }
+
+    @Override
+    public Boolean hasTag(String tag) {
+        return p.getTags().contains(tag);
+    }
+
+    @Override
+    public Long score(String objective) {
+        Scoreboard sb = p.getWorldScoreboard();
+        ScoreObjective o = sb.getObjective(objective);
+        if (o == null || !sb.entityHasObjective(p.getName(), o)) return NO_SCORE;
+        return (long) sb.getOrCreateScore(p.getName(), o).getScorePoints();
+    }
+
+    @Override
+    public Object nativePlayer() {
+        return p;
+    }
+
+    @Override
+    public boolean disconnect(Txt reason) {
+        p.connection.disconnect(McText.of(reason));
+        return true;
     }
 }

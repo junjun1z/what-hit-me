@@ -159,4 +159,9 @@ public interface DevPort {
     /** Opens the What Hit Me? config screen and presses its "Templates..." button */
     default void pressConfigTemplatesButton() {}
 
+    /** The progression rules are implemented by this version (advancement / tag / score conditions, rule results) */
+    default boolean rules13() {
+        return false;
+    }
+
 }
