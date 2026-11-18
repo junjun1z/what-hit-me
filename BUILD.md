@@ -596,9 +596,10 @@ Porting steps per version:
    must now also check `editor != null`), `pressConfigPackButton()`. `PackEditorPlan` then runs in `sp` (mode `sp-pack` runs only it).
 
 Tests (whm-tools/packed13/): `run.sh <instance> <target> sp|sp-pack` (screenshots of every tab and dialog are copied to the scratchpad),
-`mp.sh <server dir> <port> <instance> <target>` = dedicated server + the operator client (`mp-pack-a`) + a second modded client
-`<instance>_PackB` logged in as Alex (`mp-pack-b`: refused by the client and by the server, made op, sees the operator's edit and
-the notice, edits the same category; the operator gets the notice back). `lay.sh` compiles the core and renders the editor offline
+`mp.sh <server dir> <port> <instance> <target>` = dedicated server + the operator client (`mp-pack`: edit written on the
+server and broadcast, `/whm test` on the server shows it, then `/deop`: the client refuses `/whm pack`, the server answers `denied` to an
+edit sent anyway, personal mode still opens). Two editors at once, the notice, last-save-wins and refusals with several players are
+checked offline in `harness/` (PackCheck with fake players), because the test setup has only one account. `lay.sh` compiles the core and renders the editor offline
 in 10 languages x 9 window sizes (320x240 ... 1920x1080) x every tab / pane / dialog: nothing may be drawn off screen. `harness/`
 (PackCheck) checks the server store offline: path traversal, sizes, entries, order patching with comments kept, enabled, transfer,
 folders, settings, undo.
