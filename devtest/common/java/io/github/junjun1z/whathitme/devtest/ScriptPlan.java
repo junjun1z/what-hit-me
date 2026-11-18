@@ -228,8 +228,10 @@ final class ScriptPlan {
         t.act(() -> t.autoRespawn = true);
         t.waitFor("server info received (server has the mod)", () -> ClientCore.serverHasMod, 400);
         t.check("server sent its script variable list", () -> ClientCore.scriptVariables().containsKey("whmt_var"), (Supplier<?>) ClientCore::scriptVariables);
-        // KubeJS on the client adds its bridge listeners, but no script runs there in multiplayer
-        t.check("the client itself has no script variables / conditions", () -> !ScriptRegistry.hasVariables() && ScriptRegistry.conditions().isEmpty(),
+        // KubeJS on the client adds its bridge listeners, but no script runs there in multiplayer. MineTweaker sends its
+        // scripts to the clients and may run them there too: such registrations are unused on a client
+        if (minetweaker()) t.info("client registrations (MineTweaker may run the server's scripts on clients): " + ScriptRegistry.registrations().size());
+        else t.check("the client itself has no script variables / conditions", () -> !ScriptRegistry.hasVariables() && ScriptRegistry.conditions().isEmpty(),
             (Supplier<?>) ScriptRegistry::registrations);
         vanilla("/gamemode survival", 5);
         vanilla(vc.effectClear(), 5);
