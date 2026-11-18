@@ -54,7 +54,7 @@ Properties shown: Bypasses Armor (`isUnblockable`), Bypasses Magic (`isDamageAbs
 
 - Death screen panel (`GuiGameOver`): killing blow, death message, properties, scrollable hit list (mouse wheel), hover tooltip per line, "Last Xs Total", tip. Drag the header to move (position saved to offsetX/offsetY on release), `[-]`/`[+]` minimize (saved), `[Copy]` copies the recap.
 - Respawn chat summary (format from the spec): header, ☠ Killing Blow (hover details, [Copy ID] [Mute]), ⚠ Properties, Σ Last 10s Total (hearts, hits), ✎ Tip, ➜ [Click here for full death recap] (/whm last), ✖ To disable this message, run /whm togglechat, footer.
-- Totem alert: "⚠ [What Hit Me?] A Totem of Undying saved you! Last hit: ... [Details]" (details = /whm snapshot 1). Also "Lethal damage was prevented!" when another mod saved the player, and "Heavy hit: X took Y at once." for hits >= heavyHitThreshold of max health.
+- Totem alert: "⚠ [What Hit Me?] A Totem of Undying saved you! Last hit: ... [Details]" (details = /whm snapshot 1). Also "Lethal damage was prevented!" when another mod saved the player (Forge / NeoForge 1.13+: only a cancelled death event, since the damage event amount can still be reduced by mods like First Aid; otherwise the hit counts as heavy), and "Heavy hit: X took Y at once." for hits >= heavyHitThreshold of max health.
 - Damage is shown in hearts (HP / 2) with ❤. Smart merge: same id + same source within mergeWindowSeconds -> one line "x12 hits".
 - Automatic tips by type / property (fall, fire, drowning, void, explosion, projectile, bypasses armor, absolute, magic, wither, invisible attacker, melee, player, ...), overridden by hintMap.
 
