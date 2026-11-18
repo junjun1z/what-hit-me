@@ -213,7 +213,26 @@ public class DevPort121 implements DevPort {
 
     @Override
     public boolean templateEditorOpen() {
-        return io.github.junjun1z.whathitme.mc.Compat26.screen() instanceof io.github.junjun1z.whathitme.mc.TemplateEditorScreen121;
+        return io.github.junjun1z.whathitme.mc.Compat26.screen() instanceof io.github.junjun1z.whathitme.mc.TemplateEditorScreen121
+            && ((io.github.junjun1z.whathitme.mc.TemplateEditorScreen121) io.github.junjun1z.whathitme.mc.Compat26.screen()).editor != null;
+    }
+
+    @Override
+    public boolean pack13() {
+        return true;
+    }
+
+    @Override
+    public boolean packEditorOpen() {
+        return io.github.junjun1z.whathitme.mc.Compat26.screen() instanceof io.github.junjun1z.whathitme.mc.TemplateEditorScreen121
+            && ((io.github.junjun1z.whathitme.mc.TemplateEditorScreen121) io.github.junjun1z.whathitme.mc.Compat26.screen()).screen instanceof io.github.junjun1z.whathitme.core.client.PackEditor;
+    }
+
+    @Override
+    public void pressConfigPackButton() {
+        io.github.junjun1z.whathitme.mc.ConfigScreen121 s = new io.github.junjun1z.whathitme.mc.ConfigScreen121(null);
+        io.github.junjun1z.whathitme.mc.Compat26.setScreen(s);
+        s.packEditorButton().onPress(new net.minecraft.client.input.KeyEvent(com.mojang.blaze3d.platform.InputConstants.KEY_RETURN, 0, 0));
     }
 
     @Override

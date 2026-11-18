@@ -253,7 +253,26 @@ public class DevPort1192 implements DevPort {
 
     @Override
     public boolean templateEditorOpen() {
-        return mc().screen instanceof io.github.junjun1z.whathitme.mc.TemplateEditorScreen1192;
+        return mc().screen instanceof io.github.junjun1z.whathitme.mc.TemplateEditorScreen1192
+            && ((io.github.junjun1z.whathitme.mc.TemplateEditorScreen1192) mc().screen).editor != null;
+    }
+
+    @Override
+    public boolean pack13() {
+        return true;
+    }
+
+    @Override
+    public boolean packEditorOpen() {
+        return mc().screen instanceof io.github.junjun1z.whathitme.mc.TemplateEditorScreen1192
+            && ((io.github.junjun1z.whathitme.mc.TemplateEditorScreen1192) mc().screen).screen instanceof io.github.junjun1z.whathitme.core.client.PackEditor;
+    }
+
+    @Override
+    public void pressConfigPackButton() {
+        io.github.junjun1z.whathitme.mc.ConfigScreen1192 s = new io.github.junjun1z.whathitme.mc.ConfigScreen1192(null);
+        mc().setScreen(s);
+        s.packEditorButton().onPress();
     }
 
     @Override

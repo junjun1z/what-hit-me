@@ -205,6 +205,15 @@ public abstract class ClientPortMc implements io.github.junjun1z.whathitme.core.
         return true;
     }
 
+    /** Set by /whm pack, opened by {@link #tickConfigScreen} (1 = pack, 2 = personal) */
+    private static volatile int openPack;
+
+    @Override
+    public boolean openPackEditor(boolean personal) {
+        openPack = personal ? 2 : 1;
+        return true;
+    }
+
     @Override
     public String playerName() {
         return mc().player == null ? "" : mc().player.getName().getString();
@@ -215,6 +224,12 @@ public abstract class ClientPortMc implements io.github.junjun1z.whathitme.core.
         if (openEditor) {
             openEditor = false;
             io.github.junjun1z.whathitme.core.Safe.run("template editor", () -> Compat26.setScreen(new TemplateEditorScreen121(Compat26.screen())));
+        }
+        if (openPack != 0) {
+            boolean personal = openPack == 2;
+            openPack = 0;
+            io.github.junjun1z.whathitme.core.Safe.run("pack editor",
+                () -> Compat26.setScreen(new TemplateEditorScreen121(Compat26.screen(), new io.github.junjun1z.whathitme.core.client.PackEditor(personal))));
         }
         if (!openConfig) return;
         openConfig = false;

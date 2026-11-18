@@ -280,7 +280,7 @@ final class QuestPlan {
 
     /** Pack editor condition picker lists of the quest mods */
     private void suggestions() {
-        t.act(() -> t.info("suggestions: stage " + sugg("stage").size() + " bq " + sugg("bq") + " ftbquests " + sugg("ftbquests").size()
+        t.act(() -> t.info("suggestions: stage " + sugg("stage").size() + " bq " + sugg("bq") + " ftbquests " + sugg("ftbquests").size() + " heracles " + sugg("heracles")
             + " first " + (sugg("ftbquests").isEmpty() ? "-" : sugg("ftbquests").get(0))));
         if (mod("betterquesting")) {
             t.check("Better Questing: the pack editor lists the quest id", () -> listed(sugg("bq"), bqUuids() ? BQ_UUID.toString() : String.valueOf(BQ_ID)),
@@ -289,6 +289,9 @@ final class QuestPlan {
         if (mod("ftbquests")) {
             t.check("FTB Quests: the pack editor lists the quest id with a title", () -> listed(sugg("ftbquests"), ftbId) && sugg("ftbquests").size() > 1,
                 (Supplier<?>) () -> ftbId + " " + sugg("ftbquests"));
+        }
+        if (mod("heracles")) {
+            t.check("Heracles: the pack editor lists the quest id", () -> listed(sugg("heracles"), HER_ID), (Supplier<?>) () -> sugg("heracles"));
         }
         if (mod("gamestages")) {
             t.check("Game Stages: known stages listed without error", () -> {

@@ -38,6 +38,27 @@ public final class ServerPortMc implements ServerPort {
     private static final java.util.Set<String> CONDITIONS = new java.util.HashSet<>(Arrays.asList("advancement", "tag", "score"));
 
     @Override
+    public List<String> conditionValues(String prefix) {
+        java.util.Set<String> out = new java.util.TreeSet<>();
+        switch (prefix) {
+            case "advancement":
+                for (net.minecraft.advancements.AdvancementHolder a : server.getAdvancements().getAllAdvancements()) {
+                    if (a.value().display().isPresent()) out.add(a.id().toString());
+                }
+                break;
+            case "score":
+                for (net.minecraft.world.scores.Objective o : server.getScoreboard().getObjectives()) out.add(o.getName());
+                break;
+            case "tag":
+                for (ServerPlayer p : server.getPlayerList().getPlayers()) out.addAll(p.entityTags());
+                break;
+            default:
+                break;
+        }
+        return new java.util.ArrayList<>(out);
+    }
+
+    @Override
     public java.util.Set<String> builtinConditions() {
         return CONDITIONS;
     }

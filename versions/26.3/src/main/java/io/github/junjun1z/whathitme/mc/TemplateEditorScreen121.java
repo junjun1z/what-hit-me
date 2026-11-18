@@ -2,6 +2,7 @@ package io.github.junjun1z.whathitme.mc;
 
 import com.mojang.blaze3d.platform.InputConstants;
 
+import io.github.junjun1z.whathitme.core.client.CoreScreen;
 import io.github.junjun1z.whathitme.core.client.TemplateEditor;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
@@ -10,15 +11,24 @@ import net.minecraft.client.input.KeyEvent;
 import net.minecraft.client.input.MouseButtonEvent;
 import net.minecraft.network.chat.Component;
 
-/** Screen host of the core template editor on 26.3: forwards drawing, mouse, keys and typed characters. */
+/** Screen host of the core screens (template editor, pack editor) on 26.3: forwards drawing, mouse, keys and typed characters. */
 public final class TemplateEditorScreen121 extends Screen {
 
     private final Screen parent;
-    public final TemplateEditor editor = new TemplateEditor();
+    /** The hosted screen */
+    public final CoreScreen screen;
+    /** The template editor when this hosts one, else null */
+    public final TemplateEditor editor;
 
     public TemplateEditorScreen121(Screen parent) {
-        super(Component.literal("What Hit Me? Templates"));
+        this(parent, new TemplateEditor());
+    }
+
+    public TemplateEditorScreen121(Screen parent, CoreScreen screen) {
+        super(Component.literal("What Hit Me?"));
         this.parent = parent;
+        this.screen = screen;
+        this.editor = screen instanceof TemplateEditor ? (TemplateEditor) screen : null;
     }
 
     @Override
@@ -29,29 +39,29 @@ public final class TemplateEditorScreen121 extends Screen {
     @Override
     public void extractRenderState(GuiGraphicsExtractor g, int mouseX, int mouseY, float partialTick) {
         super.extractRenderState(g, mouseX, mouseY, partialTick);
-        editor.render(new Gfx121(g), width, height, mouseX, mouseY);
-        if (editor.wantsClose()) onClose();
+        screen.render(new Gfx121(g), width, height, mouseX, mouseY);
+        if (screen.wantsClose()) onClose();
     }
 
     @Override
     public void onClose() {
-        editor.closed();
+        screen.closed();
         Compat26.setScreen(parent);
     }
 
     @Override
     public void removed() {
-        editor.closed();
+        screen.closed();
     }
 
     @Override
     public boolean mouseClicked(MouseButtonEvent e, boolean doubleClick) {
-        return editor.mouseDown(Compat26.button(e.button()), e.x(), e.y(), e.hasShiftDown()) || super.mouseClicked(e, doubleClick);
+        return screen.mouseDown(Compat26.button(e.button()), e.x(), e.y(), e.hasShiftDown()) || super.mouseClicked(e, doubleClick);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double h, double v) {
-        return v != 0 && editor.scroll(mouseX, mouseY, v);
+        return v != 0 && screen.scroll(mouseX, mouseY, v);
     }
 
     private static int map(int key) {
@@ -95,14 +105,14 @@ public final class TemplateEditorScreen121 extends Screen {
     @Override
     public boolean keyPressed(KeyEvent e) {
         int k = map(e.key());
-        if (k != 0 && editor.key(k, e.hasControlDown(), e.hasShiftDown())) return true;
+        if (k != 0 && screen.key(k, e.hasControlDown(), e.hasShiftDown())) return true;
         return super.keyPressed(e);
     }
 
     @Override
     public boolean charTyped(CharacterEvent e) {
         int c = e.codepoint();
-        if (c >= 32 && c != 127 && c != 0xA7 && c <= 0xFFFF) return editor.typed((char) c);
+        if (c >= 32 && c != 127 && c != 0xA7 && c <= 0xFFFF) return screen.typed((char) c);
         return false;
     }
 }

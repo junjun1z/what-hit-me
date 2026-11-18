@@ -127,9 +127,22 @@ public final class ConfigScreen118 extends Screen {
             commit();
             minecraft.setScreen(new TemplateEditorScreen118(this));
         }));
+        String pl = net.minecraft.client.resources.language.I18n.get("whathitme.config.packeditor");
+        int pw = Math.max(70, font.width(pl) + 12);
+        packEditor = addRenderableWidget(new Button(width - tw - 4 - pw - 2, 4, pw, 20, new TextComponent(pl), b -> {
+            commit();
+            // pack mode for operators of a server with the mod, otherwise the personal lists
+            minecraft.setScreen(new TemplateEditorScreen118(this, new io.github.junjun1z.whathitme.core.client.PackEditor(false)));
+        }));
     }
 
     private Button templates;
+    private Button packEditor;
+
+    /** The "Pack editor..." button (self-test) */
+    public Button packEditorButton() {
+        return packEditor;
+    }
 
     /** The "Templates..." button (self-test) */
     public Button templatesButton() {
