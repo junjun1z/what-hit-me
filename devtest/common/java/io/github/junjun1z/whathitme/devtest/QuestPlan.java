@@ -311,6 +311,51 @@ final class QuestPlan {
 
     private static final String HER_ID = "whmt_quest";
 
+    /** Heracles 0.0.x (1.20) has no complete / reset command (QuestProgress without reset()) */
+    static boolean herOld() {
+        Class<?> c = cls("earth.terrarium.heracles.common.handlers.progress.QuestProgress");
+        if (c == null) return false;
+        for (Method m : c.getMethods()) if (m.getName().equals("reset")) return false;
+        return true;
+    }
+
+    /** Heracles 0.0.x: replaces the quest's progress with a complete / empty one by reflection */
+    static String herOldProgress(java.util.UUID player, boolean complete) {
+        try {
+            Object sp = io.github.junjun1z.whathitme.core.server.ServerCore.port.player(player).nativePlayer();
+            Class<?> h = cls("earth.terrarium.heracles.common.handlers.progress.QuestProgressHandler");
+            Method get = null;
+            for (Method m : h.getMethods()) {
+                if (m.getName().equals("getProgress") && m.getParameterCount() == 2 && m.getParameterTypes()[1] == java.util.UUID.class
+                    && java.lang.reflect.Modifier.isStatic(m.getModifiers())) get = m;
+            }
+            Object server = null;
+            for (Method m : sp.getClass().getMethods()) {
+                if (m.getParameterCount() == 0 && get.getParameterTypes()[0].isAssignableFrom(m.getReturnType()) && m.getReturnType() != Object.class) {
+                    server = m.invoke(sp);
+                    if (server != null) break;
+                }
+            }
+            Object all = get.invoke(null, server, player);
+            @SuppressWarnings("unchecked")
+            java.util.Map<String, Object> map = (java.util.Map<String, Object>) all.getClass().getMethod("progress").invoke(all);
+            Class<?> qp = cls("earth.terrarium.heracles.common.handlers.progress.QuestProgress");
+            map.put(HER_ID, qp.getConstructor(boolean.class, java.util.Set.class, java.util.Map.class).newInstance(complete, new java.util.HashSet<>(), new java.util.HashMap<>()));
+            return "ok";
+        } catch (Throwable e) {
+            return "error " + e;
+        }
+    }
+
+    private void herProgress(boolean complete) {
+        if (herOld()) {
+            t.act(() -> t.info("heracles 0.0.x progress " + complete + ": " + herOldProgress(p.playerId(), complete)));
+            t.sleep(20);
+            return;
+        }
+        vanilla(() -> "/heracles " + (complete ? "complete " : "reset ") + HER_ID + " " + p.playerName(), 30);
+    }
+
     private static java.util.List<String> sugg(String prefix) {
         return io.github.junjun1z.whathitme.core.rules.Conditions.suggestions(prefix, io.github.junjun1z.whathitme.core.server.ServerCore.port);
     }
@@ -353,6 +398,54 @@ final class QuestPlan {
                 }
             }, null);
         }
+    }
+
+    /** FTB Quests quest id of the server quest file written by the mp script (whm-tools/questmx/mpq.sh) */
+    static final String MP_FTB_ID = "57484D5400000001";
+
+    /**
+     * Dedicated server with quest mods (mode mp-quests): the server pack (written by the mp script) has rules on stage:whmt_stage,
+     * bq:9001, ftbquests:MP_FTB_ID and heracles:whmt_quest; the operator client changes the progress with the mods' commands and
+     * checks /whm test, which the server answers from its rules.
+     */
+    void planMp() {
+        t.waitFor("connected to the server", p::connected, 2400);
+        t.waitFor("server has the mod", () -> ClientCore.serverHasMod, 400);
+        t.waitFor("operator", () -> ClientCore.port.hasOpPermission(), 400);
+        t.sleep(60);
+        t.act(() -> t.info("mods: stage=" + mod("gamestages") + " bq=" + mod("betterquesting") + " ftbquests=" + mod("ftbquests") + " heracles=" + mod("heracles")));
+        t.cmd("/whm reload", "reloaded", 80);
+        t.check("server reload: no provider warnings for the installed mods", () -> !has("provider failed") && !has("is not installed") && !has("API"),
+            (Supplier<?>) t::chatText);
+        test("Rule: none matches", "mp: nothing done yet: no rule", true);
+        if (mod("gamestages")) {
+            vanilla(() -> "/gamestage add " + p.playerName() + " whmt_stage", 30);
+            test("Name: WHMT-STAGE", "mp Game Stages: stage:whmt_stage (server rule)", true);
+            vanilla(() -> "/gamestage remove " + p.playerName() + " whmt_stage", 30);
+            test("WHMT-STAGE", "mp Game Stages: stage removed", false);
+        }
+        if (mod("betterquesting")) {
+            vanilla(() -> "/bq_admin complete " + BQ_ID + " " + p.playerName(), 40);
+            t.act(() -> t.info("bq complete chat: " + t.chatText().replace('\n', '|')));
+            test("Name: WHMT-BQ", "mp Better Questing: bq:9001 completed (server rule)", true);
+            vanilla(() -> "/bq_admin reset " + BQ_ID + " " + p.playerName(), 40);
+            test("WHMT-BQ", "mp Better Questing: quest reset", false);
+        }
+        if (mod("ftbquests") && modern) {
+            vanilla(() -> "/ftbquests change_progress @p complete " + MP_FTB_ID, 40);
+            t.act(() -> t.info("change_progress chat: " + t.chatText().replace('\n', '|')));
+            test("Name: WHMT-FTBQ", "mp FTB Quests: ftbquests:<id> completed (server rule)", true);
+            vanilla(() -> "/ftbquests change_progress @p reset " + MP_FTB_ID, 40);
+            test("WHMT-FTBQ", "mp FTB Quests: progress reset", false);
+        }
+        if (mod("heracles")) {
+            vanilla(() -> "/heracles complete " + HER_ID + " " + p.playerName(), 40);
+            t.act(() -> t.info("heracles complete chat: " + t.chatText().replace('\n', '|')));
+            test("Name: WHMT-HER", "mp Heracles: heracles:<id> completed (server rule)", true);
+            vanilla(() -> "/heracles reset " + HER_ID + " " + p.playerName(), 40);
+            test("WHMT-HER", "mp Heracles: quest reset", false);
+        }
+        t.sleep(40);
     }
 
     void plan() {
@@ -441,7 +534,7 @@ final class QuestPlan {
         t.check("no provider warnings for installed mods", () -> (!mod("gamestages") || !has("Game Stages is not installed")) && !has("provider failed")
             && (!mod("ftbquests") || !has("FTB Quests is not installed")) && (!mod("betterquesting") || !has("Better Questing is not installed")) && (!mod("heracles") || !has("Heracles API")),
             (Supplier<?>) t::chatText);
-        if (mod("heracles")) vanilla(() -> "/heracles reset " + HER_ID + " " + p.playerName(), 30);
+        if (mod("heracles")) herProgress(false);
         test("Rule: none matches", "nothing done yet: no rule", true);
         if (mod("gamestages")) {
             vanilla(() -> "/gamestage add " + p.playerName() + " whmt_stage", 20);
@@ -471,10 +564,10 @@ final class QuestPlan {
             test("WHMT-FTBQ", "FTB Quests: progress reset", false);
         }
         if (mod("heracles")) {
-            vanilla(() -> "/heracles complete " + HER_ID + " " + p.playerName(), 30);
+            herProgress(true);
             t.act(() -> t.info("heracles complete chat: " + t.chatText().replace('\n', '|')));
             test("Name: WHMT-HER", "Heracles: heracles:<id> completed", true);
-            vanilla(() -> "/heracles reset " + HER_ID + " " + p.playerName(), 30);
+            herProgress(false);
             test("WHMT-HER", "Heracles: quest reset", false);
         }
         // after the checks: a Better Questing quest without tasks completes itself after a while

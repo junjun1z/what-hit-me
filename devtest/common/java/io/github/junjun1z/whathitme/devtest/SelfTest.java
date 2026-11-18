@@ -74,6 +74,11 @@ public final class SelfTest {
             new PackMpPlan(this).plan();
             return true;
         }
+        if (mode.equals("mp-quests")) {
+            // quest conditions in server rules on a dedicated server with quest mods
+            new QuestPlan(this).planMp();
+            return true;
+        }
         if (mode.equals("mp-two")) {
             new MultiplayerPlan(this).planTwo();
             return true;
