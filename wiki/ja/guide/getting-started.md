@@ -2,6 +2,8 @@
 
 ## 1. ファイルを選ぶ
 
+ダウンロード：**[Modrinth](https://modrinth.com/mod/what-hit-me)**、**[CurseForge](https://www.curseforge.com/minecraft/mc-mods/what-hit-me)**、または [GitHub Releases](https://github.com/junjun1z/what-hit-me/releases)。どこも同じファイルです。
+
 自分の **Minecraft のバージョン**と**ローダー**に合ったファイルをダウンロードします。ファイル名に両方が入っています（例：`whathitme-forge-1.20.1-1.3.0.jar`、`whathitme-fabric-1.21.1-1.3.0.jar`）。
 
 | ローダー | ほかに必要なもの |
@@ -62,6 +64,7 @@ config/whathitme/
   hint_template.cfg               /whm dump が書き出す
   pack/                           pack の定義（*.json、サブフォルダー可）
   .cache/                         catalog_cache.json, stats_<uuid>.json, whathitme_dump.csv
+  .backup/                        パックエディターが変更する前のファイル（1.3.0+、サーバー側）
 ```
 
 詳しくは[設定ファイル](/ja/reference/configuration)と [pack フォルダー](/ja/modpack/pack-folder)へ。

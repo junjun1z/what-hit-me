@@ -8,6 +8,8 @@
 | Forge、NeoForge | Mods 一覧 > What Hit Me? > Config |
 | Fabric | Mod Menu > What Hit Me? > 設定ボタン（[Mod Menu](https://modrinth.com/mod/modmenu) を入れているときのみ。任意です） |
 
+<!-- TODO media: retake: settings screen showing the Templates... and Pack editor... buttons (1.3.0) -->
+
 ![設定画面](/images/config-gui.png)
 
 ## 中身

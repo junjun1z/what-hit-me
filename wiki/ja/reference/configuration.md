@@ -8,6 +8,9 @@
 | `whathitme-client.cfg` | 各プレイヤー | 個人用の表示スイッチとフィルター、`showHints`、パネルの配置 |
 | `whathitme-client-templates.json` <Badge type="tip" text="1.3.0+" /> | 各プレイヤー | 個人用の[テンプレート](/ja/modpack/templates)。コメントアウトされた例と一緒に作られます。 |
 | `pack/` | Modpack 制作者 | [pack フォルダー](/ja/modpack/pack-folder)：名前、ヒント、非表示 ID、設定のロック、死亡トリガー、テンプレート、死亡メッセージ、ルール |
+| `hint_template.cfg` | Modpack 制作者 | [`/whm dump`](/ja/modpack/scanner#whm-dump) が書き出す、そのまま貼り付けられる `hintMap` / `renameMap` のブロック |
+| `.cache/` | mod | `catalog_cache.json`（調べたダメージの種類・モブ・効果）、`stats_<uuid>.json`（`/whm stats`、`oncePerPlayer`）、`whathitme_dump.csv`。自動で作り直されます。 |
+| `.backup/` <Badge type="tip" text="1.3.0+" /> | サーバー管理者 | [パックエディター](/ja/modpack/pack-editor)が変更する前のファイルのコピー。変更ごとに 1 フォルダー（`<日付>-<時刻>/`）で、新しい 60 個まで残します。手でコピーし直せば元に戻せます。 |
 
 ::: tip 2 つのファイルのルール
 表示項目は**両方**のファイルで `true` のときだけ表示されます。個人の名前とヒントは pack の設定の上に重ねて適用されます。優先順位：`.cfg` の項目 > pack の JSON > 組み込みの自動ヒント。

@@ -35,6 +35,12 @@ features:
   - title: 進行度ルール
     details: "1.3.0+：ボスのクエストを終えるまでは「???」と表示し、ヒントも出さない。進捗・スコアボード・Game Stages・FTB Quests・Better Questing・Heracles に対応。"
     link: /ja/modpack/rules
+  - title: スクリプトとクエスト mod
+    details: "1.3.0+：KubeJS・CraftTweaker・MineTweaker のスクリプトで条件・変数・イベントを追加。FTB Quests・Better Questing・Heracles・Game Stages の進行度を直接読み取ります。どれも任意です。"
+    link: /ja/guide/integrations
+  - title: ゲーム内パックエディター
+    details: "1.3.0+：名前・ヒント・ルール・死亡メッセージ・テンプレート・トリガー・サーバー設定をゲーム内で編集。サーバーが保存し、バックアップと元に戻す機能付き。"
+    link: /ja/modpack/pack-editor
   - title: 軽くて安全
     details: 記録するのはプレイヤーだけ。サーバーの tick 処理なし、通信は死亡時と要求時だけ。他 mod の壊れたデータでもクラッシュしないよう、すべての処理を保護しています。
     link: /ja/guide/
@@ -54,8 +60,10 @@ features:
 | サーバー管理者 | [インストール](/ja/guide/getting-started)、[クライアント・サーバーの組み合わせ](/ja/guide/multiplayer)、[設定ファイル](/ja/reference/configuration) |
 | Modpack 制作者 | [概要](/ja/modpack/)、[pack フォルダー](/ja/modpack/pack-folder)、[レシピ集](/ja/cookbook) |
 
+**ダウンロード：** [Modrinth](https://modrinth.com/mod/what-hit-me) · [CurseForge](https://www.curseforge.com/minecraft/mc-mods/what-hit-me) · [GitHub Releases](https://github.com/junjun1z/what-hit-me/releases)
+
 ::: tip バージョンについて
-この Wiki は **What Hit Me? 1.3.0** の内容です。<Badge type="tip" text="1.3.0+" /> の付いた項目は 1.3.0 で追加されたもので、1.2.0 にはありません。<Badge type="warning" text="予定" /> の付いたページは、まだ実装されていない機能の説明です。
+この Wiki は **What Hit Me? 1.3.0** の内容です。<Badge type="tip" text="1.3.0+" /> の付いた項目は 1.3.0 で追加されたもので、1.2.0 にはありません。
 :::
 
 </div>

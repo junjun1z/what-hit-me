@@ -88,6 +88,20 @@ On Forge / NeoForge, players **without** the mod always see the vanilla message.
 **A quest condition is always false.**
 The quest mod is missing, or its version has an API the provider does not know (logged once in the server log). See the [tested versions](/modpack/conditions#quest-mod-matrix). FTB Quests ids are hex ids; Better Questing GTNH ids are UUIDs.
 
+## Pack editor and scripts <Badge type="tip" text="1.3.0+" />
+
+**`/whm pack` says "Only operators ..." or "needs What Hit Me? on the server".**
+The pack editor edits the server's files, so it needs the mod on the server and operator permission (or single player with cheats). Without them, `/whm pack personal` edits your own renames, tips and ignored ids.
+
+**The comments in my pack file are gone.**
+Saving an entry in the [pack editor](/modpack/pack-editor) rewrites that file, and hand-written comments in it are lost. Use the memo fields instead. The previous version of the file is in `config/whathitme/.backup/`.
+
+**I saved something wrong in the pack editor.**
+Press **Undo** (30 steps per player until the server stops), or copy the file back from `config/whathitme/.backup/<time>/`.
+
+**My `script:` condition is always false.**
+The name is not registered (check the `Scripts:` line of `/whm reload`), the script mod is missing, or the script function threw an error (logged once). Register it inside the register event so it survives reloads. See [Script integration](/modpack/scripts#reload-and-errors).
+
 ## Reporting a bug
 
 Use `[Copy Recap]` after the death and include it in your report on [GitHub](https://github.com/junjun1z/what-hit-me/issues), together with the Minecraft version, the loader and the What Hit Me? version.

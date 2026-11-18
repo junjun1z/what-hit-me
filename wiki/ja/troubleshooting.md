@@ -88,6 +88,20 @@ Forge / NeoForge では、mod **なし**のプレイヤーには常にバニラ�
 **クエストの条件がいつも偽になる。**
 クエスト mod が入っていないか、そのバージョンの API が対応していない形です（サーバーのログに 1 回だけ出ます）。[テスト済みのバージョン](/ja/modpack/conditions#quest-mod-matrix)を確認してください。FTB Quests の ID は 16 進数、Better Questing の GTNH 版の ID は UUID です。
 
+## パックエディターとスクリプト <Badge type="tip" text="1.3.0+" />
+
+**`/whm pack` で「Only operators ...」や「needs What Hit Me? on the server」と出る。**
+パックエディターはサーバーのファイルを編集するので、サーバーに mod があり、OP（またはチート有効のシングルプレイ）である必要があります。そうでなければ `/whm pack personal` で自分の名前・ヒント・非表示 ID を編集できます。
+
+**pack ファイルのコメントが消えた。**
+[パックエディター](/ja/modpack/pack-editor)で項目を保存するとそのファイルを書き直すため、手書きのコメントは消えます。代わりにメモ欄を使ってください。変更前のファイルは `config/whathitme/.backup/` にあります。
+
+**パックエディターで間違えて保存した。**
+**元に戻す**を押すか（プレイヤーごとに 30 回、サーバーが止まるまで）、`config/whathitme/.backup/<日時>/` からファイルをコピーし直してください。
+
+**`script:` の条件がいつも偽になる。**
+名前が登録されていない（`/whm reload` の `Scripts:` の行を確認）、スクリプト mod がない、またはスクリプトの関数がエラーを出した（ログに 1 回出ます）のどれかです。再読み込みで消えないよう、登録イベントの中で登録してください。[スクリプト連携](/ja/modpack/scripts#reload-and-errors)を見てください。
+
 ## 不具合の報告
 
 死んだ後に `[Copy Recap]` でまとめをコピーし、Minecraft のバージョン、ローダー、What Hit Me? のバージョンと一緒に [GitHub](https://github.com/junjun1z/what-hit-me/issues) へ報告してください。

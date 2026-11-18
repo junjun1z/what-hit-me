@@ -59,6 +59,10 @@ config/whathitme/pack/
 | `templates` <Badge type="tip" text="1.3.0+" /> | オブジェクト：出力名 → 行のリスト | [テンプレート](/ja/modpack/templates) |
 | `deathMessages` <Badge type="tip" text="1.3.0+" /> | オブジェクト `"キー": "メッセージのテンプレート"` | [カスタム死亡メッセージ](/ja/modpack/death-messages) |
 | `rules` <Badge type="tip" text="1.3.0+" /> | オブジェクトのリスト | [進行度ルール](/ja/modpack/rules) |
+| `order` <Badge type="tip" text="1.3.0+" /> | 数値（初期値 0） | ファイルの読み込み順。小さいほど先（[パックエディター](/ja/modpack/pack-editor#what-the-editor-stores-in-the-files)） |
+| `enabled` <Badge type="tip" text="1.3.0+" /> | 真偽値（初期値 `true`） | `false` ならそのファイルを読み込まない |
+| `memo` <Badge type="tip" text="1.3.0+" /> | 文字列 | ファイルについてのメモ（ルールや死亡トリガーのオブジェクトの中にも書けます） |
+| `entryMemos` <Badge type="tip" text="1.3.0+" /> | オブジェクト：セクション → キー → メモ | リネーム、ヒント、死亡メッセージ、テンプレート、非表示 ID、ロックするキーのメモ |
 
 ### キーごとの合成ルール
 

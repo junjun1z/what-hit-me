@@ -8,6 +8,9 @@ All files are in `config/whathitme/`. Both `.cfg` files use the Forge configurat
 | `whathitme-client.cfg` | Each player | The same display switches and filters for personal use, `showHints`, and the panel layout. |
 | `whathitme-client-templates.json` <Badge type="tip" text="1.3.0+" /> | Each player | Personal [templates](/modpack/templates). Created with commented examples. |
 | `pack/` | Pack makers | [Pack folder](/modpack/pack-folder): renames, tips, ignored ids, locked features, death triggers, templates, death messages, rules. |
+| `hint_template.cfg` | Pack makers | Written by [`/whm dump`](/modpack/scanner#whm-dump): ready-to-paste `hintMap` / `renameMap` blocks. |
+| `.cache/` | The mod | `catalog_cache.json` (scanned damage types, mobs, effects), `stats_<uuid>.json` (`/whm stats`, `oncePerPlayer`), `whathitme_dump.csv`. Rebuilt automatically. |
+| `.backup/` <Badge type="tip" text="1.3.0+" /> | Server owners | A copy of each file before the [pack editor](/modpack/pack-editor) changed it, one folder per change (`<date>-<time>/`); the 60 newest folders are kept. Copy a file back to restore it by hand. |
 
 ::: tip The two-file rule
 An element is shown only when it is `true` in **both** files. Personal renames and tips are applied on top of the pack's. Priority: `.cfg` entries > pack JSON > built-in automatic tips.

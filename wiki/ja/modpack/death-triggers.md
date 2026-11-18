@@ -20,6 +20,7 @@
 | `oncePerPlayer` | | `false` | 各プレイヤーの最初の該当する死亡でだけ実行（`.cache/stats_<uuid>.json` に記録） |
 | `cooldownSeconds` | | `0` | 同じプレイヤーで次に実行できるまでの最短時間 |
 | `if` / `any` / `unless` <Badge type="tip" text="1.3.0+" /> | | | 死んだプレイヤーの進行度に対する[条件](/ja/modpack/conditions) |
+| `memo` <Badge type="tip" text="1.3.0+" /> | | | 自分用のメモ。プレイヤーには表示されません（[パックエディター](/ja/modpack/pack-editor)が書き込みます） |
 
 ## プレースホルダー {#placeholders}
 

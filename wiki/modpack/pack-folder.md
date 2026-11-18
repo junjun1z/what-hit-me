@@ -59,6 +59,10 @@ Comments and trailing commas are allowed:
 | `templates` <Badge type="tip" text="1.3.0+" /> | object: output -> list of lines | [Templates](/modpack/templates) |
 | `deathMessages` <Badge type="tip" text="1.3.0+" /> | object `"key": "message template"` | [Custom death messages](/modpack/death-messages) |
 | `rules` <Badge type="tip" text="1.3.0+" /> | list of objects | [Progression rules](/modpack/rules) |
+| `order` <Badge type="tip" text="1.3.0+" /> | number (default 0) | Load order of the file, lower first ([pack editor](/modpack/pack-editor#what-the-editor-stores-in-the-files)) |
+| `enabled` <Badge type="tip" text="1.3.0+" /> | boolean (default `true`) | `false` = the file is not loaded |
+| `memo` <Badge type="tip" text="1.3.0+" /> | string | Note about the file (also allowed inside a rule or death trigger object) |
+| `entryMemos` <Badge type="tip" text="1.3.0+" /> | object: section -> key -> note | Notes of renames, tips, death messages, templates, ignored ids and locked keys |
 
 ### Merging rules per key
 

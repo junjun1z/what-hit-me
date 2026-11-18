@@ -11,6 +11,8 @@ Or in game (op): `/whm config requireClientMod true` (from a modded client: `/wh
 
 ## What players see
 
+<!-- TODO media: screenshot: the disconnect screen with the requireClientMod message -->
+
 A player without the mod is disconnected with:
 
 > This server requires the What Hit Me? mod on your client (any version). Install it and join again.

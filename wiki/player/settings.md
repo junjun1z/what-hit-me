@@ -8,6 +8,8 @@
 | Forge, NeoForge | Mods list > What Hit Me? > Config |
 | Fabric | Mod Menu > What Hit Me? > settings icon (only when [Mod Menu](https://modrinth.com/mod/modmenu) is installed; it is optional) |
 
+<!-- TODO media: retake: settings screen showing the Templates... and Pack editor... buttons (1.3.0) -->
+
 ![Settings screen](/images/config-gui.png)
 
 ## What is in it

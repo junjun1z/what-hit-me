@@ -223,8 +223,12 @@ KubeJS also: `directName`, `modName`, `ownerName`, `rawAmount`, `absorbed`, `tim
 | `stats(player)` | `deaths`, `damageTaken`, `causes` (KubeJS) |
 | `test(player, damageId[, entityId])` | what `/whm test` shows for that player: `name`, `hint`, `rule`, `hidden`, `deathMessage`, `commands` |
 | `check(player, condition)` | any rule condition, e.g. `check(player, 'advancement:minecraft:story/mine_diamond')` |
+| `registrations()` (KubeJS) | what scripts have registered: `kind`, `owner`, `name`, `value`, `fromHook`, `failed` |
+| `apiVersion` (KubeJS) | version of the What Hit Me? API, currently `1`; it goes up when methods are added |
 
 ## Reload and errors
+
+<!-- TODO media: screenshot: /whm reload output with the "Scripts: ..." line -->
 
 - `/whm reload` and the script mod's reload rebuild everything cleanly: what scripts registered is removed, the scripts register again, the runtime entries are merged once.
 - `/whm reload` lists what scripts registered (`Scripts: 2 conditions (...), 1 variable (...), listeners: death, ...`) and warns about unknown `script:` names, about functions that failed and about a missing script mod.
@@ -257,3 +261,17 @@ Other mods can use the same API from Java without any script mod: `io.github.jun
 WhatHitMeApi.registerCondition("mymod", "boss_ready", "Boss altar activated", p -> MyData.ready(p.getUuid()));
 WhatHitMeApi.listen("mymod", DeathEvent.class, e -> e.addSummaryLine("&7Tip from My Mod"));
 ```
+
+| Method | Does |
+|---|---|
+| `API_VERSION` | `1` in 1.3.0 |
+| `registerCondition(owner, name, description, condition)` / `registerVariable(owner, name, description, variable)` | `script:<name>` condition (`WhmPlayer -> boolean`) / `{script:<name>}` variable (`(WhmPlayer, WhmDamage) -> text`) |
+| `listen(owner, eventClass, listener)` / `listen(owner, "death", listener)` | `DamageRecordedEvent`, `DeathEvent`, `RespawnEvent`, `AlertEvent` (names `damageRecorded`, `death`, `respawn`, `alert`) |
+| `onRegister(owner, hook)` | Runs the hook on every rebuild (server start, `/whm reload`, the script mod's reload; at once when the server is already running). What it registers is removed before each rebuild. One hook per owner: a new one replaces the old one |
+| `addRename`, `addHint`, `addDeathMessage`, `addTemplate`, `addRule(owner, ...)` | Runtime pack entries (source `script:<owner>`), merged after the pack files |
+| `lastDeath(player)`, `history(player, n)`, `stats(player)`, `test(player, damageId, entityId[, assume])`, `player(player)` | Read access; `player(...)` gives a `WhmPlayer` with `getUuid()`, `getName()`, `getNativePlayer()` and `check(condition)` |
+| `registrations()` | Everything registered, with owner and failures |
+| `clear(owner)` / `removeHooks(owner)` | Remove everything of an owner / only its register hooks |
+| `rebuild()` / `rebuildLater()` | Rebuild now / on the next server tick (for script mods without an "after the scripts" hook) |
+
+Load your integration class only when What Hit Me? is installed (for example behind a mod-loaded check), so What Hit Me? stays optional for your mod too.

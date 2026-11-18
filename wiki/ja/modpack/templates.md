@@ -166,6 +166,8 @@ pack ファイルでは、出力ごとに行のリスト（または `\n` を含
 
 ## 出力ごとの例
 
+<!-- TODO media: screenshot: a custom summary template in chat next to the built-in one, and a custom panel line -->
+
 ### `hover`
 
 ```json

@@ -24,6 +24,9 @@
 | Replace vanilla death messages <Badge type="tip" text="1.3.0+" /> | `deathMessages` | [Custom death messages](/modpack/death-messages) |
 | Change names, tips and hidden fields with progress <Badge type="tip" text="1.3.0+" /> | `rules` | [Progression rules](/modpack/rules) |
 | Require the mod on every client <Badge type="tip" text="1.3.0+" /> | `requireClientMod` | [requireClientMod](/modpack/require-client-mod) |
+| Use quest progress (FTB Quests, Better Questing, Heracles, Game Stages) <Badge type="tip" text="1.3.0+" /> | `if` / `any` / `unless` conditions | [Conditions & quest mods](/modpack/conditions) |
+| Drive it from KubeJS / CraftTweaker / MineTweaker <Badge type="tip" text="1.3.0+" /> | `script:`, `{script:}`, events, API | [Script integration](/modpack/scripts) |
+| Edit all of this in game <Badge type="tip" text="1.3.0+" /> | `/whm pack` | [Pack editor](/modpack/pack-editor) |
 
 ## Quick start (5 minutes)
 
@@ -66,7 +69,7 @@ Built-in defaults and automatic tips
 
 - Ship `config/whathitme/whathitme-common.cfg` and your `config/whathitme/pack/` folder.
 - Do **not** ship `whathitme-client.cfg` unless you want to force a panel layout; players change it.
-- You can ship `.cache/` or leave it out; it is rebuilt automatically.
+- You can ship `.cache/` or leave it out; it is rebuilt automatically. Do not ship `.backup/` (pack editor backups).
 - On a dedicated server, the server's files are what counts. They are sent to every modded client.
 
 ::: tip Translations

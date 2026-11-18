@@ -11,6 +11,8 @@ B:requireClientMod=true
 
 ## プレイヤーに見えるもの
 
+<!-- TODO media: screenshot: the disconnect screen with the requireClientMod message -->
+
 mod なしのプレイヤーは、次のメッセージで切断されます。
 
 > This server requires the What Hit Me? mod on your client (any version). Install it and join again.

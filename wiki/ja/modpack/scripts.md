@@ -223,8 +223,12 @@ KubeJS のみ: `directName`、`modName`、`ownerName`、`rawAmount`、`absorbed`
 | `stats(player)` | `deaths`、`damageTaken`、`causes`（KubeJS） |
 | `test(player, damageId[, entityId])` | そのプレイヤーで `/whm test` が表示する内容: `name`、`hint`、`rule`、`hidden`、`deathMessage`、`commands` |
 | `check(player, condition)` | 任意のルール条件。例: `check(player, 'advancement:minecraft:story/mine_diamond')` |
+| `registrations()`（KubeJS） | スクリプトが登録したもの: `kind`、`owner`、`name`、`value`、`fromHook`、`failed` |
+| `apiVersion`（KubeJS） | What Hit Me? の API のバージョン。現在は `1` で、メソッドが増えると上がります |
 
-## 再読み込みとエラー
+## 再読み込みとエラー {#reload-and-errors}
+
+<!-- TODO media: screenshot: /whm reload output with the "Scripts: ..." line -->
 
 - `/whm reload` とスクリプト mod の再読み込みは、すべてをきれいに作り直します。スクリプトが登録したものを消し、スクリプトが登録し直し、実行時の設定を 1 回だけ合成します。
 - `/whm reload` はスクリプトが登録したものを一覧にし（`Scripts: 2 conditions (...), 1 variable (...), listeners: death, ...`）、未登録の `script:` 名、失敗した関数、スクリプト mod がないことを警告します。
@@ -257,3 +261,17 @@ KubeJS のみ: `directName`、`modName`、`ownerName`、`rawAmount`、`absorbed`
 WhatHitMeApi.registerCondition("mymod", "boss_ready", "ボスの祭壇が起動済み", p -> MyData.ready(p.getUuid()));
 WhatHitMeApi.listen("mymod", DeathEvent.class, e -> e.addSummaryLine("&7My Mod からのヒント"));
 ```
+
+| メソッド | 内容 |
+|---|---|
+| `API_VERSION` | 1.3.0 では `1` |
+| `registerCondition(owner, name, description, condition)` / `registerVariable(owner, name, description, variable)` | `script:<name>` の条件（`WhmPlayer -> boolean`）/ `{script:<name>}` の変数（`(WhmPlayer, WhmDamage) -> 文字列`） |
+| `listen(owner, イベントのクラス, listener)` / `listen(owner, "death", listener)` | `DamageRecordedEvent`、`DeathEvent`、`RespawnEvent`、`AlertEvent`（名前は `damageRecorded`、`death`、`respawn`、`alert`） |
+| `onRegister(owner, hook)` | 作り直すたび（サーバーの起動、`/whm reload`、スクリプト mod の再読み込み。サーバーが動いていればすぐ）にフックを実行します。フックが登録したものは作り直しの前に消えます。フックは owner ごとに 1 つで、新しいものが古いものを置き換えます |
+| `addRename`、`addHint`、`addDeathMessage`、`addTemplate`、`addRule(owner, ...)` | 実行時のパック設定（出どころ `script:<owner>`）。パックのファイルの後に合成されます |
+| `lastDeath(player)`、`history(player, n)`、`stats(player)`、`test(player, damageId, entityId[, assume])`、`player(player)` | 読み取り。`player(...)` は `getUuid()`、`getName()`、`getNativePlayer()`、`check(condition)` を持つ `WhmPlayer` を返します |
+| `registrations()` | 登録されたすべてのもの（owner と失敗の有無付き） |
+| `clear(owner)` / `removeHooks(owner)` | その owner のものをすべて消す / 登録フックだけ消す |
+| `rebuild()` / `rebuildLater()` | すぐに作り直す / 次のサーバー tick で作り直す（「スクリプトの後」のフックがないスクリプト mod 用） |
+
+What Hit Me? が入っているときだけ連携用のクラスを読み込むようにしてください（mod が読み込まれているかを確認してから呼ぶなど）。そうすれば、あなたの mod にとっても What Hit Me? は任意のままです。

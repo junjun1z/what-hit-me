@@ -100,6 +100,7 @@ mod 入りのクライアントには `/whm copy <text>` と `/whm copyrecap` �
 - 不明なテンプレート変数と出力名 <Badge type="tip" text="1.3.0+" />
 - ルールの問題：不明な条件の接頭辞、入っていないクエスト mod、このバージョンで使えない条件、引数の誤り <Badge type="tip" text="1.3.0+" />
 - Forge / NeoForge の[死亡メッセージの警告](/ja/modpack/require-client-mod#the-death-message-warning) <Badge type="tip" text="1.3.0+" />
+- スクリプトが登録した内容（`Scripts: 2 conditions (...), 1 variable (...), listeners: ...`）、失敗したスクリプトの関数、不明な `script:` の名前（[スクリプト連携](/ja/modpack/scripts#reload-and-errors)） <Badge type="tip" text="1.3.0+" />
 
 mod 入りのクライアントではクライアント側のファイルも読み直し、OP ならサーバーにも読み直しを依頼します。
 

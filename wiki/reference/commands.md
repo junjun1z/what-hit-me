@@ -99,7 +99,8 @@ Re-reads both `.cfg` files and the pack folder, rescans the catalog, and reports
 - how many pack files were read and which could not be parsed (that file is skipped),
 - unknown template variables and outputs <Badge type="tip" text="1.3.0+" />,
 - rule problems: unknown condition prefixes, missing quest mods, conditions not supported on this version, bad arguments <Badge type="tip" text="1.3.0+" />,
-- the Forge / NeoForge [death message warning](/modpack/require-client-mod#the-death-message-warning) <Badge type="tip" text="1.3.0+" />.
+- the Forge / NeoForge [death message warning](/modpack/require-client-mod#the-death-message-warning) <Badge type="tip" text="1.3.0+" />,
+- what scripts registered (`Scripts: 2 conditions (...), 1 variable (...), listeners: ...`), script functions that failed and unknown `script:` names ([script integration](/modpack/scripts#reload-and-errors)) <Badge type="tip" text="1.3.0+" />.
 
 On a modded client it reloads the client files too and asks the server to reload when you are op.
 

@@ -6,6 +6,8 @@
 
 ## 最初のルール
 
+<!-- TODO media: screenshot pair: the same death as "???" without a tip before the quest, and the full record after it -->
+
 `config/whathitme/pack/rules/bosses.json`：
 
 ```json
@@ -52,6 +54,7 @@
 | `enforce` | 真偽値 | `hide` があれば `true`、なければ `false` | 個人の名前・ヒント・テンプレートを使わせない |
 | `oncePerPlayer` | 真偽値 | `false` | `commands` をプレイヤーごとに 1 回だけ実行 |
 | `cooldownSeconds` | 数値 | `0` | `commands` のプレイヤーごとのクールダウン |
+| `memo` | 文字列 | | 自分用のメモ。プレイヤーには表示されません（[パックエディター](/ja/modpack/pack-editor)が書き込みます） |
 
 条件の詳細は[条件とクエスト mod](/ja/modpack/conditions)にあります。
 

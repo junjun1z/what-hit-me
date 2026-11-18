@@ -8,11 +8,13 @@
 | Opened by | `/whm pack`, or the **Pack editor...** button in the settings screen |
 | Server-authoritative | The client only sends edits. The server checks them, writes the JSON file, reloads the pack at once and sends the new state to everyone, so every player gets the change without `/whm reload`. |
 | Saving | When an entry is confirmed: **Done**, Enter in a field, or selecting another entry / tab / category. Nothing is saved per keystroke. |
-| Backup and undo | Before a file changes, its previous version is copied to `config/whathitme/.backup/<time>/`. **Undo** restores the files of your last change (30 steps per editor). |
+| Backup and undo | Before a file changes, its previous version is copied to `config/whathitme/.backup/<time>/` (a server setting change copies `whathitme-common.cfg`). The 60 newest backup folders are kept. **Undo** restores the files of your last change: 30 steps per player, kept until the server stops (personal mode: 30 steps while the screen is open). |
 | Versions | The screen exists on every supported version and loader: Forge 1.7.10 - 26.3, Fabric 1.14 - 26.3, NeoForge 1.20.1 - 26.3. Clients of 1.7.10 / 1.8.9 are not told their operator level, so `/whm pack` asks the server first (a non-operator gets the "only operators" message, the settings button opens the own lists). |
 
 
 ## Layout
+
+<!-- TODO media: screenshot of the whole pack editor (tabs, category tree, entry list, rule form) in a clean test world -->
 
 - **Tabs** at the top: Renames, Hints, Rules, Death msgs, Templates, Triggers, Ignored, Locked, Server settings. A tab shows only the entries of that type.
 - **Categories** (left): every JSON file of the pack folder is a category, sub-folders are groups. A category without entries of the current tab is still listed (grey), so you can add entries to it. `#n` is the position in the load order; the checkbox switches a category on or off; `✎` marks a memo; red `!` marks a file with a syntax error (shown, not editable). Entries registered by scripts appear under **Scripts (read-only)**.
@@ -59,10 +61,14 @@ Keys the editor does not know are kept. `order`, `enabled` and the category memo
 
 ### Match key builder
 
+<!-- TODO media: screenshot or GIF of the match key builder (search a mob, click it, add a wildcard) -->
+
 Searchable lists of the damage ids and mobs the server knows (registries, the damage id scanner and recorded deaths) with their mod names. Clicking a row fills the damage id or the attacker; `*`, `mod:*` and `mob:mod:*` insert wildcards; item (`@item:`) and dimension (`@dim:`) are separate fields. See [match keys](/modpack/match-keys).
 
 
 ### Condition picker
+
+<!-- TODO media: screenshot of the condition picker with a quest list (FTB Quests or Better Questing) -->
 
 The condition prefixes with the values the server can list: advancements, scoreboard objectives, tags of online players, script conditions, and for quest mods what their API offers (FTB Quests chapters and quests with their titles, Game Stages known stages, Better Questing quests with their names, also the GTNH version, Heracles quests with their titles). Advancements exist from 1.12, tags from 1.9. Greyed prefixes are not available on this server (mod missing / version). **not (!)** negates; for `score:` choose the comparison and the number. Any value can also be typed. See [conditions](/modpack/conditions).
 
@@ -72,6 +78,8 @@ The condition prefixes with the values the server can list: advancements, scoreb
 Under the fields: unknown condition prefixes and wrong `score:` syntax (refused), conditions of a missing mod or an unregistered script condition (warning, counts as false), a match key that matches no known damage id / mob, unknown template variables, and the server's `/whm reload` warnings for that entry.
 
 ### Preview
+
+<!-- TODO media: screenshot of the preview pane with "As" and an assumed condition -->
 
 **Preview** (bottom bar) shows a test pane under the form: **As** chooses an online player whose progress is used, the field next to it lists conditions to assume, **Test** runs exactly what `/whm test <damage_id> ... --as <player> --assume <condition>` prints, for the saved state of the entry's match key. It runs again after every save.
 
@@ -86,9 +94,11 @@ The title shows who else has the editor open. When someone saves, every other ed
 
 ## Security
 
-Everything is checked on the server: permission (operator / single player owner) for every message, file and folder names (letters, digits, space, `- _ . ( )`; paths stay inside `config/whathitme/pack/`, no `..`), known sections and value types only, size limits (8000 characters per text, 512 KB per file, 5000 entries per section). A refused edit leaves the files unchanged and shows the reason in the status line.
+Everything is checked on the server: permission (operator / single player owner) for every message, file and folder names (letters, digits, space, `- _ . ( )`; paths stay inside `config/whathitme/pack/`, no `..`), known sections and value types only, size limits (8000 characters per text, 600 per match key, 512 KB per file, 5000 entries per section, 500 categories). A refused edit leaves the files unchanged and shows the reason in the status line.
 
 ## Personal mode
+
+<!-- TODO media: screenshot of the personal mode (own renames list) -->
 
 The same editor without permission: `/whm pack personal`, or **Pack editor...** in the settings screen when you are not an operator. It edits **your own** `renameMap`, `hintMap` and `ignoredDamageIds` in `whathitme-client.cfg` with the same lists, search, match key builder and preview, instead of one-line comma lists. Server-only tabs, conditions and memos are not shown there; Undo works the same way. Operators switch between **Pack** and **Personal** with the tabs at the top left.
 

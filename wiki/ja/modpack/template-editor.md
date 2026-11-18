@@ -2,6 +2,8 @@
 
 [テンプレート](/ja/modpack/templates)を**プレビューを見ながら**書けるゲーム内の画面です。対応しているすべてのバージョンとローダーで動き、クライアントに mod が必要です。
 
+<!-- TODO media: retake: current shot shows test strings ("WHMT"); also a short GIF of typing with the live preview updating -->
+
 ![テンプレートエディター](/images/template-editor.png)
 
 ## 開き方
@@ -15,7 +17,7 @@
 2. **行を編集します。** テンプレートの 1 行が 1 つの入力欄です。
    - `+ Line` で行を追加、`↑` / `↓` で移動、`✕` で削除します。
    - カーソル移動、範囲選択、Ctrl+A / C / V / X、Home / End、Backspace / Delete など、普通の文字入力の操作が使えます。
-3. 右の一覧から**変数を挿入します。** 変数をクリックするとカーソルの位置に入ります。マウスを乗せると（または選ぶと）、下に 1 行の説明が出ます。変数は Damage、Damage type、Attacker、Context、Other に分かれています。
+3. 右の一覧から**変数を挿入します。** 変数をクリックするとカーソルの位置に入ります。マウスを乗せると（または選ぶと）、下に 1 行の説明が出ます。変数は Damage、Damage type、Attacker、Context、Other、Script（サーバーの[スクリプト](/ja/modpack/scripts)が登録した変数。登録時の説明付き）に分かれています。
 4. 行の下の**プレビューを見ます。** 実際の表示と同じ処理で描かれます：Hover はツールチップ、Line はパネルの 1 行、Summary と Alert はチャットの行、Copy は文字だけの枠です。入力するたびに更新されます。
 5. **Sample death** / **Latest death** で**プレビューのデータを切り替えます**：自分の最新の死亡か、組み込みのサンプルの死亡です。
 6. **保存します。**
@@ -32,11 +34,15 @@
 | **Sample death** / **Latest death** | プレビューのデータを切り替え | 常に |
 | **Close** | エディターを閉じる | 常に |
 
+[パックエディター](/ja/modpack/pack-editor)のテンプレート項目の **Edit in the template editor...** から開いたときのボタンは **Done**（行をパックエディターの項目に戻し、その項目を保存）、**Sample death** / **Latest death**、**Cancel** です。
+
 入力欄の下の行には、表示中のテンプレートの出どころが出ます：*Your personal template*（個人用）、*Modpack template*（pack）、*Built-in output (editing starts from an example)*（組み込み。例から編集を始めます）。
 
 ## ロックされた出力
 
 pack が出力をロックしている場合（`lockedFeatures` に `templates` または `templates.<出力名>`）、エディターは pack のテンプレートを**読み取り専用**で表示し、*Locked by the modpack (read-only)* と出ます。Save と Reset は使えません。
+
+<!-- TODO media: retake: locked output without test strings -->
 
 ![テンプレートエディターでロックされた出力](/images/template-editor-locked.png)
 

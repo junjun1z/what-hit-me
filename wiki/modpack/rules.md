@@ -6,6 +6,8 @@ The server decides. It evaluates the rules for each player whenever it builds an
 
 ## A first rule
 
+<!-- TODO media: screenshot pair: the same death as "???" without a tip before the quest, and the full record after it -->
+
 `config/whathitme/pack/rules/bosses.json`:
 
 ```json
@@ -52,6 +54,7 @@ Check it: `/whm reload`, then
 | `enforce` | boolean | `true` if `hide` is set, else `false` | Personal renames, tips and templates do not apply |
 | `oncePerPlayer` | boolean | `false` | Run `commands` only once per player |
 | `cooldownSeconds` | number | `0` | Cooldown of `commands` per player |
+| `memo` | string | | Your note, never shown to players (the [pack editor](/modpack/pack-editor) writes it) |
 
 Conditions are explained on [Conditions & quest mods](/modpack/conditions).
 

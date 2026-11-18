@@ -35,6 +35,12 @@ features:
   - title: Progression rules
     details: "1.3.0+: show ??? and no tip until the boss quest is done. Advancements, scoreboard, Game Stages, FTB Quests, Better Questing, Heracles."
     link: /modpack/rules
+  - title: Scripts and quest mods
+    details: "1.3.0+: KubeJS, CraftTweaker and MineTweaker scripts add conditions, variables and event listeners. FTB Quests, Better Questing, Heracles and Game Stages are read directly. All optional."
+    link: /guide/integrations
+  - title: In-game pack editor
+    details: "1.3.0+: edit names, tips, rules, death messages, templates, triggers and server settings in game, saved by the server with backups and undo."
+    link: /modpack/pack-editor
   - title: Light and safe
     details: Only players are tracked, no server tick handlers, packets only on death or on request, every hook guarded against broken data from other mods.
     link: /guide/
@@ -54,8 +60,10 @@ features:
 | Server owner | [Installation](/guide/getting-started), [Client, server or both](/guide/multiplayer), [Configuration files](/reference/configuration) |
 | Modpack maker | [Overview](/modpack/), [Pack folder](/modpack/pack-folder), [Cookbook](/cookbook) |
 
+**Download:** [Modrinth](https://modrinth.com/mod/what-hit-me) · [CurseForge](https://www.curseforge.com/minecraft/mc-mods/what-hit-me) · [GitHub Releases](https://github.com/junjun1z/what-hit-me/releases)
+
 ::: tip Version note
-This wiki describes **What Hit Me? 1.3.0**. Sections marked <Badge type="tip" text="1.3.0+" /> are new in 1.3.0 and do not exist in 1.2.0. Pages marked <Badge type="warning" text="planned" /> describe features that are not implemented yet.
+This wiki describes **What Hit Me? 1.3.0**. Sections marked <Badge type="tip" text="1.3.0+" /> are new in 1.3.0 and do not exist in 1.2.0.
 :::
 
 </div>

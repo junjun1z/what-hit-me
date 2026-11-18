@@ -24,6 +24,9 @@
 | バニラの死亡メッセージを置き換える <Badge type="tip" text="1.3.0+" /> | `deathMessages` | [カスタム死亡メッセージ](/ja/modpack/death-messages) |
 | 進行度に応じて名前・ヒント・非表示を変える <Badge type="tip" text="1.3.0+" /> | `rules` | [進行度ルール](/ja/modpack/rules) |
 | すべてのクライアントに mod を必須にする <Badge type="tip" text="1.3.0+" /> | `requireClientMod` | [requireClientMod](/ja/modpack/require-client-mod) |
+| クエストの進行度を使う（FTB Quests、Better Questing、Heracles、Game Stages） <Badge type="tip" text="1.3.0+" /> | `if` / `any` / `unless` の条件 | [条件とクエスト mod](/ja/modpack/conditions) |
+| KubeJS / CraftTweaker / MineTweaker から動かす <Badge type="tip" text="1.3.0+" /> | `script:`、`{script:}`、イベント、API | [スクリプト連携](/ja/modpack/scripts) |
+| ここまでの設定をゲーム内で編集する <Badge type="tip" text="1.3.0+" /> | `/whm pack` | [パックエディター](/ja/modpack/pack-editor) |
 
 ## 5 分でわかる使い方
 
@@ -66,7 +69,7 @@ pack フォルダーの JSON（config/whathitme/pack/**/*.json）
 
 - `config/whathitme/whathitme-common.cfg` と `config/whathitme/pack/` フォルダーを同梱します。
 - パネルの配置を固定したいのでなければ、`whathitme-client.cfg` は同梱**しない**でください。プレイヤーが変更するファイルです。
-- `.cache/` は同梱してもしなくても構いません。自動で作り直されます。
+- `.cache/` は同梱してもしなくても構いません。自動で作り直されます。`.backup/`（パックエディターのバックアップ）は同梱しないでください。
 - 専用サーバーでは、サーバーのファイルが使われ、mod 入りの全クライアントに送られます。
 
 ::: tip 翻訳

@@ -20,6 +20,7 @@
 | `oncePerPlayer` | no | `false` | Run only for the first matching death of each player (remembered in `.cache/stats_<uuid>.json`) |
 | `cooldownSeconds` | no | `0` | Minimum time between two runs for the same player |
 | `if` / `any` / `unless` <Badge type="tip" text="1.3.0+" /> | no | | [Conditions](/modpack/conditions) on the dead player's progress |
+| `memo` <Badge type="tip" text="1.3.0+" /> | no | | Your note, never shown to players (the [pack editor](/modpack/pack-editor) writes it) |
 
 ## Placeholders
 

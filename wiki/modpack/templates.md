@@ -166,6 +166,8 @@ These need a whole death or snapshot, so they are filled in `summary`, `alert` a
 
 ## Examples per output
 
+<!-- TODO media: screenshot: a custom summary template in chat next to the built-in one, and a custom panel line -->
+
 ### `hover`
 
 ```json

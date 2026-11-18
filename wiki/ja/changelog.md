@@ -1,6 +1,6 @@
 # 更新履歴
 
-詳しい更新履歴は [GitHub の CHANGELOG.md](https://github.com/junjun1z/what-hit-me/blob/main/CHANGELOG.md)（英語）にあります。ダウンロード：[GitHub Releases](https://github.com/junjun1z/what-hit-me/releases)、Modrinth、CurseForge。
+詳しい更新履歴は [GitHub の CHANGELOG.md](https://github.com/junjun1z/what-hit-me/blob/main/CHANGELOG.md)（英語）にあります。ダウンロード：[Modrinth](https://modrinth.com/mod/what-hit-me)、[CurseForge](https://www.curseforge.com/minecraft/mc-mods/what-hit-me)、[GitHub Releases](https://github.com/junjun1z/what-hit-me/releases)。
 
 ## 1.3.0 <Badge type="tip" text="公開予定" />
 
@@ -20,6 +20,8 @@
 - すべての pack セクションとサーバー設定を編集できるゲーム内[パックエディター](/ja/modpack/pack-editor)（`/whm pack`、設定画面の **パックエディター...**）。判定はサーバー、バックアップと元に戻す付き。pack ファイルに `order`・`enabled`・メモを書けます。個人モード（`/whm pack personal`）で自分のリネーム・ヒント・非表示 ID を編集。画面は対応するすべてのバージョンとローダーにあります（Forge 1.7.10 - 26.3、Fabric 1.14 - 26.3、NeoForge 1.20.1 - 26.3）。
 
 - クエスト mod がある、すべてのバージョンとローダーでクエスト条件に対応（[対応表](/ja/modpack/conditions#quest-mod-matrix)）：Better Questing 1.7.10 〜 1.12.2（すべての API 世代、Better Questing Unofficial も）と 1.20.1（Forge、NeoForge）、Game Stages 1.11.2 〜 1.20.3 と NeoForge 1.20.1、Heracles 1.20 と Fabric 1.21、FTB Quests 1.16.4（1604）、Forge / Fabric 1.20.4、1.21、26.1。すべてゲーム内でテストし、サーバーのルールでのクエスト条件も専用サーバーで確認しました。
+
+- `/whm reload` に、スクリプトが登録した内容と失敗したスクリプトの関数も表示されます。
 
 - 修正（Forge 1.7.10 〜 1.12.1）：同じ tick に回復（満腹度による自然回復、再生）があると、受けたダメージが少なく記録され、燃焼ダメージのような 1 ❤ のヒットが記録から抜けることがありました（まとめた行が x3 ではなく x2 になる）。
 

@@ -29,6 +29,8 @@
 
 ## 対応表 {#support-matrix}
 
+<!-- TODO media: screenshot: a custom death message in chat and on the death screen (one Fabric, one Forge) -->
+
 | サーバー | mod ありのプレイヤー | mod なしのプレイヤー | 死亡画面 | サーバーのログ |
 |---|---|---|---|---|
 | **Fabric**（全バージョン） | カスタム | カスタム | カスタム | カスタム |

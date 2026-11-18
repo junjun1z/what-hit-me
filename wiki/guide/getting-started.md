@@ -2,6 +2,8 @@
 
 ## 1. Pick the right file
 
+Downloads: **[Modrinth](https://modrinth.com/mod/what-hit-me)**, **[CurseForge](https://www.curseforge.com/minecraft/mc-mods/what-hit-me)** or [GitHub Releases](https://github.com/junjun1z/what-hit-me/releases). The same files are on all three.
+
 Download the file that matches your **Minecraft version** and **loader**. Every file name contains both, for example `whathitme-forge-1.20.1-1.3.0.jar` or `whathitme-fabric-1.21.1-1.3.0.jar`.
 
 | Loader | Also needed |
@@ -62,6 +64,7 @@ config/whathitme/
   hint_template.cfg               written by /whm dump
   pack/                           pack definitions (any *.json, any subfolder)
   .cache/                         catalog_cache.json, stats_<uuid>.json, whathitme_dump.csv
+  .backup/                        files before a pack editor change (1.3.0+, server)
 ```
 
 Details: [Configuration files](/reference/configuration) and [Pack folder](/modpack/pack-folder).
