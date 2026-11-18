@@ -180,6 +180,11 @@ final class DevPort112 implements DevPort {
     }
 
     @Override
+    public boolean deferredHitRead() {
+        return true;
+    }
+
+    @Override
     public boolean v12() {
         return true;
     }
@@ -366,6 +371,11 @@ final class DevPort112 implements DevPort {
             case ENV_SETUP:
                 p.world.setBlockState(new BlockPos(p), Blocks.WEB.getDefaultState());
                 p.setItemStackToSlot(EntityEquipmentSlot.MAINHAND, new ItemStack(Items.STICK));
+                break;
+            case HIT_HEAL:
+                p.hurtResistantTime = 0;
+                p.attackEntityFrom(DamageSource.WITHER, amount);
+                p.heal(1f);
                 break;
             case CACTUS:
                 p.attackEntityFrom(DamageSource.CACTUS, amount);

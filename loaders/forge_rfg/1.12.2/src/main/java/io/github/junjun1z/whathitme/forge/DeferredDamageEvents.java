@@ -13,6 +13,7 @@ import net.minecraft.entity.player.EntityPlayerMP;
 import net.minecraft.util.DamageSource;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingHealEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.fml.common.eventhandler.EventPriority;
 import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
@@ -22,7 +23,7 @@ import net.minecraftforge.fml.common.gameevent.PlayerEvent;
  * Forge for 1.12 / 1.12.1 has no LivingDamageEvent (damage after armor and absorption). As on 1.11.2 and older, the hit
  * seen by LivingHurtEvent is kept until the very next thing that happens to that player (its next hurt event, its death,
  * or a one-off task queued for the next server tick, whichever comes first); by then Minecraft has applied it, and the health /
- * absorption left are read from the player ({@link ServerCore#onDamageAfter}). A Totem of Undying that saved the player
+ * absorption left are read from the player ({@link ServerCore#onDamageAfter}; heals in between are added back). A Totem of Undying that saved the player
  * is recognised by the totem it used.
  * <p>
  * Registered <b>before</b> {@link ServerEvents}, so that each handler here runs before the one of the same priority there.
@@ -34,6 +35,8 @@ public final class DeferredDamageEvents {
         final DamageSource src;
         final long tick;
         final int totems;
+        /** Health given back between the hit and its read */
+        float healed;
 
         Hit(EntityPlayerMP p, DamageSource src, long tick, int totems) {
             this.p = p;
@@ -60,7 +63,7 @@ public final class DeferredDamageEvents {
 
     private static void apply(Hit h) {
         EntityPlayerMP p = h.p;
-        float health = p.getHealth();
+        float health = Math.max(0f, p.getHealth() - h.healed);
         float absorption = p.getAbsorptionAmount();
         PlayerHandle handle = new PlayerHandle112(p);
         // a totem saved the player: the hit was lethal (the totem set health to 1 and gave absorption)
@@ -95,6 +98,16 @@ public final class DeferredDamageEvents {
         pending.put(id, new Hit(p, event.getSource(), p.world.getTotalWorldTime(), PlayerHandle112.totems(p)));
         ServerPort srv = ServerCore.port;
         if (!queued && srv != null) srv.schedule(() -> flush(id));
+    }
+
+    /** Food regeneration (or any heal) between a hit and its read would hide the hit: count it */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onHeal(LivingHealEvent event) {
+        if (pending.isEmpty() || event.getAmount() <= 0) return;
+        Hit h = pending.get(event.getEntityLiving().getUniqueID());
+        if (h == null) return;
+        float hp = h.p.getHealth();
+        if (hp > 0f) h.healed += Math.min(event.getAmount(), Math.max(0f, h.p.getMaxHealth() - hp));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST)

@@ -57,7 +57,9 @@ public interface DevPort {
         /** Death while health is 10 (health-overhaul part death), then health 0 so the player can respawn */
         VITAL_DEATH,
         /** Health set to 0 and a death without any hurt event before (magic source) */
-        SETHEALTH_DEATH
+        SETHEALTH_DEATH,
+        /** Wither hit of the amount without invulnerability frames, then a heal of 1 in the same server tick (only used when deferredHitRead() is true) */
+        HIT_HEAL
     }
 
     /** "1.12.2", "1.20.1", ... */
@@ -123,6 +125,10 @@ public interface DevPort {
     // ---- 1.2
 
     /** The 1.2 features are implemented by this version (enables the extra checks) */
+    default boolean deferredHitRead() {
+        return false;
+    }
+
     default boolean v12() {
         return false;
     }

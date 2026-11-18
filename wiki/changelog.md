@@ -21,6 +21,8 @@ The full changelog is in [CHANGELOG.md on GitHub](https://github.com/junjun1z/wh
 
 - Quest mod conditions on every version and loader where the quest mod exists ([matrix](/modpack/conditions#quest-mod-matrix)): Better Questing 1.7.10 - 1.12.2 (every API generation, also Better Questing Unofficial) and 1.20.1 (Forge, NeoForge), Game Stages 1.11.2 - 1.20.3 and NeoForge 1.20.1, Heracles 1.20 and Fabric 1.21, FTB Quests 1.16.4 (1604), 1.20.4 Forge / Fabric, 1.21 and 26.1; each tested in game, quest conditions in server rules tested on dedicated servers.
 
+- Fix (Forge 1.7.10 - 1.12.1): a hit healed in the same tick (food regeneration, Regeneration) was recorded with too little damage, and a 1 ❤ hit such as a burning tick could be lost (merged lines showed x2 instead of x3).
+
 ## 1.2.0
 
 - Pack folder `config/whathitme/pack/` with `renameMap`, `hintMap`, `defaultIgnoredDamageIds`, `lockedFeatures`, `deathTriggers`.

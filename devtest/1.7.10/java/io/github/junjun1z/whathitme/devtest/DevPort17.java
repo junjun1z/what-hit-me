@@ -185,6 +185,11 @@ final class DevPort17 implements DevPort {
     }
 
     @Override
+    public boolean deferredHitRead() {
+        return true;
+    }
+
+    @Override
     public boolean v12() {
         return true;
     }
@@ -291,7 +296,7 @@ final class DevPort17 implements DevPort {
                 p.worldObj.getGameRules().setOrCreateGameRule("doDaylightCycle", "false");
                 p.worldObj.getGameRules().setOrCreateGameRule("doMobSpawning", "false");
                 p.worldObj.getGameRules().setOrCreateGameRule("keepInventory", "true");
-                // food regeneration in the tick between a hit and its deferred read hides that hit
+                // no random heals between the test hits (HIT_HEAL covers a heal before the deferred read)
                 p.worldObj.getGameRules().setOrCreateGameRule("naturalRegeneration", "false");
                 p.worldObj.setWorldTime(6000);
                 p.setGameType(WorldSettings.GameType.SURVIVAL);
@@ -399,6 +404,11 @@ final class DevPort17 implements DevPort {
                 p.setCurrentItemOrArmor(0, new ItemStack(Items.stick));
                 break;
             }
+            case HIT_HEAL:
+                p.hurtResistantTime = 0;
+                p.attackEntityFrom(DamageSource.wither, amount);
+                p.heal(1f);
+                break;
             case CACTUS:
                 p.attackEntityFrom(DamageSource.cactus, amount);
                 break;

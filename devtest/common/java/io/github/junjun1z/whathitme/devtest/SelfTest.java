@@ -358,6 +358,12 @@ public final class SelfTest {
         hit(Act.ON_FIRE, 1f);
         check("smart merge (x3 hits, one line)", () -> find(id("onFire")) != null && find(id("onFire")).hits == 3, describe(id("onFire")));
         srv(Act.EXTINGUISH);
+        if (port.deferredHitRead()) {
+            // food regeneration between a hit and its deferred read must not hide the hit
+            hit(Act.HIT_HEAL, 1f);
+            check("hit healed in the same tick still recorded (1 damage)", () -> find(id("wither")) != null && find(id("wither")).hits == 1
+                && Math.abs(find(id("wither")).taken() - 1f) < 0.01f, describe(id("wither")));
+        }
         hit(Act.MAGIC, 2f);
         check("magic: Magic + Bypasses Armor", () -> find(id("magic")) != null && find(id("magic")).has(DamageRecord.MAGIC) && find(id("magic")).has(DamageRecord.BYPASS_ARMOR),
             describe(id("magic")));

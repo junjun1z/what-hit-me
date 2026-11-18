@@ -16,6 +16,7 @@ import net.minecraft.util.DamageSource;
 import net.minecraft.util.IChatComponent;
 import net.minecraftforge.common.util.FakePlayer;
 import net.minecraftforge.event.entity.living.LivingDeathEvent;
+import net.minecraftforge.event.entity.living.LivingHealEvent;
 import net.minecraftforge.event.entity.living.LivingHurtEvent;
 import net.minecraftforge.event.entity.player.AttackEntityEvent;
 import net.minecraftforge.event.entity.player.PlayerDestroyItemEvent;
@@ -31,7 +32,7 @@ import net.minecraftforge.fml.common.gameevent.PlayerEvent;
  * Forge before 1.12 has no LivingDamageEvent (damage after armor and absorption). The hit seen by LivingHurtEvent is
  * kept until the very next thing that happens to that player (its next hurt event, its death, or a one-off task queued
  * for the next server tick, whichever comes first); by then Minecraft has applied it, and the health / absorption lost
- * are read from the player ({@link ServerCore#onDamageAfter}). A Totem of Undying that saved the player is recognised
+ * are read from the player ({@link ServerCore#onDamageAfter}; heals in between are added back). A Totem of Undying that saved the player is recognised
  * by the totem it used.
  */
 public final class ServerEvents {
@@ -41,6 +42,8 @@ public final class ServerEvents {
         final DamageSource src;
         final long tick;
         final int totems;
+        /** Health given back between the hit and its read */
+        float healed;
         final long millis = System.currentTimeMillis();
 
         Hit(EntityPlayerMP p, DamageSource src, long tick, int totems) {
@@ -68,7 +71,7 @@ public final class ServerEvents {
 
     private static void apply(Hit h) {
         EntityPlayerMP p = h.p;
-        float health = p.getHealth();
+        float health = Math.max(0f, p.getHealth() - h.healed);
         float absorption = p.getAbsorptionAmount();
         PlayerHandle handle = new PlayerHandle18(p);
         // a totem saved the player: the hit was lethal (the totem set health to 1 and gave absorption)
@@ -121,6 +124,16 @@ public final class ServerEvents {
             ServerPort srv = ServerCore.port;
             if (!queued && srv != null) srv.schedule(() -> flush(id));
         }
+    }
+
+    /** Food regeneration (or any heal) between a hit and its read would hide the hit: count it */
+    @SubscribeEvent(priority = EventPriority.LOWEST)
+    public void onHeal(LivingHealEvent event) {
+        if (pending.isEmpty() || event.amount <= 0) return;
+        Hit h = pending.get(event.entityLiving.getUniqueID());
+        if (h == null) return;
+        float hp = h.p.getHealth();
+        if (hp > 0f) h.healed += Math.min(event.amount, Math.max(0f, h.p.getMaxHealth() - hp));
     }
 
     @SubscribeEvent(priority = EventPriority.LOWEST, receiveCanceled = true)

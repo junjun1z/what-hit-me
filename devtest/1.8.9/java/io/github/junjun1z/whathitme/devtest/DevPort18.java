@@ -181,6 +181,11 @@ final class DevPort18 implements DevPort {
     }
 
     @Override
+    public boolean deferredHitRead() {
+        return true;
+    }
+
+    @Override
     public boolean v12() {
         return true;
     }
@@ -371,6 +376,11 @@ final class DevPort18 implements DevPort {
             case ENV_SETUP:
                 p.worldObj.setBlockState(new net.minecraft.util.BlockPos(p), net.minecraft.init.Blocks.web.getDefaultState());
                 p.setCurrentItemOrArmor(0, new ItemStack(Items.stick));
+                break;
+            case HIT_HEAL:
+                p.hurtResistantTime = 0;
+                p.attackEntityFrom(DamageSource.wither, amount);
+                p.heal(1f);
                 break;
             case CACTUS:
                 p.attackEntityFrom(DamageSource.cactus, amount);
