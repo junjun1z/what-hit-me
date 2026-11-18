@@ -218,6 +218,11 @@ final class QuestPlan {
         }
     }
 
+    /** Better Questing 4.x (1.20.1) */
+    static boolean bqV4() {
+        return cls("funwayguy.betterquesting.questing.quests.QuestDatabase") != null;
+    }
+
     /** The GTNH fork of Better Questing (UUID quest ids) */
     static boolean bqUuids() {
         return cls("betterquesting.api2.storage.IUuidDatabase") != null;
@@ -276,11 +281,12 @@ final class QuestPlan {
             }
             if (cls("betterquesting.api.api.QuestingAPI") == null && v4 != null) {
                 // 4.x (1.20.1): createNew(id) adds the quest
+                // short id BQ_ID (shown by the quest book and used by the commands) inside a full id
                 Object db = v4.getField("INSTANCE").get(null);
-                Object e = db.getClass().getMethod("getEntry", int.class).invoke(db, BQ_ID);
-                if (e instanceof java.util.Optional && ((java.util.Optional<?>) e).isPresent()) return "exists";
-                db.getClass().getMethod("createNew", int.class).invoke(db, BQ_ID);
-                return "created v4";
+                if ((Integer) db.getClass().getMethod("getFullID", int.class).invoke(db, BQ_ID) >= 0) return "exists";
+                Object full = db.getClass().getMethod("createFullID", int.class).invoke(db, BQ_ID);
+                db.getClass().getMethod("createNew", int.class).invoke(db, full);
+                return "created v4 full id " + full;
             }
             Class<?> api = Class.forName("betterquesting.api.api.QuestingAPI");
             Object key = Class.forName("betterquesting.api.api.ApiReference").getField("QUEST_DB").get(null);
@@ -552,7 +558,8 @@ final class QuestPlan {
                 t.waitFor("/whm test magic", () -> has("Chat preview"), 80);
                 t.check("Better Questing (GTNH): bq:<Base64 id> completed", () -> has("Name: WHMT-BQ64"), (Supplier<?>) () -> t.chatText());
             }
-            vanilla(() -> "/bq_admin reset " + bqCommandId() + " " + p.playerName(), 30);
+            // 4.x: players first
+            vanilla(() -> bqV4() ? "/bq_admin reset " + p.playerName() + " " + BQ_ID : "/bq_admin reset " + bqCommandId() + " " + p.playerName(), 30);
             t.act(() -> t.info("bq reset: " + bqV1Reset(p.playerId())));
             test("WHMT-BQ", "Better Questing: quest reset", false);
         }

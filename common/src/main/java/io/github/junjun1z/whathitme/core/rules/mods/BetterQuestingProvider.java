@@ -73,10 +73,14 @@ public final class BetterQuestingProvider implements ConditionProvider {
             Object db = Reflect.staticField(v4, "INSTANCE");
             Class<?> props = Reflect.first("funwayguy.betterquesting.properties.CommonProps");
             Object name = props == null ? null : Reflect.staticField(props, "NAME");
+            Method ref = exact(db.getClass(), "getRefID");
             for (Object e : Reflect.list(db, "getEntries", null)) {
                 Object q = Reflect.read(e, "getValue", null);
                 Object info = q == null ? null : Reflect.read(q, "getInfo", null);
-                out.add(Reflect.entry(String.valueOf(Reflect.read(e, "getID", null)), info == null || name == null ? null : call(info, "getProp", name)));
+                Object id = Reflect.read(e, "getID", null);
+                // the short id the quest book and commands show
+                if (ref != null && id instanceof Integer) id = ref.invoke(db, id);
+                out.add(Reflect.entry(String.valueOf(id), info == null || name == null ? null : call(info, "getProp", name)));
             }
         }
         if (api == null || ref == null) {
@@ -189,9 +193,25 @@ public final class BetterQuestingProvider implements ConditionProvider {
         return Reflect.truth(done.invoke(quest, who));
     }
 
-    private boolean testV4(int id, UUID who) throws Exception {
+    /** A public method with exactly one int parameter (overloads taking Object would also accept an Integer) */
+    private static Method exact(Class<?> c, String name) {
+        for (Method m : c.getMethods()) {
+            if (m.getName().equals(name) && m.getParameterCount() == 1 && m.getParameterTypes()[0] == int.class) {
+                Reflect.open(m);
+                return m;
+            }
+        }
+        return null;
+    }
+
+    private boolean testV4(int shortId, UUID who) throws Exception {
         Object db = Reflect.staticField(v4, "INSTANCE");
-        Method entry = Reflect.method(db.getClass(), "getEntry", int.class);
+        // 4.x: commands and the quest book use a short id, the database and progress the full id
+        Method full = exact(db.getClass(), "getFullID");
+        int id = shortId;
+        Object f = full == null ? null : full.invoke(db, shortId);
+        if (f instanceof Integer && (Integer) f >= 0) id = (Integer) f;
+        Method entry = exact(db.getClass(), "getEntry");
         if (entry == null) throw new NoSuchMethodException("QuestDatabase.getEntry(int)");
         Object e = entry.invoke(db, id);
         if (e instanceof java.util.Optional) e = ((java.util.Optional<?>) e).orElse(null);
@@ -203,7 +223,7 @@ public final class BetterQuestingProvider implements ConditionProvider {
         Method prog = Reflect.method(mgr.getClass(), "getProgress", UUID.class);
         Object progress = prog == null ? null : prog.invoke(mgr, who);
         if (progress == null) return false;
-        Method done = Reflect.method(progress.getClass(), "isQuestDone", int.class);
+        Method done = exact(progress.getClass(), "isQuestDone");
         if (done == null) throw new NoSuchMethodException("PlayerProgress.isQuestDone(int)");
         Object t = done.invoke(progress, id);
         // a Tuple<Boolean, Long> record
