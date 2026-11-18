@@ -10,9 +10,9 @@ What Hit Me? は、何も設定しなくてもすべての mod と一緒に使�
 | **Better Questing** | クエストの達成を条件にできる（`bq:`）。GTNH 版にも対応 | 1.12.2、1.7.10（GTNH 版） | <Badge type="tip" text="1.3.0+" /> | [条件とクエスト mod](/ja/modpack/conditions#quest-mods) |
 | **Heracles / Odyssey Quests** | クエストの達成を条件にできる（`heracles:`） | 1.20 〜 1.21.1 | <Badge type="tip" text="1.3.0+" /> | [条件とクエスト mod](/ja/modpack/conditions#quest-mods) |
 | **Game Stages** | ステージを条件にできる（`stage:`） | 1.12.2 〜 1.20.x（Forge） | <Badge type="tip" text="1.3.0+" /> | [条件とクエスト mod](/ja/modpack/conditions#quest-mods) |
-| **KubeJS** | スクリプトでルール条件（`script:`）、テンプレート変数（`{script:}`）、イベント、実行時の設定を追加できる | 1.20.1（Forge、Fabric）、1.21.1（NeoForge）。ほかのバージョンは対応中 | <Badge type="tip" text="1.3.0+" /> | [スクリプト連携](/ja/modpack/scripts) |
-| **CraftTweaker** | KubeJS と同じことを ZenScript で（`mods.whathitme.WhatHitMe`） | 1.12.2、1.20.1（Forge）。ほかのバージョンは対応中 | <Badge type="tip" text="1.3.0+" /> | [スクリプト連携](/ja/modpack/scripts) |
-| **MineTweaker 3** | 同じことを 1.7.10 で（GTNH 版も） | 1.7.10 | <Badge type="warning" text="予定" /> | [スクリプト連携](/ja/modpack/scripts) |
+| **KubeJS** | スクリプトでルール条件（`script:`）、テンプレート変数（`{script:}`）、イベント、実行時の設定を追加できる | 26.1.2、1.21.1、1.20.4（NeoForge）、1.20.1・1.19.2・1.18.2・1.16.5（Forge、Fabric）、1.17.1・1.16.1（Fabric）、1.15.2・1.14.4・1.12.2（Forge） | <Badge type="tip" text="1.3.0+" /> | [スクリプト連携](/ja/modpack/scripts) |
+| **CraftTweaker** | KubeJS と同じことを ZenScript で（`mods.whathitme.WhatHitMe`） | 1.21.1・1.20.6（Fabric、NeoForge）、1.20.4（Forge、Fabric、NeoForge）、1.18.2 - 1.20.2（Forge、Fabric）、1.17.1・1.16.5・1.15.2・1.14.4・1.12.2（Forge） | <Badge type="tip" text="1.3.0+" /> | [スクリプト連携](/ja/modpack/scripts) |
+| **MineTweaker 3** | 同じことを MineTweaker 3 / CraftTweaker 3.x で（GTNH 版も） | 1.7.10、1.8.9、1.9.4、1.10.2、1.11.2（Forge） | <Badge type="tip" text="1.3.0+" /> | [スクリプト連携](/ja/modpack/scripts) |
 | **Mod Menu** | mod 一覧から What Hit Me? の設定画面を開ける（Fabric） | Fabric の全バージョン | ✔ | [設定画面](/ja/player/settings) |
 | **ダメージを与えるすべての mod** | どの mod のダメージ ID や攻撃者も記録。スキャナーなら誰も被弾していないうちに一覧を出せる | 全バージョン | ✔ | [スキャナー](/ja/modpack/scanner)、[ダメージ ID](/ja/reference/damage-ids) |
 

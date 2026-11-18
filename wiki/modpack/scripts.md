@@ -15,13 +15,15 @@ Everything is decided on the server and sent to the players, like the [rules](/m
 
 | Script mod | Form | Minecraft / loader | Status |
 |---|---|---|---|
-| KubeJS 7 | global `WhatHitMe`, events `WhatHitMeEvents.*` (server scripts) | 1.21.1 NeoForge | <Badge type="tip" text="1.3.0+" /> |
-| KubeJS 6 | the same | 1.20.1 Forge, Fabric (also NeoForge 1.20.1 with the Forge jar) | <Badge type="tip" text="1.3.0+" /> |
+| KubeJS 8 / 7 | global `WhatHitMe`, events `WhatHitMeEvents.*` (server scripts) | 26.1.2 NeoForge, 1.21.1 NeoForge | <Badge type="tip" text="1.3.0+" /> |
+| KubeJS 6 (also the KubeJS 7 beta of NeoForge 1.20.4) | the same | 1.20.4 NeoForge, 1.20.1 Forge / Fabric (also NeoForge 1.20.1 with the Forge jar), 1.19.2 Forge / Fabric | <Badge type="tip" text="1.3.0+" /> |
+| KubeJS 5 / 3 | global `WhatHitMe`, events `onEvent('whathitme.*')` | 1.18.2 Forge / Fabric, 1.17.1 Fabric, 1.16.5 Forge / Fabric | <Badge type="tip" text="1.3.0+" /> |
+| Old KubeJS (1.x / 2.x) | global `WhatHitMe`, events `events.listen('whathitme.*')` | 1.16.1 Fabric, 1.15.2 Forge, 1.14.4 Forge, 1.12.2 Forge | <Badge type="tip" text="1.3.0+" /> |
+| CraftTweaker (new ZenScript) | ZenScript class `mods.whathitme.WhatHitMe` | 1.21.1, 1.20.6 Fabric / NeoForge; 1.20.4 Forge / Fabric / NeoForge; 1.20.2 - 1.18.2 Forge / Fabric; 1.17.1 Forge; 1.16.5, 1.15.2, 1.14.4 Forge | <Badge type="tip" text="1.3.0+" /> |
 | CraftTweaker 1.12.2 | ZenScript class `mods.whathitme.WhatHitMe` | 1.12.2 Forge | <Badge type="tip" text="1.3.0+" /> |
-| CraftTweaker (new ZenScript) | ZenScript class `mods.whathitme.WhatHitMe` | 1.20.1 Forge | <Badge type="tip" text="1.3.0+" /> |
-| KubeJS / CraftTweaker on other versions, MineTweaker 3 (1.7.10, also the GTNH fork) | the same forms | every version where the script mod exists | in progress |
+| MineTweaker 3 / CraftTweaker 3.x (also the GTNH fork) | ZenScript class `mods.whathitme.WhatHitMe` | 1.11.2, 1.10.2, 1.9.4, 1.8.9, 1.7.10 Forge (MineTweaker 3.0.10B and CraftTweaker 3.0.9: [partly](#minetweaker-3-crafttweaker-3-x-1-7-10-1-11-2)) | <Badge type="tip" text="1.3.0+" /> |
 
-On a version without a binding, the recipes in [Without a binding](#without-a-binding) still work.
+No script mod exists for the other versions (1.21.3 - 1.21.11, 26.2, 26.3, KubeJS on Fabric / Forge 1.21+). There the recipes in [Without a binding](#without-a-binding) still work. KubeJS 8 on 26.1.2 needs Java 25 (it does not start on Java 27).
 
 ## KubeJS
 
@@ -67,6 +69,62 @@ WhatHitMeEvents.alert(event => {
 
 `WhatHitMe` (the global of server scripts) has the same registration methods as the register event plus the read methods: `lastDeath(player)`, `history(player, n)`, `stats(player)`, `test(player, damageId[, entityId])`, `check(player, condition)` and `registrations()`. Registrations made through `WhatHitMe` outside the register event (for example in a listener) stay until the server scripts reload.
 
+## KubeJS 5 and older
+
+KubeJS 5 (1.18.2) and KubeJS 3 (1.16.5, 1.17.1 Fabric) use `onEvent`, old KubeJS (1.12.2 - 1.16.1) uses `events.listen`. The event names are `whathitme.register`, `whathitme.damage_recorded`, `whathitme.death`, `whathitme.respawn` and `whathitme.alert`; the event objects and the global `WhatHitMe` are the same as above. Players are the Minecraft player objects, so use `WhatHitMe.check(player, ...)` for tags, scores, stages and quests.
+
+```js
+// kubejs/server_scripts/whathitme.js (1.12.2: kubejs/whathitme.js)
+onEvent('whathitme.register', event => {      // old KubeJS: events.listen('whathitme.register', function (event) { ... })
+  event.condition('veteran', 'Has the veteran tag', player => WhatHitMe.check(player, 'tag:veteran'))
+  event.addRule({ match: '*@minecraft:wither', unless: ['script:veteran'], name: '???' })
+})
+
+onEvent('whathitme.damage_recorded', event => {
+  if (event.damage.damageType == 'cactus') event.cancel()
+})
+```
+
+- KubeJS 1.12.2 / 1.14.4 / 1.16.1 run on Nashorn: write ES5 (`function`, `var`, no arrow functions) and give rules as JSON text.
+- Script folders: 1.12.2 `kubejs/`; 1.14.4, 1.15.2 and 1.16.1 `kubejs/data/modpack/kubejs/` (1.14.4 and 1.16.1 also list the file in `scripts.json` there); 1.16.5 and newer `kubejs/server_scripts/`.
+- 1.16.1 Fabric: use KubeJS Fabric 1.1.5 (1.5.3 is marked for 1.16.1 but needs 1.16.2+). It runs on Nashorn, which current Fabric Loaders hide from mods: add the JVM argument `-Dfabric.debug.disableClassPathIsolation=true`.
+- 1.12.2: the scripts reload with `/kubejs reload`; 1.14.4 - 1.18.2: with `/reload`.
+
+## MineTweaker 3 / CraftTweaker 3.x (1.7.10 - 1.11.2)
+
+Put the script in `scripts/`. The scripts run when the server starts and on `/minetweaker reload`; What Hit Me? replaces what the previous run registered.
+
+ZenScript 1 functions cannot call static methods, so inside a function everything goes through the arguments: `onRegister` passes an `Api` object (the registration methods), conditions and variables get a `Player` (`check(condition)`, `name`, `player` (the `IPlayer`), `lastDeath`, `history(n)`, `stats`, `test(damageId)`), and every event has `event.player` (a `Player`) and `event.api`. At the top level of the script the static methods of `WhatHitMe` work as in CraftTweaker 1.12.2. Scoreboard tags only exist from 1.9: on 1.7.10 / 1.8.9 check scores instead (`score:<objective>>=1`).
+
+```zenscript
+import mods.whathitme.WhatHitMe;
+import mods.whathitme.Api;
+import mods.whathitme.Player;
+import mods.whathitme.DeathEvent;
+import mods.whathitme.RespawnEvent;
+
+WhatHitMe.onRegister(function(api as Api) {
+    api.condition("veteran", "Has the veteran score", function(player as Player) as bool {
+        return player.check("score:veteran>=1");
+    });
+    api.addRule('{"match": "minecraft:lava", "unless": ["script:veteran"], "name": "???"}');
+});
+
+WhatHitMe.onDeath(function(event as DeathEvent) {
+    event.addSummaryLine("&7Better luck next time, {player}.");
+});
+
+WhatHitMe.onRespawn(function(event as RespawnEvent) {
+    event.api.addHint("my:last", event.player.lastDeath.killingBlow.damageType);
+});
+```
+
+Write `if (...) { ... }` blocks instead of an early `return;` (ZenScript 1 rejects a bare `return;`). The [GTNH fork](https://github.com/GTNewHorizons/CraftTweaker) (mod id `MineTweaker3` as well) works the same way.
+
+::: warning MineTweaker 3.0.10B (1.7.10) and CraftTweaker 3.0.9 (1.9.4)
+Their ZenScript compiler fails on functions without a result, so `onRegister` and the event listeners (`onDamageRecorded`, `onDeath`, `onRespawn`, `onAlert`) do not work there. Top-level registrations, conditions, variables, `addRule` / `addRename` / ... and the read methods work. On 1.7.10 use CraftTweaker 3.1.0 or the GTNH fork for everything.
+:::
+
 ## CraftTweaker 1.12.2
 
 Put the script in `scripts/`. CraftTweaker 1.12.2 runs the scripts once when the game starts.
@@ -100,9 +158,9 @@ WhatHitMe.onDeath(function(event as DeathEvent) {
 
 Rules are given as JSON text. The other methods: `onRespawn`, `onAlert`, `addHint`, `addDeathMessage`, `addTemplate(output, lines as string[])`, `lastDeath`, `history`, `stats`, `test`, `check`.
 
-## CraftTweaker (1.16.5 and newer)
+## CraftTweaker (1.14.4 and newer)
 
-Put the script in `scripts/`. The scripts run again on every `/reload`; What Hit Me? replaces what the previous run registered.
+Put the script in `scripts/`. The scripts run again on every `/reload`; What Hit Me? replaces what the previous run registered. The player type is `crafttweaker.api.entity.type.player.Player` from 1.17.1, `crafttweaker.api.player.MCPlayerEntity` on 1.16.5 and `crafttweaker.api.entity.player.MCPlayerEntity` on 1.14.4 / 1.15.2. CraftTweaker for Fabric 1.18.2 / 1.19.2 needs Ingredient Extension API. CraftTweaker for Fabric 1.17.1 does not start with the Fabric Loader versions What Hit Me? needs, so there is no binding for it.
 
 ```zenscript
 import crafttweaker.api.entity.type.player.Player;

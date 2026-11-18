@@ -15,7 +15,7 @@ The full changelog is in [CHANGELOG.md on GitHub](https://github.com/junjun1z/wh
 - New sample folders `pack/templates/`, `pack/deathmessages/`, `pack/rules/`.
 - Network protocol 3; 1.0 - 1.2 clients and servers keep working.
 
-- [Script integration](/modpack/scripts): KubeJS and CraftTweaker scripts add `script:` conditions, `{script:}` template variables, event listeners and runtime entries (public Java API `io.github.junjun1z.whathitme.api`).
+- [Script integration](/modpack/scripts): KubeJS, CraftTweaker and MineTweaker scripts add `script:` conditions, `{script:}` template variables, event listeners and runtime entries (public Java API `io.github.junjun1z.whathitme.api`), on every version and loader where one of these script mods exists: KubeJS 1.12.2 - 26.1.2, CraftTweaker 1.12.2 - 1.21.1, MineTweaker 3 / CraftTweaker 3.x 1.7.10 - 1.11.2 (also the GTNH fork).
 
 - In-game [pack editor](/modpack/pack-editor) (`/whm pack`, **Pack editor...** in the settings screen) for every pack section and the server settings, server-authoritative with backups and undo; pack files may carry `order`, `enabled` and memos. Personal mode (`/whm pack personal`) for your own renames, tips and ignored ids. Screen on every supported version and loader (Forge 1.7.10 - 26.3, Fabric 1.14 - 26.3, NeoForge 1.20.1 - 26.3).
 

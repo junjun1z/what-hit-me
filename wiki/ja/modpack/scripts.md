@@ -15,13 +15,15 @@ KubeJS や CraftTweaker のスクリプトから、サーバー側で What Hit M
 
 | スクリプト mod | 書き方 | Minecraft / ローダー | 状態 |
 |---|---|---|---|
-| KubeJS 7 | グローバル `WhatHitMe`、イベント `WhatHitMeEvents.*`（server_scripts） | 1.21.1 NeoForge | <Badge type="tip" text="1.3.0+" /> |
-| KubeJS 6 | 同じ | 1.20.1 Forge、Fabric（Forge 版の jar を使う NeoForge 1.20.1 も） | <Badge type="tip" text="1.3.0+" /> |
+| KubeJS 8 / 7 | グローバル `WhatHitMe`、イベント `WhatHitMeEvents.*`（server_scripts） | 26.1.2 NeoForge、1.21.1 NeoForge | <Badge type="tip" text="1.3.0+" /> |
+| KubeJS 6（NeoForge 1.20.4 の KubeJS 7 ベータも） | 同じ | 1.20.4 NeoForge、1.20.1 Forge / Fabric（Forge 版の jar を使う NeoForge 1.20.1 も）、1.19.2 Forge / Fabric | <Badge type="tip" text="1.3.0+" /> |
+| KubeJS 5 / 3 | グローバル `WhatHitMe`、イベント `onEvent('whathitme.*')` | 1.18.2 Forge / Fabric、1.17.1 Fabric、1.16.5 Forge / Fabric | <Badge type="tip" text="1.3.0+" /> |
+| 古い KubeJS（1.x / 2.x） | グローバル `WhatHitMe`、イベント `events.listen('whathitme.*')` | 1.16.1 Fabric、1.15.2 Forge、1.14.4 Forge、1.12.2 Forge | <Badge type="tip" text="1.3.0+" /> |
+| CraftTweaker（新しい ZenScript） | ZenScript のクラス `mods.whathitme.WhatHitMe` | 1.21.1、1.20.6 Fabric / NeoForge、1.20.4 Forge / Fabric / NeoForge、1.20.2 - 1.18.2 Forge / Fabric、1.17.1 Forge、1.16.5・1.15.2・1.14.4 Forge | <Badge type="tip" text="1.3.0+" /> |
 | CraftTweaker 1.12.2 | ZenScript のクラス `mods.whathitme.WhatHitMe` | 1.12.2 Forge | <Badge type="tip" text="1.3.0+" /> |
-| CraftTweaker（新しい ZenScript） | ZenScript のクラス `mods.whathitme.WhatHitMe` | 1.20.1 Forge | <Badge type="tip" text="1.3.0+" /> |
-| ほかのバージョンの KubeJS / CraftTweaker、MineTweaker 3（1.7.10、GTNH 版も） | 同じ書き方 | スクリプト mod があるすべてのバージョン | 対応中 |
+| MineTweaker 3 / CraftTweaker 3.x（GTNH 版も） | ZenScript のクラス `mods.whathitme.WhatHitMe` | 1.11.2、1.10.2、1.9.4、1.8.9、1.7.10 Forge（MineTweaker 3.0.10B と CraftTweaker 3.0.9 は一部のみ） | <Badge type="tip" text="1.3.0+" /> |
 
-連携がまだないバージョンでも、[連携なしでできること](#連携なしでできること)の方法は使えます。
+ほかのバージョン（1.21.3 - 1.21.11、26.2、26.3、Fabric / Forge 1.21 以降の KubeJS）にはスクリプト mod がありません。そこでも[連携なしでできること](#連携なしでできること)の方法は使えます。26.1.2 の KubeJS 8 は Java 25 が必要です（Java 27 では起動しません）。
 
 ## KubeJS
 
@@ -67,6 +69,62 @@ WhatHitMeEvents.alert(event => {
 
 server_scripts のグローバル `WhatHitMe` には、register イベントと同じ登録メソッドに加えて、読み取り用の `lastDeath(player)`、`history(player, n)`、`stats(player)`、`test(player, damageId[, entityId])`、`check(player, condition)`、`registrations()` があります。register イベントの外（リスナーの中など）で `WhatHitMe` から登録したものは、server_scripts が読み直されるまで残ります。
 
+## KubeJS 5 以前
+
+KubeJS 5（1.18.2）と KubeJS 3（1.16.5、1.17.1 Fabric）は `onEvent`、古い KubeJS（1.12.2 - 1.16.1）は `events.listen` を使います。イベント名は `whathitme.register`、`whathitme.damage_recorded`、`whathitme.death`、`whathitme.respawn`、`whathitme.alert` です。イベントのオブジェクトとグローバル `WhatHitMe` は上と同じです。プレイヤーは Minecraft のプレイヤーオブジェクトなので、タグ・スコア・ステージ・クエストは `WhatHitMe.check(player, ...)` で調べてください。
+
+```js
+// kubejs/server_scripts/whathitme.js（1.12.2 は kubejs/whathitme.js）
+onEvent('whathitme.register', event => {      // 古い KubeJS: events.listen('whathitme.register', function (event) { ... })
+  event.condition('veteran', 'veteran タグを持つ', player => WhatHitMe.check(player, 'tag:veteran'))
+  event.addRule({ match: '*@minecraft:wither', unless: ['script:veteran'], name: '???' })
+})
+
+onEvent('whathitme.damage_recorded', event => {
+  if (event.damage.damageType == 'cactus') event.cancel()
+})
+```
+
+- KubeJS 1.12.2 / 1.14.4 / 1.16.1 は Nashorn で動きます。ES5（`function`、`var`、アロー関数なし）で書き、ルールは JSON 文字列で渡してください。
+- スクリプトのフォルダー：1.12.2 は `kubejs/`、1.14.4・1.15.2・1.16.1 は `kubejs/data/modpack/kubejs/`（1.14.4 と 1.16.1 はそこの `scripts.json` にもファイルを書く）、1.16.5 以降は `kubejs/server_scripts/`。
+- 1.16.1 Fabric では KubeJS Fabric 1.1.5 を使ってください（1.5.3 は 1.16.1 用と表示されていますが 1.16.2 以降が必要です）。Nashorn で動くため、最近の Fabric Loader では JVM 引数 `-Dfabric.debug.disableClassPathIsolation=true` が必要です。
+- スクリプトの再読み込みは 1.12.2 が `/kubejs reload`、1.14.4 - 1.18.2 が `/reload` です。
+
+## MineTweaker 3 / CraftTweaker 3.x（1.7.10 - 1.11.2）
+
+スクリプトは `scripts/` に置きます。スクリプトはサーバーの起動時と `/minetweaker reload` で実行され、前回の実行で登録したものは What Hit Me? が置き換えます。
+
+ZenScript 1 の関数の中からは static メソッドを呼べないので、関数の中ではすべて引数を使います。`onRegister` には登録メソッドを持つ `Api` が渡され、条件と変数には `Player`（`check(条件)`、`name`、`player`（`IPlayer`）、`lastDeath`、`history(n)`、`stats`、`test(damageId)`）が渡されます。どのイベントにも `event.player`（`Player`）と `event.api` があります。スクリプトの一番外側では `WhatHitMe` の static メソッドが CraftTweaker 1.12.2 と同じように使えます。スコアボードのタグは 1.9 からなので、1.7.10 / 1.8.9 ではスコアで調べてください（`score:<目的>>=1`）。
+
+```zenscript
+import mods.whathitme.WhatHitMe;
+import mods.whathitme.Api;
+import mods.whathitme.Player;
+import mods.whathitme.DeathEvent;
+import mods.whathitme.RespawnEvent;
+
+WhatHitMe.onRegister(function(api as Api) {
+    api.condition("veteran", "veteran スコアを持つ", function(player as Player) as bool {
+        return player.check("score:veteran>=1");
+    });
+    api.addRule('{"match": "minecraft:lava", "unless": ["script:veteran"], "name": "???"}');
+});
+
+WhatHitMe.onDeath(function(event as DeathEvent) {
+    event.addSummaryLine("&7次はがんばって、{player}。");
+});
+
+WhatHitMe.onRespawn(function(event as RespawnEvent) {
+    event.api.addHint("my:last", event.player.lastDeath.killingBlow.damageType);
+});
+```
+
+途中で抜ける `return;` は使わず、`if (...) { ... }` で書いてください（ZenScript 1 は単独の `return;` を受け付けません）。[GTNH 版](https://github.com/GTNewHorizons/CraftTweaker)（mod id は同じ `MineTweaker3`）も同じように使えます。
+
+::: warning MineTweaker 3.0.10B（1.7.10）と CraftTweaker 3.0.9（1.9.4）
+この 2 つの ZenScript コンパイラーは戻り値のない関数をコンパイルできないため、`onRegister` とイベント（`onDamageRecorded`、`onDeath`、`onRespawn`、`onAlert`）は使えません。一番外側での登録、条件、変数、`addRule` / `addRename` などと読み取りメソッドは使えます。1.7.10 ですべての機能を使うには CraftTweaker 3.1.0 か GTNH 版を使ってください。
+:::
+
 ## CraftTweaker 1.12.2
 
 スクリプトは `scripts/` に置きます。CraftTweaker 1.12.2 はゲーム起動時に 1 回だけスクリプトを実行します。
@@ -100,9 +158,9 @@ WhatHitMe.onDeath(function(event as DeathEvent) {
 
 ルールは JSON の文字列で渡します。ほかのメソッド: `onRespawn`、`onAlert`、`addHint`、`addDeathMessage`、`addTemplate(output, lines as string[])`、`lastDeath`、`history`、`stats`、`test`、`check`。
 
-## CraftTweaker（1.16.5 以降）
+## CraftTweaker（1.14.4 以降）
 
-スクリプトは `scripts/` に置きます。`/reload` のたびにスクリプトが実行し直され、前回の実行で登録したものは What Hit Me? が置き換えます。
+スクリプトは `scripts/` に置きます。`/reload` のたびにスクリプトが実行し直され、前回の実行で登録したものは What Hit Me? が置き換えます。プレイヤーの型は 1.17.1 から `crafttweaker.api.entity.type.player.Player`、1.16.5 は `crafttweaker.api.player.MCPlayerEntity`、1.14.4 / 1.15.2 は `crafttweaker.api.entity.player.MCPlayerEntity` です。Fabric 1.18.2 / 1.19.2 の CraftTweaker には Ingredient Extension API が必要です。Fabric 1.17.1 の CraftTweaker は What Hit Me? が必要とする Fabric Loader では起動しないため、連携はありません。
 
 ```zenscript
 import crafttweaker.api.entity.type.player.Player;

@@ -501,22 +501,39 @@ Adding a binding for a version:
    annotation scan of `@ZenRegister` / `@CraftTweakerPlugin`), never referenced from the loader code.
 4. Test (below), then add the version to the wiki tables (`wiki/modpack/scripts.md`, `wiki/guide/integrations.md`, both languages).
 
-Bindings so far:
+Bindings (a target lists several directories; shared code first):
 
 | Directory | Script mod | Targets | Entry / reload hooks |
 | --- | --- | --- | --- |
-| `kubejs` | shared KubeJS classes (`WhatHitMeJS` global, `PlayerPredicate`, `PlayerValue`) | with `kubejs6` / `kubejs7` | - |
-| `kubejs7` | KubeJS 7 (2101.7.x) | 1.21.1-neoforge | `KubeJSPlugin` (interface): `registerEvents(EventGroupRegistry)`, `registerBindings` (server only), `beforeScriptsLoaded` -> `clear("kubejs")`, `afterScriptsLoaded` -> `rebuild()`. Events implement `KubeEvent`; `damageRecorded` needs `.hasResult()` or `event.cancel()` is only logged |
-| `kubejs6` | KubeJS 6 (2001.6.x) | 1.20.1-forge, 1.20.1-fabric | `KubeJSPlugin` (class): `registerEvents()` -> `GROUP.register()`, `registerBindings(BindingsEvent)` runs before the server scripts (also on `/reload`) -> `clear`, `onServerReload()` after them -> `rebuild()`. Events extend `EventJS` |
+| `kubejs` | shared KubeJS classes (`WhatHitMeJS` global, `PlayerPredicate`, `PlayerValue`) | every KubeJS target | - |
+| `kubejs7` | KubeJS 7 (2101.7.x) and KubeJS 8 (26.1.2-8.0.x, same API) | 1.21.1-neoforge, 26.1.2-neoforge | `KubeJSPlugin` (interface): `registerEvents(EventGroupRegistry)`, `registerBindings` (server only), `beforeScriptsLoaded` -> `clear("kubejs")`, `afterScriptsLoaded` -> `rebuild()`. Events implement `KubeEvent`; `damageRecorded` needs `.hasResult()` or `event.cancel()` is only logged |
+| `kubejs6` | KubeJS 6 (1902.6.x, 2001.6.x) and the KubeJS 7 beta of NeoForge 1.20.4 (2004.7.0, still the KubeJS 6 API) | 1.19.2-forge, 1.19.2-fabric, 1.20.1-forge, 1.20.1-fabric, 1.20.4-neoforge | `KubeJSPlugin` (class): `registerEvents()` -> `GROUP.register()`, `registerBindings(BindingsEvent)` runs before the server scripts (also on `/reload`) -> `clear`, `onServerReload()` after them -> `rebuild()`. Events extend `EventJS` |
+| `kubejs5` | KubeJS 5 (1802.5.x, package `dev.latvian.mods.kubejs`, `onEvent` scripts) | 1.18.2-forge, 1.18.2-fabric | `KubeJSPlugin` (class) `init()` (bridge listeners), `addBindings(BindingsEvent)` (server) -> `clear`, global, `WhatHitMeApi.rebuildLater()` (no "after the scripts" hook: the rebuild runs on the next server tick). Events extend `EventJS`, posted with `post(ScriptType.SERVER, "whathitme.<event>")`; `canCancel()` true for `damage_recorded`. Compiled against Modrinth's Maven |
+| `kubejs3` | KubeJS 2 / 3 shared classes (package `dev.latvian.kubejs`): events and `KubeJS3.init()` / `KubeJS3.bindings(event)` | with `kubejs3plugin`, `kubejs2forge`, `kubejs2fabric` | like `kubejs5`; compiled against CurseMaven (`kubejs_file`, optional `rhino_file`) |
+| `kubejs3plugin` | KubeJS 3 (1605.3.x) and the 1.17.1 Fabric port (1701.3.10) | 1.16.5-forge, 1.16.5-fabric, 1.17.1-fabric | `KubeJSPlugin` (class) delegating to `KubeJS3` |
+| `kubejs2forge` | KubeJS 2 (1.14.4 2.2.0.x on Nashorn, 1.15.2 1502.3.x on Rhino), no plugin API | 1.14.4-forge, 1.15.2-forge | `core.script.ScriptBindings` (called from the loader at mod construction) calls `WhatHitMeOldKubeJS.init()` when `kubejs` is loaded: `KubeJS3.init()` + a Forge bus listener for `BindingsEvent` |
+| `kubejs2fabric` | KubeJS 1.5 for Fabric 1.16.1 (Nashorn), no plugin API | 1.16.1-fabric | `ScriptBindings` -> `BindingsEvent.EVENT.register(...)` |
+| `kubejs1` | KubeJS 1.1 for Forge 1.12.2 (Nashorn, one script folder `kubejs/`, `events.listen`) | 1.12.2-forge | `ScriptBindings` in the pre init of What Hit Me? (`dependencies = "before:kubejs"`: KubeJS runs its scripts in its own pre init); Forge 1.12 bus listener for `BindingsEvent` (also on `/kubejs reload`); events posted with `EventsJS.post(id, event)` |
 | `crafttweaker112` | CraftTweaker 1.12.2 (4.1.20) | 1.12.2-forge | `@ZenRegister @ZenClass("mods.whathitme.WhatHitMe")` static methods, functional interfaces as `@ZenClass` interfaces; scripts run once at game start (no reload), `onRegister` hooks are rebuilt by `/whm reload`. ZenScript map literals are `IAny`, not `IData`: rules are JSON text |
-| `crafttweaker` | CraftTweaker 14.x (new ZenScript, `@ZenCodeType`) | 1.20.1-forge | `@CraftTweakerPlugin("whathitme:main")`; `IListenerRegistrationHandler.onExecuteRun` is called **after** each run, so the binding marks the run as ended and the first top-level registration of the next run clears the old ones (calls made from inside What Hit Me? callbacks do not count). Players are the Minecraft `Player` (CraftTweaker native type) |
+| `minetweaker3` | MineTweaker 3 / CraftTweaker 3.x (`minetweaker.*` API, ZenScript 1), also the GTNH fork | 1.7.10-forge, 1.8.9-forge, 1.9.4-forge, 1.10.2-forge, 1.11.2-forge | the `crafttweaker112` classes without `@ZenRegister` (`minetweaker.api.player.IPlayer`, `MineTweakerMC`). ZenScript 1 function literals cannot reach static classes ("cannot use type as expression" / "package name as expression"), so functions get objects: `onRegister(function(api as Api))`, conditions / variables a `Player` wrapper (`check`, `lastDeath`, `history`, `stats`, `test`), events `event.player` (wrapper) and `event.api`; no bare `return;` in ZenScript 1. MineTweaker has no class discovery: `ScriptBindings` (loader init) calls `WhatHitMeMT.init()` when `MineTweaker3` (or `crafttweaker`, the mod id of CraftTweaker 3.1 on 1.11.2) is loaded -> `MineTweakerAPI.registerClass` for every class, `onReloadEvent` -> clear, `onPostReload` -> `rebuild()` (scripts run at server start and on `/minetweaker reload`). No scoreboard tags before 1.9: the test script uses `score:` conditions |
+| `crafttweaker` | CraftTweaker 8+ (new ZenScript, `@ZenCodeType`, players are the Minecraft `Player`) | 1.17.1 - 1.21.1 (with `crafttweaker8` or `crafttweaker9`) | static `mods.whathitme.WhatHitMe`; the first top-level registration of a new script run clears the previous run (`CTRun.newRun()`; calls made from inside What Hit Me? callbacks do not count) |
+| `crafttweaker9` | CraftTweaker 9.1 - 21.0 (`@CraftTweakerPlugin`) | 1.18.2 - 1.21.1 Forge / Fabric / NeoForge | `IListenerRegistrationHandler.onExecuteRun` is called **after** each run: `CTRun.ended()` |
+| `crafttweaker8` | CraftTweaker 8.0 (1.17.1, no plugin API) and CraftTweaker 7 | 1.17.1-forge, 1.17.1-fabric, 1.16.5-forge | `CTRun`: a run is new when `CraftTweakerAPI.getCurrentRun()` is another object |
+| `crafttweaker7` | CraftTweaker 7 (1.16.5): the `crafttweaker` sources with `api.annotations.ZenRegister` | 1.16.5-forge | with `crafttweaker8`; keep it in step with `crafttweaker` |
+| `crafttweaker5` + `crafttweaker5run` | CraftTweaker 5 / 6 (1.14.4 / 1.15.2): the `crafttweaker7` sources with the `MCPlayerEntity` wrapper (`getInternal()` for the API) | 1.14.4-forge, 1.15.2-forge | `CTRun`: every run creates a new `CraftTweakerAPI.getEngine()` |
 
 Test (scripts in `whm-tools/script13/`):
 
 - Instances `WhmTest_<mc>_<Loader>_Scripts` (KubeJS) / `WhmTest_<mc>_<Loader>_CrT_Scripts` (CraftTweaker): `inst.sh <source> <new> <jars>`;
   rename a new instance folder away and back once so Prism sees it. Runtime jars from Modrinth (`mr.py`) or CurseForge (`../quest13/cf.py`).
-- `run.sh <instance> <target> scripts <script> <dir>`: copies the test script (`scripts/kubejs/whm_test.js` to `kubejs/server_scripts`,
-  `scripts/crafttweaker112/whm_test.zs` or `scripts/crafttweaker/whm_test.zs` to `scripts`) and runs `ScriptPlan` (flag `scripts`):
+- Instances: `mk.sh <source> <new> <jars>` (inst.sh plus the rename trick). Do not create instances while a game is being launched
+  (Prism reloads every instance and the launch can be lost).
+- `run.sh <instance> <target> scripts <script> <dir>`: copies the test script and runs `ScriptPlan` (flag `scripts`). Test scripts:
+  `scripts/kubejs/whm_test.js` (KubeJS 6 - 8, `kubejs/server_scripts`), `scripts/kubejs5/whm_test.js` (KubeJS 3 / 5, `onEvent`),
+  `scripts/kubejs2/whm_test.js` (old KubeJS, `events.listen`, ES5; 1.12.2 in `kubejs/`), `scripts/crafttweaker/whm_test.zs` (1.17.1+),
+  `scripts/crafttweaker7/whm_test.zs` (1.16.5), `scripts/crafttweaker5/whm_test.zs` (1.14.4 / 1.15.2), `scripts/crafttweaker112/whm_test.zs`,
+  `scripts/minetweaker3/whm_test.zs` (`score:` conditions), all to `scripts/` for the ZenScript ones. `batch.sh <list>` runs a list of
+  `run.sh` lines one after the other. `ScriptPlan`:
   registrations listed by `/whm reload`, `script:` conditions true / false / throwing, register-event rule and rename, top-level
   entry, `{script:whmt_var}` in a pack line template, `damageRecorded` name / badge / cancel, alert, death summary line and tip,
   respawn reads (lastDeath, history, stats, test), no duplicates after two `/whm reload`, and the script mod's `/reload`
@@ -524,47 +541,82 @@ Test (scripts in `whm-tools/script13/`):
   must also pass (`run.sh <instance> <target> sp <script> <dir>`).
 - Without the script mod (a plain instance): `run.sh <instance> <target> scripts` checks the reload warning and that nothing changes,
   plus a normal `sp`.
-- Multiplayer: server with the script mod and the test script, server pack with the line template
+- Multiplayer: `mps.sh <server dir> <target> <client instance> <script> <script dir> <script mod jars>` (backs up ops.json, the mod
+  list and the top-level files, starts the server with the script mod, runs the client, then removes everything the run added).
+  Server with the script mod and the test script, server pack with the line template
   `{name} {badges} WHMV:{script:whmt_var|none}`, modded client with flag `mp-scripts` (`ScriptPlan.planMp`: the variable list
   arrives in `ServerInfo`, the client has no registrations of its own, the history line shows `WHMV:V-fall`).
 - Offline: `sc.sh` (`ScriptCheck`: API, rules, variables on the wire, runtime entries, hooks, events), `golden.sh` (built-in
   outputs of HEAD vs the working tree must stay identical without scripts).
 
-Script mods per Minecraft version and loader (Modrinth / CurseForge, November 2026). "Binding" = directory to use or the
-new one the port phase has to write:
+Script mods per Minecraft version and loader (rechecked on Modrinth / CurseForge / the mavens on 2026-11-18) and the
+binding of each target. Results: see "Script binding test results" below.
 
 | Minecraft | Our targets | KubeJS | CraftTweaker / MineTweaker |
 | --- | --- | --- | --- |
-| 1.7.10 | forge | - | MineTweaker 3 3.0.10B (CurseForge `minetweaker3`), CraftTweaker 3.1.0 legacy (`crafttweaker`, MineTweaker API); GTNH fork `GTNewHorizons/CraftTweaker` 3.5.0 (GitHub releases): new binding `minetweaker3` (`minetweaker.*` API, ZenScript 1.x), check the fork separately |
-| 1.8.9 | forge | - | CraftTweaker 3.1.0 legacy (MineTweaker API): `minetweaker3` binding |
-| 1.9.4 | forge | - | CraftTweaker 3.0.9: `minetweaker3` |
+| 1.7.10 | forge | - | MineTweaker 3 3.0.10B (CurseForge `minetweaker3`), CraftTweaker 3.1.0 legacy, GTNH fork `GTNewHorizons/CraftTweaker` 3.5.0 (GitHub releases, mod id `MineTweaker3` too): `minetweaker3` (MineTweaker 3.0.10B only partly, see the results) |
+| 1.8.9 | forge | - | CraftTweaker 3.1.0 legacy: `minetweaker3` |
+| 1.9.4 | forge | - | CraftTweaker 3.0.9: `minetweaker3` (partly, see the results) |
 | 1.10.2, 1.11.2 | forge | - | CraftTweaker 3.1.0 legacy: `minetweaker3` |
-| 1.12.2 | forge | KubeJS 1.1.0.65 (old KubeJS, different API; low priority) | CraftTweaker 4.1.20.718: `crafttweaker112` (done) |
-| 1.14.4 | fabric, forge | Forge 2.2.0.29 (old `events.listen` API) | Forge 5.0.1.202 (new API, early): check against `crafttweaker` |
-| 1.15.2 | fabric, forge | Forge 1502.3.0.19 (old API) | Forge 6.0.0.45 |
-| 1.16.1 | fabric | Fabric 1.5.3 (CurseForge `kubejs-fabric`, old API) | - |
-| 1.16.5 | fabric, forge | Forge 1605.3.19-build.299, Fabric 1605.3.19-build.299 (`kubejs-fabric` project): KubeJS 3, `onEvent` style: new binding `kubejs3` (close to `kubejs5`) | Forge 7.1.2.534 |
-| 1.17.1 | fabric, forge | Fabric 1701.3.10 (unfinished port) | Forge / Fabric 8.0.0+36 |
-| 1.18.2 | fabric, forge | Forge / Fabric 1802.5.5-build.569 (KubeJS 5, `onEvent`): new binding `kubejs5` | Forge 9.1.213, Fabric 9.1.211 |
-| 1.19.2 | fabric, forge | Forge / Fabric 1902.6.2-build.73 (KubeJS 6, event groups): `kubejs6` should fit | Forge / Fabric 10.1.56 |
-| 1.19.3 | fabric, forge | - | Forge / Fabric 11.0.4 |
-| 1.19.4 | fabric, forge | - | Forge / Fabric 12.0.3 |
-| 1.20.1 | fabric, forge (+NeoForge 1.20.1) | Forge / Fabric 2001.6.5-build.26: `kubejs6` (done) | Forge / Fabric 14.0.60: `crafttweaker` (done on Forge; Fabric: check how CraftTweaker Fabric finds `@ZenRegister` classes) |
-| 1.20.2 | fabric, forge | - | Forge / Fabric / NeoForge 15.0.11 |
-| 1.20.4 | fabric, forge, neoforge | NeoForge 2004.7.0-build.26 (KubeJS 7 beta): check against `kubejs7` | Forge / Fabric / NeoForge 17.0.20 (16.0.9 for 1.20.3) |
-| 1.20.6 | fabric, forge, neoforge | - | Fabric / NeoForge 19.0.13 (no Forge) |
-| 1.21.1 | fabric, forge, neoforge | NeoForge 2101.7.2-build.381: `kubejs7` (done); no Fabric / Forge build | Fabric / NeoForge 21.0.38 |
+| 1.12.2 | forge | KubeJS 1.1.0.65: `kubejs1` | CraftTweaker 4.1.20.718: `crafttweaker112` |
+| 1.14.4 | fabric, forge | Forge 2.2.0.27 (the 2.2.0.29 file is tagged 1.15): `kubejs2forge` | Forge 5.0.1.202: `crafttweaker5` |
+| 1.15.2 | fabric, forge | Forge 1502.3.0.19 (+ Rhino 1.7.13.7): `kubejs2forge` | Forge 6.0.0.45: `crafttweaker5` |
+| 1.16.1 | fabric | Fabric 1.1.5 (CurseForge `kubejs-fabric`; 1.5.3 is tagged 1.16.1 but needs 1.16.2+): `kubejs2fabric` | - (CraftTweaker 1.16.1 is Forge only; we have no Forge 1.16.1 target) |
+| 1.16.5 | fabric, forge | Forge / Fabric 1605.3.19-build.299 (KubeJS 3): `kubejs3plugin` | Forge 7.1.2.534: `crafttweaker7` |
+| 1.17.1 | fabric, forge | Fabric 1701.3.10-build.9999 (unfinished port, KubeJS 3 API): `kubejs3plugin` | Forge 8.0.0+36: `crafttweaker8`; Fabric 8.0.0+36 does not start with Fabric Loader 0.14+ (not supported) |
+| 1.18.2 | fabric, forge | Forge / Fabric 1802.5.5-build.569 (KubeJS 5): `kubejs5` | Forge 9.1.213, Fabric 9.1.211 (+ Ingredient Extension API): `crafttweaker9` |
+| 1.19.2 | fabric, forge | Forge / Fabric 1902.6.2-build.73: `kubejs6` | Forge / Fabric 10.1.56 (Fabric + Ingredient Extension API): `crafttweaker9` |
+| 1.19.3 | fabric, forge | - | Forge / Fabric 11.0.4: `crafttweaker9` |
+| 1.19.4 | fabric, forge | - | Forge / Fabric 12.0.3: `crafttweaker9` |
+| 1.20.1 | fabric, forge (+NeoForge 1.20.1) | Forge / Fabric 2001.6.5-build.26: `kubejs6` | Forge 14.0.61, Fabric 14.0.60: `crafttweaker9` |
+| 1.20.2 | fabric, forge | - | Forge / Fabric 15.0.11 (NeoForge too; no NeoForge 1.20.2 target): `crafttweaker9` |
+| 1.20.4 | fabric, forge, neoforge | NeoForge 2004.7.0-build.26 (KubeJS 7 beta, KubeJS 6 API): `kubejs6` | Forge / Fabric / NeoForge 17.0.20: `crafttweaker9` |
+| 1.20.6 | fabric, forge, neoforge | - | Fabric / NeoForge 19.0.13 (no Forge): `crafttweaker9` |
+| 1.21.1 | fabric, forge, neoforge | NeoForge 2101.7.2-build.381: `kubejs7`; no Fabric / Forge build | Fabric / NeoForge 21.0.38 (no Forge): `crafttweaker9` |
 | 1.21.3 - 1.21.11 | fabric, forge, neoforge | - | - |
-| 26.1.2 | fabric, forge, neoforge | NeoForge 26.1.2-8.0.8 (KubeJS 8): new binding `kubejs8` | - |
+| 26.1.2 | fabric, forge, neoforge | NeoForge 26.1.2-8.0.8 (KubeJS 8, KubeJS 7 API; needs Java 25, does not start on Java 27): `kubejs7` | - |
 | 26.2, 26.3 | fabric, forge, neoforge | - | - |
 
-Notes for the port phase:
+Script binding test results (2026-11-18, `ScriptPlan` with the test script, then `sp` in the same instance; mp see below):
+
+| Minecraft / loader | Script mod (test instance) | Result |
+| --- | --- | --- |
+| 1.7.10 Forge | CraftTweaker 3.1.0 legacy (`_1.7.10_CrT31_Scripts`), GTNH CraftTweaker 3.5.0 (`_1.7.10_GTNHCrT_Scripts`) | ALL PASSED |
+| 1.7.10 Forge | MineTweaker 3 3.0.10B (`_1.7.10_MT_Scripts`) | partial: its ZenScript cannot compile functions without a result (`Control flow falls through code end` / `NegativeArraySizeException`), so `onRegister` and the event listeners fail; top-level registrations, conditions, variables, runtime entries and the read methods work. Use CraftTweaker 3.1.0 or the GTNH fork |
+| 1.8.9, 1.10.2, 1.11.2 Forge | CraftTweaker 3.1.0 legacy | ALL PASSED (1.11.2: mod id `crafttweaker`) |
+| 1.9.4 Forge | CraftTweaker 3.0.9 | partial, the same ZenScript bug as MineTweaker 3.0.10B (only release for 1.9.x) |
+| 1.12.2 Forge | KubeJS 1.1.0.65 (`_1.12.2_KubeJS`), CraftTweaker 4.1.20 | ALL PASSED |
+| 1.14.4 Forge | KubeJS 2.2.0.27 (scripts in `kubejs/data/modpack/kubejs/` + `scripts.json`), CraftTweaker 5.0.1 | ALL PASSED |
+| 1.15.2 Forge | KubeJS 1502.3.0.19 (scripts in `kubejs/data/modpack/kubejs/`), CraftTweaker 6.0.0.45 | ALL PASSED |
+| 1.16.1 Fabric | KubeJS Fabric 1.1.5 (the last real 1.16.1 build; 1.5.3 is tagged 1.16.1 but crashes there; Nashorn: needs `-Dfabric.debug.disableClassPathIsolation=true` on Fabric Loader 0.14+, scripts in `kubejs/data/modpack/kubejs/` + `scripts.json`) | ALL PASSED |
+| 1.16.5 Forge / Fabric | KubeJS 1605.3.19; CraftTweaker 7.1.2 (Forge) | ALL PASSED |
+| 1.17.1 Forge | CraftTweaker 8.0.0 | ALL PASSED |
+| 1.17.1 Fabric | KubeJS 1701.3.10 (unfinished port, starts and works) | ALL PASSED |
+| 1.17.1 Fabric | CraftTweaker 8.0.0 | not supported: it calls `ModContainerImpl.getOriginPath()`, which Fabric Loader 0.14+ no longer has, and What Hit Me? needs Loader 0.15+ (no binding in that jar) |
+| 1.18.2 Forge / Fabric | KubeJS 1802.5.5; CraftTweaker 9.1 (Fabric + Ingredient Extension API) | ALL PASSED |
+| 1.19.2 Forge / Fabric | KubeJS 1902.6.2; CraftTweaker 10.1.56 | ALL PASSED |
+| 1.19.3, 1.19.4, 1.20.2 Forge / Fabric | CraftTweaker 11.0.4, 12.0.3, 15.0.11 | ALL PASSED |
+| 1.20.1 Forge / Fabric | KubeJS 2001.6.5, CraftTweaker 14.0 (Fabric new) | ALL PASSED |
+| 1.20.4 Forge / Fabric / NeoForge | CraftTweaker 17.0.20; KubeJS 2004.7.0 (NeoForge) | ALL PASSED |
+| 1.20.6, 1.21.1 Fabric / NeoForge | CraftTweaker 19.0.13, 21.0.38; KubeJS 2101.7.2 (1.21.1 NeoForge) | ALL PASSED |
+| 26.1.2 NeoForge | KubeJS 26.1.2-8.0.8 (Java 25; on Java 27 NeoForge stops with a fatal error before the title screen) | ALL PASSED |
+
+mp-scripts (`mps.sh`, server with the script mod and the test script, modded client with flag `mp-scripts`): ALL PASSED on
+server-forge-1.18.2 (KubeJS 5), server-forge-1.16.5 (KubeJS 3; no start.sh: the python launcher, clients join through
+`whm_connect.txt`), server-neoforge-1.20.4 (KubeJS 6 API), server-fabric-1.21.1-r121 (CraftTweaker 21; the client with CraftTweaker
+has no registrations of its own), server-forge-1.7.10 (CraftTweaker 3.1.0), server-forge-1.12.2 (KubeJS 1.1); earlier
+server-neoforge-1.21.1-r121 (KubeJS 7). MineTweaker may run the server's scripts on clients too: `planMp` only logs client
+registrations there (unused on a client).
+
+Notes:
 - KubeJS 2101 also lists Minecraft 1.21 (NeoForge); KubeJS 2001 is also marked for NeoForge 1.20.1 (runs with the Forge jar).
-- Rhino versions: 2101.2.7-build.81+ (KubeJS 7, pom), 2001.2.3-build.10 (1.20.1), 1902.2.3, 1802.2.1; KubeJS 6 needs Architectury at run time.
+- Runtime dependencies: KubeJS 3 - 7 need Rhino and Architectury (1.16.5: Architectury 1.32, 1.17.1: 2.10, 1.18.2: 4.11, 1.19.2: 6.6,
+  1.20.4: 11.1 + `rhino-neoforge`), KubeJS 8 needs Rhino 2101.2.8 and Better Advanced Tooltips; KubeJS 1.15.2 needs Rhino 1.7.13.x;
+  CraftTweaker for Fabric 1.17.1 - 1.19.2 needs Ingredient Extension API.
 - The test scripts use `damage.damageType` (msgId), which is the same on every version, and `WhatHitMe.check(player, "tag:...")`
-  so they need no version-specific player API.
-- Mixed packs: KubeJS and CraftTweaker can be installed together; each registers under its own owner (`kubejs`, `crafttweaker`).
-  Test them in separate instances (the test scripts use the same names).
+  (MineTweaker: `player.check("score:...")`) so they need no version-specific player API.
+- Mixed packs: KubeJS and CraftTweaker can be installed together; each registers under its own owner (`kubejs`, `crafttweaker`,
+  `minetweaker`). Test them in separate instances (the test scripts use the same names).
 
 ## Porting 1.3.0 pack editor
 

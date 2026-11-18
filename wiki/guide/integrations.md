@@ -10,9 +10,9 @@ What Hit Me? works with every mod out of the box: damage from any mod is recorde
 | **Better Questing** | Rules can check quest completion (`bq:`), including the GTNH fork | 1.12.2, 1.7.10 (GTNH fork) | <Badge type="tip" text="1.3.0+" /> | [Conditions & quest mods](/modpack/conditions#quest-mods) |
 | **Heracles / Odyssey Quests** | Rules can check quest completion (`heracles:`) | 1.20 - 1.21.1 | <Badge type="tip" text="1.3.0+" /> | [Conditions & quest mods](/modpack/conditions#quest-mods) |
 | **Game Stages** | Rules can check stages (`stage:`) | 1.12.2 - 1.20.x (Forge) | <Badge type="tip" text="1.3.0+" /> | [Conditions & quest mods](/modpack/conditions#quest-mods) |
-| **KubeJS** | Scripts add rule conditions (`script:`), template variables (`{script:}`), event listeners and runtime entries | 1.20.1 (Forge, Fabric), 1.21.1 (NeoForge); more versions in progress | <Badge type="tip" text="1.3.0+" /> | [Script integration](/modpack/scripts) |
-| **CraftTweaker** | Same as KubeJS, in ZenScript (`mods.whathitme.WhatHitMe`) | 1.12.2, 1.20.1 (Forge); more versions in progress | <Badge type="tip" text="1.3.0+" /> | [Script integration](/modpack/scripts) |
-| **MineTweaker 3** | Same as above on 1.7.10 (also the GTNH fork) | 1.7.10 | <Badge type="warning" text="planned" /> | [Script integration](/modpack/scripts) |
+| **KubeJS** | Scripts add rule conditions (`script:`), template variables (`{script:}`), event listeners and runtime entries | 26.1.2, 1.21.1, 1.20.4 (NeoForge); 1.20.1, 1.19.2, 1.18.2, 1.16.5 (Forge, Fabric); 1.17.1, 1.16.1 (Fabric); 1.15.2, 1.14.4, 1.12.2 (Forge) | <Badge type="tip" text="1.3.0+" /> | [Script integration](/modpack/scripts) |
+| **CraftTweaker** | Same as KubeJS, in ZenScript (`mods.whathitme.WhatHitMe`) | 1.21.1, 1.20.6 (Fabric, NeoForge); 1.20.4 (Forge, Fabric, NeoForge); 1.18.2 - 1.20.2 (Forge, Fabric); 1.17.1, 1.16.5, 1.15.2, 1.14.4, 1.12.2 (Forge) | <Badge type="tip" text="1.3.0+" /> | [Script integration](/modpack/scripts) |
+| **MineTweaker 3** | Same as above with MineTweaker 3 / CraftTweaker 3.x (also the GTNH fork) | 1.7.10, 1.8.9, 1.9.4, 1.10.2, 1.11.2 (Forge) | <Badge type="tip" text="1.3.0+" /> | [Script integration](/modpack/scripts) |
 | **Mod Menu** | Opens the What Hit Me? settings screen from the mod list (Fabric) | every Fabric version | ✔ | [Settings screen](/player/settings) |
 | **Any mod with damage** | Damage ids and attackers of every mod are recorded; the scanner lists them before anyone gets hurt | all | ✔ | [Scanner](/modpack/scanner), [Damage ids](/reference/damage-ids) |
 
