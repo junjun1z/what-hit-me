@@ -296,8 +296,13 @@ public final class SelfTest {
     /** Hit the player on the server, then wait out the invulnerability frames */
     void hit(Act a, float amount) {
         srv(a, amount);
-        // > 10 server ticks apart even when the client catches up ticks: vanilla ignores an equal hit within 10 ticks of the last one
-        sleep(22);
+        sleep(14);
+    }
+
+    /** Equal hits that must all land (merge checks): more than the 10 server ticks of vanilla invulnerability even when the client catches up ticks */
+    void hitSpaced(Act a, float amount) {
+        srv(a, amount);
+        sleep(24);
     }
 
     void srv(Act a, float amount) {
@@ -358,9 +363,9 @@ public final class SelfTest {
         hit(Act.IN_FIRE, 2f);
         check("fire flag", () -> find(id("inFire")) != null && find(id("inFire")).has(DamageRecord.FIRE), describe(id("inFire")));
         // smart merge: three burning ticks within the merge window
-        hit(Act.ON_FIRE, 1f);
-        hit(Act.ON_FIRE, 1f);
-        hit(Act.ON_FIRE, 1f);
+        hitSpaced(Act.ON_FIRE, 1f);
+        hitSpaced(Act.ON_FIRE, 1f);
+        hitSpaced(Act.ON_FIRE, 1f);
         check("smart merge (x3 hits, one line)", () -> find(id("onFire")) != null && find(id("onFire")).hits == 3, describe(id("onFire")));
         srv(Act.EXTINGUISH);
         if (port.deferredHitRead()) {

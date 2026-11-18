@@ -287,10 +287,10 @@ final class V12Plan {
         // ---- environment context (+ merge reuses the first hit's world read)
         t.srv(Act.ENV_SETUP);
         t.sleep(2);
-        t.hit(Act.CACTUS, 1f);
+        t.hitSpaced(Act.CACTUS, 1f);
         t.srv(Act.ENV_CLEAR);
         t.sleep(2);
-        t.hit(Act.CACTUS, 1f);
+        t.hitSpaced(Act.CACTUS, 1f);
         t.check("environment: feet block + held item, kept for merged hits", () -> {
             DamageRecord r = last(SelfTest.id("cactus"));
             Context.Part feet = r == null ? null : Context.find(r.context, Context.FEET);
