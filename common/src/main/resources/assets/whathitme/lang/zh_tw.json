@@ -563,6 +563,7 @@
   "whathitme.pack.warn.vars": "未知變數：%s",
   "whathitme.pack.warn.lockkey": "%s 不是已知的設定鍵。",
   "whathitme.pack.needserver": "模組包編輯器需要伺服器安裝 What Hit Me?。個人清單：/whm pack personal",
+  "whathitme.pack.oldserver": "整合包編輯器需要伺服器安裝 What Hit Me? 1.3 或更新版本。你自己的清單：/whm pack personal",
   "whathitme.pack.noperm": "只有管理員（或開啟作弊的單人遊戲）可編輯模組包。個人清單：/whm pack personal",
   "whathitme.pack.unavailable": "此 Minecraft 版本暫不支援模組包編輯器畫面，請編輯 config/whathitme/pack/*.json。"
 }

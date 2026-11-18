@@ -563,6 +563,7 @@
   "whathitme.pack.warn.vars": "不明な変数: %s",
   "whathitme.pack.warn.lockkey": "%s は既知の設定キーではありません。",
   "whathitme.pack.needserver": "パックエディターにはサーバー側のWhat Hit Me?が必要です。自分のリスト: /whm pack personal",
+  "whathitme.pack.oldserver": "パックエディタにはサーバー側に What Hit Me? 1.3 以降が必要です。自分用のリスト: /whm pack personal",
   "whathitme.pack.noperm": "パックを編集できるのはOP（またはチート有効のシングルプレイ）だけです。自分のリスト: /whm pack personal",
   "whathitme.pack.unavailable": "このMinecraftバージョンではパックエディター画面はまだ使えません。config/whathitme/pack/*.json を編集してください。"
 }

@@ -563,6 +563,7 @@
   "whathitme.pack.warn.vars": "Variables desconocidas: %s",
   "whathitme.pack.warn.lockkey": "%s no es un ajuste conocido.",
   "whathitme.pack.needserver": "El editor del pack necesita What Hit Me? en el servidor. Tus listas: /whm pack personal",
+  "whathitme.pack.oldserver": "El editor del pack necesita What Hit Me? 1.3 o posterior en el servidor. Tus propias listas: /whm pack personal",
   "whathitme.pack.noperm": "Solo los operadores (o un jugador con trucos) pueden editar el pack. Tus listas: /whm pack personal",
   "whathitme.pack.unavailable": "El editor del pack aún no está disponible en esta versión de Minecraft; edita config/whathitme/pack/*.json."
 }

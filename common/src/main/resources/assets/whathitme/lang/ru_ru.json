@@ -563,6 +563,7 @@
   "whathitme.pack.warn.vars": "Неизвестные переменные: %s",
   "whathitme.pack.warn.lockkey": "%s — неизвестный ключ настроек.",
   "whathitme.pack.needserver": "Редактору сборки нужен What Hit Me? на сервере. Свои списки: /whm pack personal",
+  "whathitme.pack.oldserver": "Редактору пака нужен What Hit Me? 1.3 или новее на сервере. Ваши собственные списки: /whm pack personal",
   "whathitme.pack.noperm": "Редактировать сборку могут только операторы (или одиночная игра с читами). Свои списки: /whm pack personal",
   "whathitme.pack.unavailable": "Экран редактора сборки пока недоступен в этой версии Minecraft; правьте config/whathitme/pack/*.json."
 }

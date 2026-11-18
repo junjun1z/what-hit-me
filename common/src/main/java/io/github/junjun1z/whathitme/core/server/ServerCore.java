@@ -863,11 +863,21 @@ public final class ServerCore {
             case Packets.Request.RELOAD:
                 if (!p.isAdmin()) break; // the client already reloaded its own files
                 reload(srv);
-                p.send(new Packets.Message(false, "whathitme.reload.server"));
-                for (String w : WhmConfig.pack.warnings) p.send(new Packets.Message(true, "whathitme.reload.warning", w));
-                for (String w : ruleWarnings(srv)) p.send(new Packets.Message(true, "whathitme.reload.warning", w));
-                if (deathMessageWarning(srv) != null) p.send(new Packets.Message(true, "whathitme.reload.dmwarning", platform(srv)));
-                for (String l : ScriptRegistry.summary()) p.send(new Packets.Message(false, "whathitme.reload.scripts", l));
+                final PlayerHandle to = p;
+                final boolean old = tracker().protocol(p.uuid()) < 3;
+                // clients before 1.3 do not know the newer keys: they get the English text instead
+                java.util.function.BiConsumer<Boolean, String[]> say = (err, ka) -> {
+                    String[] args = java.util.Arrays.copyOfRange(ka, 1, ka.length);
+                    if (old && !ka[0].equals("whathitme.reload.server") && !ka[0].equals("whathitme.reload.pack")) to.send(new Packets.Message(err, Msg.ENGLISH.text(ka[0], (Object[]) args)));
+                    else to.send(new Packets.Message(err, ka[0], args));
+                };
+                say.accept(false, new String[] {"whathitme.reload.server"});
+                say.accept(false, new String[] {"whathitme.reload.pack", String.valueOf(WhmConfig.pack.files.size()), String.valueOf(WhmConfig.pack.errors.size())});
+                for (String e : WhmConfig.pack.errors) say.accept(true, new String[] {"whathitme.reload.warning", e});
+                for (String w : WhmConfig.pack.warnings) say.accept(true, new String[] {"whathitme.reload.warning", w});
+                for (String w : ruleWarnings(srv)) say.accept(true, new String[] {"whathitme.reload.warning", w});
+                if (deathMessageWarning(srv) != null) say.accept(true, new String[] {"whathitme.reload.dmwarning", platform(srv)});
+                for (String l : ScriptRegistry.summary()) say.accept(false, new String[] {"whathitme.reload.scripts", l});
 
                 break;
             default:
@@ -912,7 +922,8 @@ public final class ServerCore {
      * clients.
      */
     public static void execute(CommandSource sender, String[] args) {
-        Msg m = Msg.of(modded(sender));
+        // translated only for clients that know this version's keys (a 1.2 client would show raw 1.3 keys)
+        Msg m = Msg.of(modded(sender) && tracker().protocol(sender.player().uuid()) >= Packets.PROTOCOL);
         try {
             run(sender, m, args);
         } catch (CommandText.Failure f) {

@@ -267,7 +267,7 @@ public final class PackEditor implements CoreScreen {
      * @param personalMode start in personal mode (also forced when the player may not edit the pack)
      */
     public PackEditor(boolean personalMode) {
-        canPack = Safe.get("permission", () -> ClientCore.serverHasMod && ClientCore.op(), false);
+        canPack = Safe.get("permission", () -> ClientCore.serverPackEditor() && ClientCore.op(), false);
         assume.placeholder = tr("whathitme.pack.assume.placeholder");
         search.placeholder = tr("whathitme.pack.search");
         start(personalMode || !canPack);

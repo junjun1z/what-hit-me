@@ -60,6 +60,10 @@ public final class SelfTest {
 
     /** Plans the common modes; returns false when the mode is not a common one */
     public boolean planCommon() {
+        if (mode.equals("qa")) {
+            new QaPlan(this).plan();
+            return true;
+        }
         if (mode.equals("scripts")) {
             // script integration (test instance with KubeJS / CraftTweaker and the test script, or without a script mod)
             new ScriptPlan(this).plan();

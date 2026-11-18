@@ -563,6 +563,7 @@
   "whathitme.pack.warn.vars": "未知变量：%s",
   "whathitme.pack.warn.lockkey": "%s 不是已知的配置键。",
   "whathitme.pack.needserver": "整合包编辑器需要服务器安装 What Hit Me?。个人列表：/whm pack personal",
+  "whathitme.pack.oldserver": "整合包编辑器需要服务器安装 What Hit Me? 1.3 或更高版本。你自己的列表：/whm pack personal",
   "whathitme.pack.noperm": "只有管理员（或开启作弊的单人游戏）可编辑整合包。个人列表：/whm pack personal",
   "whathitme.pack.unavailable": "此 Minecraft 版本暂不支持整合包编辑器界面，请编辑 config/whathitme/pack/*.json。"
 }

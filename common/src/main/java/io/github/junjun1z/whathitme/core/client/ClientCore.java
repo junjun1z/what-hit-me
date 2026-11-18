@@ -591,7 +591,11 @@ public final class ClientCore {
                 if (!server) CatalogCache.rescan(port.registries());
                 print(m.tr(Fmt.GREEN, "whathitme.reload.done"));
                 for (String w : WhmConfig.client.templateWarnings) print(m.tr(Fmt.GOLD, "whathitme.reload.warning", w));
-                if (!server) for (String w : WhmConfig.pack.warnings) print(m.tr(Fmt.GOLD, "whathitme.reload.warning", w));
+                if (!server) {
+                    print(m.tr(Fmt.GRAY, "whathitme.reload.pack", WhmConfig.pack.files.size(), WhmConfig.pack.errors.size()));
+                    for (String e : WhmConfig.pack.errors) print(m.tr(Fmt.RED, "whathitme.reload.warning", e));
+                    for (String w : WhmConfig.pack.warnings) print(m.tr(Fmt.GOLD, "whathitme.reload.warning", w));
+                }
                 if (server && (port.isSingleplayer() || port.hasOpPermission())) request(Packets.Request.RELOAD, "");
                 break;
             }
@@ -636,11 +640,18 @@ public final class ClientCore {
         return serverHasMod ? null : FALLBACK.lastDeath();
     }
 
+    /** The server has What Hit Me? 1.3+ (pack editor protocol) */
+    public static boolean serverPackEditor() {
+        Packets.ServerInfo i = serverInfo;
+        return serverHasMod && i != null && i.protocol >= 3;
+    }
+
     /** /whm pack [personal]: the pack editor (operators, server with the mod) or the personal lists editor */
     private static void pack(Msg m, String[] args) {
         boolean personal = args.length > 1 && args[1].equalsIgnoreCase("personal");
         if (!personal) {
             if (!serverHasMod) throw CommandText.err(m, "whathitme.pack.needserver");
+            if (!serverPackEditor()) throw CommandText.err(m, "whathitme.pack.oldserver");
             if (!op()) throw CommandText.err(m, "whathitme.pack.noperm");
             if (!Safe.get("op level", port::knowsOpLevel, true)) {
                 askPack(m);
