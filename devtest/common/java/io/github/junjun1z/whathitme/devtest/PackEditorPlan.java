@@ -26,14 +26,20 @@ final class PackEditorPlan {
     private int before;
 
     private final boolean modern;
+    /** Entity tags exist from 1.9; before that a score stands in */
+    private final boolean tags;
+    private final String vet;
 
     PackEditorPlan(SelfTest t) {
         this.t = t;
         this.p = t.port;
         this.modern = VanillaCommands.of(p.mcVersion()).atLeast(1, 13, 0);
+        this.tags = VanillaCommands.of(p.mcVersion()).atLeast(1, 9, 0);
+        this.vet = tags ? "tag:whmt_vet" : "score:whmt_vet>=1";
     }
 
     private String tagCmd(boolean add) {
+        if (!tags) return "/scoreboard players set @p whmt_vet " + (add ? 1 : 0);
         return modern ? "/tag @p " + (add ? "add" : "remove") + " whmt_vet" : "/scoreboard players tag @p " + (add ? "add" : "remove") + " whmt_vet";
     }
 
@@ -101,6 +107,9 @@ final class PackEditorPlan {
             deleteTree(new File(pack(), "pe13"));
             WhmConfig.reloadCommon();
         });
+        // an objective for the score values list (and the stand-in for tags before 1.9)
+        t.act(() -> p.say("/scoreboard objectives add whmt_vet dummy"));
+        t.sleep(10);
         t.clearChat();
         t.act(() -> p.command("/whm pack"));
         t.waitFor("/whm pack opens the editor", p::packEditorOpen, 60);
@@ -110,7 +119,10 @@ final class PackEditorPlan {
             (Supplier<?>) () -> e().model().cats.size());
         t.check("helper lists: damage ids, mobs, condition prefixes", () -> !e().model().damage.isEmpty() && !e().model().mobs.isEmpty()
             && e().model().conds.containsKey("advancement") && e().model().conds.containsKey("tag"), null);
-        t.check("advancement values from the server", () -> !e().model().conds.get("advancement").isEmpty(), (Supplier<?>) () -> e().model().condProblems);
+        if (VanillaCommands.of(p.mcVersion()).atLeast(1, 12, 0)) {
+            t.check("advancement values from the server", () -> !e().model().conds.get("advancement").isEmpty(), (Supplier<?>) () -> e().model().condProblems);
+        }
+        t.check("score values from the server", () -> e().model().conds.get("score").contains("whmt_vet"), (Supplier<?>) () -> e().model().conds.get("score"));
         shot("renames_empty");
         // ---- folder and category through the tree buttons and dialogs
         t.act(() -> e().openTreeAction("dir.new"));
@@ -157,7 +169,7 @@ final class PackEditorPlan {
         type("key", "minecraft:lava");
         type("name", "&kWHMT???");
         t.act(() -> {
-            e().addCondition("unless", "tag:whmt_vet");
+            e().addCondition("unless", vet);
             e().setHide("damage_id", true);
         });
         t.act(() -> e().openConditionPicker());
@@ -168,14 +180,14 @@ final class PackEditorPlan {
         t.act(() -> e().dialogCancel());
         shot("rule_form");
         op("rule saved", () -> e().done());
-        t.check("rule in the file", () -> read("pe13/boss.json").contains("\"unless\"") && read("pe13/boss.json").contains("tag:whmt_vet")
+        t.check("rule in the file", () -> read("pe13/boss.json").contains("\"unless\"") && read("pe13/boss.json").contains(vet)
             && WhmConfig.pack.rules.size() >= 1, (Supplier<?>) () -> read("pe13/boss.json"));
         t.cmd("/whm test minecraft:lava", "WHMT???", 60);
         t.check("rule hides the damage id in the test", () -> t.chatHas("damage_id"), (Supplier<?>) t::chatText);
         // live preview with --as / --assume (the server's /whm test code)
         t.act(() -> {
             e().togglePreview(true);
-            e().setPreviewAs(p.playerName(), "tag:whmt_vet");
+            e().setPreviewAs(p.playerName(), vet);
             e().runPreview();
         });
         t.waitFor("preview assuming the tag shows the rename", () -> String.join("\n", e().previewLines()).contains("WHMT-PE Lava"), 60);
@@ -328,6 +340,8 @@ final class PackEditorPlan {
                 }
             }
         });
+        t.act(() -> p.say("/scoreboard objectives remove whmt_vet"));
+        t.sleep(5);
         t.cmd("/whm reload", "reloaded", 60);
         t.check("clean after the pack editor plan", () -> !WhmConfig.pack.renameMap.containsKey("minecraft:lava") && WhmConfig.pack.rules.isEmpty(), null);
     }

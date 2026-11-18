@@ -293,7 +293,15 @@ final class QuestPlan {
         if (mod("gamestages")) {
             t.check("Game Stages: known stages listed without error", () -> {
                 try {
-                    return new io.github.junjun1z.whathitme.core.rules.mods.GameStagesProvider().suggestions() != null;
+                    // the file was written after the game started: load it again (Game Stages reads it at start)
+                    try {
+                        Class.forName("net.darkhax.gamestages.data.GameStageSaveHandler").getMethod("reloadKnownStages").invoke(null);
+                    } catch (ReflectiveOperationException ignored) {
+                        // 1.12.2: no known stages file
+                    }
+                    List<String> l = new io.github.junjun1z.whathitme.core.rules.mods.GameStagesProvider().suggestions();
+                    // 1.14+ loads known_stages.json; 1.12.2 lists only stages registered at run time
+                    return !VanillaCommands.of(p.mcVersion()).atLeast(1, 14, 0) || l.contains("whmt_stage");
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
@@ -303,6 +311,18 @@ final class QuestPlan {
 
     void plan() {
         File rules = new File(Platform.whmConfigDir(), "pack/testq/rules.json");
+        // Game Stages 1.14+ reads its known stages from this file (the pack editor lists them)
+        if (mod("gamestages")) t.act(() -> {
+            try {
+                File k = new File(Platform.configDir, "gamestages/known_stages.json");
+                if (!k.exists()) {
+                    k.getParentFile().mkdirs();
+                    Files.write(k.toPath(), "[\"whmt_stage\"]".getBytes(StandardCharsets.UTF_8));
+                }
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        });
         // Heracles loads config/heracles/quests/*.json with the world; an empty object is a quest with defaults
         if (mod("heracles")) t.act(() -> {
             try {
@@ -375,7 +395,6 @@ final class QuestPlan {
         t.check("no provider warnings for installed mods", () -> (!mod("gamestages") || !has("Game Stages is not installed")) && !has("provider failed")
             && (!mod("ftbquests") || !has("FTB Quests is not installed")) && (!mod("betterquesting") || !has("Better Questing is not installed")) && (!mod("heracles") || !has("Heracles API")),
             (Supplier<?>) t::chatText);
-        suggestions();
         if (mod("heracles")) vanilla(() -> "/heracles reset " + HER_ID + " " + p.playerName(), 30);
         test("Rule: none matches", "nothing done yet: no rule", true);
         if (mod("gamestages")) {
@@ -411,6 +430,8 @@ final class QuestPlan {
             vanilla(() -> "/heracles reset " + HER_ID + " " + p.playerName(), 30);
             test("WHMT-HER", "Heracles: quest reset", false);
         }
+        // after the checks: a Better Questing quest without tasks completes itself after a while
+        suggestions();
         t.act(() -> {
             rules.delete();
             rules.getParentFile().delete();

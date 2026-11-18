@@ -45,7 +45,8 @@ final class PackMpPlan {
         t.waitFor("operator", () -> ClientCore.port.hasOpPermission(), 400);
         t.act(() -> p.command("/whm pack"));
         t.waitFor("editor open (operator, dedicated server)", () -> p.packEditorOpen() && e() != null && e().loaded() && !e().personal(), 200);
-        t.check("server lists: damage ids, advancements", () -> !e().model().damage.isEmpty() && !e().model().conds.get("advancement").isEmpty(), null);
+        boolean adv = io.github.junjun1z.whmdriver.VanillaCommands.of(p.mcVersion()).atLeast(1, 12, 0);
+        t.check("server lists: damage ids, advancements (1.12+)", () -> !e().model().damage.isEmpty() && (!adv || !e().model().conds.get("advancement").isEmpty()), null);
         op("create category pemp/mp", () -> e().createCategory("pemp", "mp"));
         t.act(() -> {
             e().selectTab("renames");
