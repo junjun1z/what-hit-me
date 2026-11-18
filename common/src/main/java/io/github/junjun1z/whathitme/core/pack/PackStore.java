@@ -757,6 +757,7 @@ public final class PackStore {
                 String to = cleanPath(op.get("to"), true);
                 File ff = file(from);
                 if (!ff.isFile()) throw new Fail("whathitme.pack.err.nofile", from);
+                if (from.equals(to)) throw new Fail("whathitme.pack.err.nochange");
                 if (file(to).exists() && !from.equalsIgnoreCase(to)) throw new Fail("whathitme.pack.err.exists", to);
                 byte[] data = bytes(ff);
                 delete(b, from);
@@ -903,14 +904,16 @@ public final class PackStore {
 
     private static void undo(Batch b) throws IOException {
         Batch redo = new Batch();
+        // deletions first: on a case-insensitive file system "Boss.json" and "boss.json" are the same file
         for (Map.Entry<String, byte[]> e : b.prev.entrySet()) {
-            File f = file(e.getKey());
             redo.touched.add(e.getKey());
-            if (e.getValue() == null) Files.deleteIfExists(f.toPath());
-            else {
-                if (f.getParentFile() != null) f.getParentFile().mkdirs();
-                Files.write(f.toPath(), e.getValue());
-            }
+            if (e.getValue() == null) Files.deleteIfExists(file(e.getKey()).toPath());
+        }
+        for (Map.Entry<String, byte[]> e : b.prev.entrySet()) {
+            if (e.getValue() == null) continue;
+            File f = file(e.getKey());
+            if (f.getParentFile() != null) f.getParentFile().mkdirs();
+            Files.write(f.toPath(), e.getValue());
         }
         List<String> created = new ArrayList<>(b.dirsCreated);
         java.util.Collections.reverse(created);

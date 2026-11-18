@@ -173,7 +173,7 @@ public final class Templates {
                 write(f, personalSample());
                 return out;
             }
-            Object root = Json.parse(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
+            Object root = Json.parse(CfgFile.decode(Files.readAllBytes(f.toPath())));
             readSection(Json.obj(root).get("templates"), PERSONAL_FILE, out, warnings);
         } catch (Exception e) {
             warnings.add(PERSONAL_FILE + ": " + e.getMessage());
@@ -187,7 +187,7 @@ public final class Templates {
         File f = personalFile();
         try {
             if (f.isFile()) {
-                Object t = Json.obj(Json.parse(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8))).get("templates");
+                Object t = Json.obj(Json.parse(CfgFile.decode(Files.readAllBytes(f.toPath())))).get("templates");
                 if (t instanceof Map) for (Map.Entry<String, Object> e : Json.obj(t).entrySet()) m.put(e.getKey().toLowerCase(Locale.ROOT), lines(e.getValue()));
             }
         } catch (Exception ignored) {

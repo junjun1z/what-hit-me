@@ -154,9 +154,17 @@ public final class PackConfig {
     }
 
     private static void map(Object v, Map<String, String> into) {
+        map(v, into, null, null, null);
+    }
+
+    private static void map(Object v, Map<String, String> into, String file, String section, List<String> warnings) {
         if (v instanceof Map) {
             for (Map.Entry<String, Object> e : Json.obj(v).entrySet()) {
                 String k = e.getKey().trim();
+                if (e.getValue() instanceof Map || e.getValue() instanceof List) {
+                    if (warnings != null) warnings.add(file + ": " + section + " \"" + k + "\": the value must be a text");
+                    continue;
+                }
                 String val = Json.str(e.getValue(), "").trim();
                 if (k.isEmpty()) continue;
                 if (val.isEmpty()) into.remove(k);
@@ -175,10 +183,34 @@ public final class PackConfig {
         }
     }
 
+    /** Sections and the JSON type they need ("map": object or "key = value" list, "list", "object") */
+    private static final String[][] SECTION_TYPES = {
+        {"renameMap", "map"}, {"hintMap", "map"}, {"deathMessages", "map"}, {"defaultIgnoredDamageIds", "list"},
+        {"lockedFeatures", "list"}, {"deathTriggers", "list"}, {"rules", "list"}, {"templates", "object"}};
+
+    /** Wrong section types are skipped with a warning; a single text / object becomes a one-element list */
+    private static Map<String, Object> checkTypes(Map<String, Object> in, String file, List<String> warnings) {
+        Map<String, Object> o = new LinkedHashMap<>(in);
+        for (String[] st : SECTION_TYPES) {
+            Object v = o.get(st[0]);
+            if (v == null) continue;
+            boolean okType = "map".equals(st[1]) ? v instanceof Map || v instanceof List : "list".equals(st[1]) ? v instanceof List : v instanceof Map;
+            if (okType) continue;
+            if ("list".equals(st[1]) && (v instanceof String || v instanceof Map && (st[0].equals("rules") || st[0].equals("deathTriggers")))) {
+                warnings.add(file + ": " + st[0] + " should be a list [ ... ] (read as one entry)");
+                o.put(st[0], new ArrayList<Object>(java.util.Collections.singletonList(v)));
+                continue;
+            }
+            warnings.add(file + ": " + st[0] + " is ignored: expected " + ("map".equals(st[1]) || "object".equals(st[1]) ? "an object { ... }" : "a list [ ... ]"));
+            o.remove(st[0]);
+        }
+        return o;
+    }
+
     void merge(Object root, String file) {
-        Map<String, Object> o = Json.obj(root);
-        map(o.get("renameMap"), renameMap);
-        map(o.get("hintMap"), hintMap);
+        Map<String, Object> o = checkTypes(Json.obj(root), file, warnings);
+        map(o.get("renameMap"), renameMap, file, "renameMap", warnings);
+        map(o.get("hintMap"), hintMap, file, "hintMap", warnings);
         for (Object v : Json.list(o.get("defaultIgnoredDamageIds"))) {
             String s = Json.str(v, "").trim();
             if (!s.isEmpty() && !ignored.contains(s)) ignored.add(s);
@@ -212,7 +244,7 @@ public final class PackConfig {
         }
         Templates.readSection(o.get("templates"), file, templates, warnings);
         Map<String, String> dm = new LinkedHashMap<>(deathMessages);
-        map(o.get("deathMessages"), dm);
+        map(o.get("deathMessages"), dm, file, "deathMessages", warnings);
         for (Map.Entry<String, String> e : dm.entrySet()) {
             if (e.getValue().equals(deathMessages.get(e.getKey()))) continue;
             for (String u : io.github.junjun1z.whathitme.core.text.Template.unknown(java.util.Collections.singletonList(e.getValue()))) {

@@ -76,9 +76,11 @@ public final class PackFiles {
     /** Every category of the folder in load order (also the disabled ones and files with errors) */
     public static List<Cat> scan(File dir) {
         List<File> found = new ArrayList<>();
-        collect(dir, found, 0);
+        List<File> deep = new ArrayList<>();
+        collect(dir, found, deep, 0);
         List<Cat> out = new ArrayList<>();
         for (File f : found) out.add(read(dir, f));
+        for (File f : deep) out.add(new Cat(rel(dir, f), f, null, null, "folder nested too deep (at most " + MAX_DEPTH + " sub-folders)"));
         sort(out);
         return out;
     }
@@ -87,7 +89,7 @@ public final class PackFiles {
         String path = rel(dir, f);
         String text = null;
         try {
-            text = new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8);
+            text = io.github.junjun1z.whathitme.core.config.CfgFile.decode(Files.readAllBytes(f.toPath()));
             Object root = Json.parse(text);
             if (!(root instanceof Map)) return new Cat(path, f, text, null, "not a JSON object");
             return new Cat(path, f, text, Json.obj(root), null);
@@ -113,7 +115,7 @@ public final class PackFiles {
 
     private static void dirs(File root, File dir, List<String> out, int depth) {
         File[] list = dir.listFiles();
-        if (list == null || depth > 8) return;
+        if (list == null || depth > MAX_DEPTH) return;
         for (File f : list) {
             if (f.isDirectory() && !f.getName().startsWith(".")) {
                 out.add(rel(root, f));
@@ -122,13 +124,15 @@ public final class PackFiles {
         }
     }
 
-    private static void collect(File dir, List<File> out, int depth) {
+    private static final int MAX_DEPTH = 8;
+
+    private static void collect(File dir, List<File> out, List<File> deep, int depth) {
         File[] list = dir.listFiles();
-        if (list == null || depth > 8) return;
+        if (list == null || depth > 32) return;
         for (File f : list) {
             if (f.isDirectory()) {
-                if (!f.getName().startsWith(".")) collect(f, out, depth + 1);
-            } else if (f.getName().toLowerCase(Locale.ROOT).endsWith(".json")) out.add(f);
+                if (!f.getName().startsWith(".")) collect(f, out, deep, depth + 1);
+            } else if (f.getName().toLowerCase(Locale.ROOT).endsWith(".json")) (depth > MAX_DEPTH ? deep : out).add(f);
         }
     }
 }

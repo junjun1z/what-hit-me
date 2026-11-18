@@ -23,6 +23,8 @@ public final class CfgFile implements ConfigBackend {
     private final Map<String, Setting> settings = new TreeMap<>();
     private final Map<String, String> catComments = new TreeMap<>();
     private boolean changed;
+    /** The file exists but could not be read: do not rewrite it with defaults */
+    private boolean readFailed;
 
     public CfgFile(File file) {
         this.file = file;
@@ -36,15 +38,18 @@ public final class CfgFile implements ConfigBackend {
     public synchronized void load() {
         values.clear();
         changed = false;
+        readFailed = false;
         if (!file.isFile()) {
             changed = true;
             return;
         }
         List<String> lines;
         try {
-            lines = Files.readAllLines(file.toPath(), StandardCharsets.UTF_8);
+            lines = java.util.Arrays.asList(decode(Files.readAllBytes(file.toPath())).split("\r?\n", -1));
         } catch (IOException e) {
-            changed = true;
+            // unreadable now (locked by an editor?): keep the defaults in memory, never overwrite the file
+            io.github.junjun1z.whathitme.core.Platform.log.warn("Could not read " + file, e);
+            readFailed = true;
             return;
         }
         String cat = null;
@@ -85,6 +90,25 @@ public final class CfgFile implements ConfigBackend {
         }
     }
 
+    /** UTF-8; a file saved in another encoding (e.g. by Notepad as ANSI) is read with the system encoding instead of being reset */
+    public static String decode(byte[] b) {
+        String t;
+        try {
+            t = StandardCharsets.UTF_8.newDecoder().decode(java.nio.ByteBuffer.wrap(b)).toString();
+        } catch (java.nio.charset.CharacterCodingException e) {
+            java.nio.charset.Charset cs = StandardCharsets.ISO_8859_1;
+            try {
+                String n = System.getProperty("native.encoding", System.getProperty("sun.jnu.encoding"));
+                if (n != null && !n.toUpperCase(Locale.ROOT).contains("UTF")) cs = java.nio.charset.Charset.forName(n);
+            } catch (RuntimeException ignored) {
+                // keep ISO-8859-1
+            }
+            io.github.junjun1z.whathitme.core.Platform.log.warn("What Hit Me? a config file is not UTF-8, read as " + cs.name() + "", null);
+            t = new String(b, cs);
+        }
+        return !t.isEmpty() && t.charAt(0) == 0xFEFF ? t.substring(1) : t;
+    }
+
     private static String unquote(String s) {
         return s.length() >= 2 && s.startsWith("\"") && s.endsWith("\"") ? s.substring(1, s.length() - 1) : s;
     }
@@ -95,7 +119,7 @@ public final class CfgFile implements ConfigBackend {
 
     @Override
     public synchronized boolean hasChanged() {
-        return changed;
+        return changed && !readFailed;
     }
 
     @Override
@@ -125,8 +149,8 @@ public final class CfgFile implements ConfigBackend {
                     Integer.parseInt(v);
                     return v;
                 case FLOAT:
-                    Double.parseDouble(v);
-                    return v;
+                    double d = Double.parseDouble(v);
+                    return Double.isNaN(d) ? null : v;
                 case STRING:
                     if (s.valid != null && s.valid.length > 0) {
                         for (String x : s.valid) if (x.equalsIgnoreCase(v)) return x;

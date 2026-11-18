@@ -320,7 +320,7 @@ public final class WhmConfig {
                 case FLOAT:
                     try {
                         double d = Double.parseDouble(value.trim());
-                        if (d < s.min || d > s.max) return "invalid";
+                        if (Double.isNaN(d) || d < s.min || d > s.max) return "invalid";
                         backend.set(s, value.trim());
                     } catch (NumberFormatException e) {
                         return "invalid";

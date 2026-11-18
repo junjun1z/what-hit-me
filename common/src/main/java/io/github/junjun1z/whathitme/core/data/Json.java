@@ -11,8 +11,12 @@ import java.util.Map;
  */
 public final class Json {
 
+    /** Deepest nesting accepted (deeper input would overflow the stack) */
+    private static final int MAX_DEPTH = 256;
+
     private final String s;
     private int p;
+    private int depth;
 
     private Json(String s) {
         this.s = s;
@@ -54,8 +58,12 @@ public final class Json {
     private Object value() {
         if (p >= s.length()) throw err("unexpected end");
         char c = s.charAt(p);
-        if (c == '{') return object();
-        if (c == '[') return array();
+        if (c == '{' || c == '[') {
+            if (++depth > MAX_DEPTH) throw err("nested too deep");
+            Object v = c == '{' ? object() : array();
+            depth--;
+            return v;
+        }
         if (c == '"') return string();
         if (s.startsWith("true", p)) {
             p += 4;
@@ -150,7 +158,11 @@ public final class Json {
                     break;
                 case 'u':
                     if (p + 4 > s.length()) throw err("bad escape");
-                    sb.append((char) Integer.parseInt(s.substring(p, p + 4), 16));
+                    try {
+                        sb.append((char) Integer.parseInt(s.substring(p, p + 4), 16));
+                    } catch (NumberFormatException ex) {
+                        throw err("bad escape");
+                    }
                     p += 4;
                     break;
                 default:
