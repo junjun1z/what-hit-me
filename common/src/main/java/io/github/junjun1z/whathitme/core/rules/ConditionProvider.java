@@ -16,4 +16,9 @@ public interface ConditionProvider {
     default String checkArg(String arg) {
         return arg == null || arg.isEmpty() ? "empty argument" : null;
     }
+
+    /** Arguments the pack editor offers ("id" or "id	title"); empty = none known */
+    default java.util.List<String> suggestions() throws Exception {
+        return java.util.Collections.emptyList();
+    }
 }

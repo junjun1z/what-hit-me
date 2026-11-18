@@ -86,6 +86,15 @@ public final class SelfTest {
             new QuestPlan(this).plan();
             return true;
         }
+        if (mode.equals("sp-pack")) {
+            // only the pack editor section (development shortcut)
+            loadWorld("whm_selftest");
+            waitFor("server info received (server has the mod)", () -> ClientCore.serverHasMod, 400);
+            srv(Act.SETUP);
+            sleep(60);
+            new PackEditorPlan(this).plan();
+            return true;
+        }
         if (mode.equals("sp-rules")) {
             // only the progression rules section (development shortcut)
             loadWorld("whm_selftest");
@@ -489,5 +498,6 @@ public final class SelfTest {
         if (port.v12()) new V12Plan(this).plan();
         if (port.v13()) new V13Plan(this).plan();
         if (port.rules13()) new V13RulesPlan(this).plan();
+        if (port.pack13()) new PackEditorPlan(this).plan();
     }
 }

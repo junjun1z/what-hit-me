@@ -72,4 +72,12 @@ public interface ClientPort {
         return false;
     }
 
+    /**
+     * Opens the pack editor ({@code PackEditor}, personal = the player's own lists) on the next client tick; false = no
+     * editor screen on this version
+     */
+    default boolean openPackEditor(boolean personal) {
+        return false;
+    }
+
 }

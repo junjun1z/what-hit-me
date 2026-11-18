@@ -258,6 +258,18 @@ public final class WhmConfig {
             read();
         }
 
+        /** Stored lines of a list setting */
+        public synchronized String[] list(Setting s) {
+            return backend.getList(s);
+        }
+
+        /** Replaces a list setting, writes the file and applies it (pack editor, personal mode) */
+        public synchronized void setList(Setting s, List<String> values) {
+            backend.setList(s, values.toArray(new String[0]));
+            backend.save();
+            read();
+        }
+
         /** Every setting by name, case-insensitive (for /whm config) */
         public Map<String, Setting> byKey() {
             Map<String, Setting> out = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
@@ -275,9 +287,14 @@ public final class WhmConfig {
          * @return null when done, "unknown" or "invalid" otherwise
          */
         public synchronized String set(String key, String value) {
+            return set(key, value, true);
+        }
+
+        /** Like {@link #set(String, String)}; the pack editor (server operators) may change keys the pack locked for players */
+        public synchronized String set(String key, String value, boolean checkLock) {
             Setting s = byKey().get(key);
             if (s == null) return "unknown";
-            if (isLocked(s.key)) return "locked";
+            if (checkLock && isLocked(s.key)) return "locked";
             switch (s.type) {
                 case LIST:
                     backend.setList(s, value.isEmpty() ? new String[0] : value.split("\\s*,\\s*"));

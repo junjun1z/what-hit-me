@@ -555,6 +555,7 @@ public final class ServerCore {
         Safe.run("logout event", () -> {
             tracker().remove(id);
             Stats.unload(id);
+            io.github.junjun1z.whathitme.core.pack.PackStore.onLogout(id);
             for (int i = PENDING.size() - 1; i >= 0; i--) if (PENDING.get(i).id.equals(id)) PENDING.remove(i);
         });
     }
@@ -656,6 +657,7 @@ public final class ServerCore {
         tracker().clear();
         PENDING.clear();
         TRIGGER_TIMES.clear();
+        io.github.junjun1z.whathitme.core.pack.PackStore.reset();
         port = null;
     }
 
@@ -855,6 +857,9 @@ public final class ServerCore {
                 }, Completion.args(r.arg));
                 break;
             }
+            case Packets.Request.PACK:
+                io.github.junjun1z.whathitme.core.pack.PackStore.onRequest(p, r.arg);
+                break;
             case Packets.Request.RELOAD:
                 if (!p.isAdmin()) break; // the client already reloaded its own files
                 reload(srv);

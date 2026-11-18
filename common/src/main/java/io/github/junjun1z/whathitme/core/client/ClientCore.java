@@ -388,6 +388,10 @@ public final class ClientCore {
     }
 
     static void onMessage(Packets.Message msg) {
+        if (io.github.junjun1z.whathitme.core.pack.PackProto.KEY.equals(msg.key)) {
+            io.github.junjun1z.whathitme.core.pack.PackClient.onChunk(msg);
+            return;
+        }
         print(Msg.LOCAL.tr(msg.error ? Fmt.RED : Fmt.GREEN, msg.key, (Object[]) msg.args));
     }
 
@@ -614,6 +618,9 @@ public final class ClientCore {
             case "template":
                 template(m, f, args, now);
                 break;
+            case "pack":
+                pack(m, args);
+                break;
             case "help":
                 CommandText.help(CHAT, m, true);
                 break;
@@ -627,6 +634,16 @@ public final class ClientCore {
     public static Snapshot latestDeath() {
         if (currentDeath != null) return currentDeath;
         return serverHasMod ? null : FALLBACK.lastDeath();
+    }
+
+    /** /whm pack [personal]: the pack editor (operators, server with the mod) or the personal lists editor */
+    private static void pack(Msg m, String[] args) {
+        boolean personal = args.length > 1 && args[1].equalsIgnoreCase("personal");
+        if (!personal) {
+            if (!serverHasMod) throw CommandText.err(m, "whathitme.pack.needserver");
+            if (!op()) throw CommandText.err(m, "whathitme.pack.noperm");
+        }
+        if (!Safe.get("pack editor", () -> port.openPackEditor(personal), false)) throw CommandText.err(m, "whathitme.pack.unavailable");
     }
 
     /** /whm template [preview &lt;output&gt; | reset [output]] */
@@ -701,6 +718,8 @@ public final class ClientCore {
                     return Completion.matching(args, CommandText.SERVER_FORWARD);
                 case "template":
                     return Completion.matching(args, "preview", "reset");
+                case "pack":
+                    return Completion.matching(args, "personal");
                 default:
                     break;
             }

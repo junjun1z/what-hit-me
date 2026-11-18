@@ -169,6 +169,26 @@ public final class Conditions {
         }
     }
 
+    /** Pack editor values of a prefix ("id" or "id	title"), empty when unknown / failing */
+    public static List<String> suggestions(String prefix, ServerPort srv) {
+        try {
+            if (BUILTIN.containsKey(prefix) && !"script".equals(prefix)) return srv == null ? java.util.Collections.<String>emptyList() : srv.conditionValues(prefix);
+            if ("script".equals(prefix)) {
+                List<String> out = new java.util.ArrayList<>();
+                for (io.github.junjun1z.whathitme.core.script.ScriptRegistry.Fn<?> f : io.github.junjun1z.whathitme.core.script.ScriptRegistry.conditions()) {
+                    out.add(f.description == null || f.description.isEmpty() ? f.name : f.name + "	" + f.description);
+                }
+                return out;
+            }
+            ConditionProvider p = provider(prefix);
+            if (p == null || p.unavailable(srv) != null) return java.util.Collections.emptyList();
+            return p.suggestions();
+        } catch (Throwable t) {
+            logOnce(prefix + "|suggestions", "What Hit Me? could not list the " + prefix + " values for the pack editor: " + t);
+            return java.util.Collections.emptyList();
+        }
+    }
+
     public static Set<String> prefixes() {
         Set<String> out = new LinkedHashSet<>(BUILTIN.keySet());
         out.addAll(MODS.keySet());

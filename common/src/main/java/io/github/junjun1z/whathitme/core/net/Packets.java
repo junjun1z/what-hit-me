@@ -124,6 +124,8 @@ public final class Packets {
         public static final int RELOAD = 7;
         /** Run the server /whm with these arguments ("/whm server ..." on 1.13+; 1.12 sends a chat command instead) */
         public static final int COMMAND = 8;
+        /** 1.3: a pack editor message chunk ({@code PackProto}); not cut to 256 characters */
+        public static final int PACK = 9;
 
         public final int kind;
         public final String arg;
@@ -141,7 +143,7 @@ public final class Packets {
         @Override
         public void write(WireOut o) {
             o.writeByte(kind);
-            o.writeString(arg.length() > 256 ? arg.substring(0, 256) : arg);
+            o.writeString(kind != PACK && arg.length() > 256 ? arg.substring(0, 256) : arg);
         }
 
         static Request read(WireIn in) {

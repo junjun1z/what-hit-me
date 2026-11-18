@@ -69,4 +69,12 @@ public interface ServerPort {
     default boolean canRequireClientMod() {
         return false;
     }
+
+    /**
+     * Values the pack editor offers for a built-in condition prefix: "advancement" (advancement ids), "score" (scoreboard
+     * objectives), "tag" (tags of online players); empty = none known (the field still takes any text)
+     */
+    default List<String> conditionValues(String prefix) {
+        return java.util.Collections.emptyList();
+    }
 }

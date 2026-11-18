@@ -28,7 +28,7 @@ import io.github.junjun1z.whathitme.core.text.Txt;
  * with {@link Gfx}; a version only needs a screen that forwards drawing, mouse, keys and typed characters and closes
  * itself when {@link #wantsClose()} is true.
  */
-public final class TemplateEditor {
+public final class TemplateEditor implements CoreScreen {
 
     // key codes the screen host maps its own keys to
     public static final int K_BACKSPACE = 1;
@@ -109,14 +109,39 @@ public final class TemplateEditor {
     private int lastH = 240;
     private Gfx lastG;
 
+    /** Pack editor mode: one output, its lines; Done hands the lines back (null = normal editor) */
+    private final java.util.function.Consumer<List<String>> packDone;
+    private final List<String> packLines;
+
     public TemplateEditor() {
         canPack = Safe.get("permission", () -> ClientCore.port.isSingleplayer() && ClientCore.op(), false);
+        packDone = null;
+        packLines = null;
         for (String o : Template.OUTPUTS) outputs.add(o);
         if (canPack) outputs.add(Template.DEATH);
         Snapshot real = ClientCore.latestDeath();
         sample = real == null || real.key() == null;
         load(0);
         current = this;
+    }
+
+    /** The template of one pack category entry (pack editor, templates tab): Done returns the lines, nothing is saved here */
+    public TemplateEditor(String output, List<String> lines, java.util.function.Consumer<List<String>> done) {
+        canPack = false;
+        packDone = done;
+        packLines = new ArrayList<>(lines == null ? new ArrayList<String>() : lines);
+        outputs.add(output);
+        Snapshot real = ClientCore.latestDeath();
+        sample = real == null || real.key() == null;
+        load(0);
+        current = this;
+    }
+
+    /** Pack editor mode: hands the lines back and closes */
+    public void done() {
+        if (packDone == null) return;
+        packDone.accept(lines());
+        close = true;
     }
 
     private static String tr(String key, Object... args) {
@@ -173,8 +198,12 @@ public final class TemplateEditor {
         out = idx;
         String o = output();
         List<String> lines;
-        lockedNow = !Template.DEATH.equals(o) && Templates.locked(o, ClientCore::locked);
-        if (Template.DEATH.equals(o)) {
+        lockedNow = packDone == null && !Template.DEATH.equals(o) && Templates.locked(o, ClientCore::locked);
+        if (packDone != null) {
+            lines = packLines.isEmpty() ? Templates.EXAMPLES.get(o) : packLines;
+            source = packLines.isEmpty() ? "example" : "pack";
+            if (lines == null) lines = new ArrayList<>();
+        } else if (Template.DEATH.equals(o)) {
             lines = new ArrayList<>();
             for (Map.Entry<String, String> e : ClientCore.packDeathMessages().entrySet()) lines.add(e.getKey() + " = " + e.getValue());
             source = lines.isEmpty() ? "example" : "pack";
@@ -365,6 +394,7 @@ public final class TemplateEditor {
                 focus = i;
                 if (lastG != null) fields.get(i).click(lastG, (int) mx - e.getValue()[0] - 3, shift);
             } else if (id.equals("add")) addLine(fields.size() - 1);
+            else if (id.equals("done")) done();
             else if (id.equals("save")) save();
             else if (id.equals("pack")) saveToPack();
             else if (id.equals("reset")) reset();
@@ -474,7 +504,10 @@ public final class TemplateEditor {
         int top = ty + 18;
         // bottom buttons, wrapped to more rows in narrow windows
         boolean death = Template.DEATH.equals(output());
-        String[][] btns = {
+        String[][] btns = packDone != null ? new String[][] {
+            {"done", tr("whathitme.pack.done"), "true"},
+            {"sample", tr(sample ? "whathitme.editor.usereal" : "whathitme.editor.usesample"), "true"},
+            {"cancel", tr("whathitme.pack.cancel"), "true"}} : new String[][] {
             {"save", tr("whathitme.editor.save"), String.valueOf(!lockedNow && !death)},
             {"pack", tr("whathitme.editor.savepack"), String.valueOf(canPack)},
             {"reset", tr("whathitme.editor.reset"), String.valueOf(!lockedNow && !death)},

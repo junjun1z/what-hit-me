@@ -13,6 +13,8 @@ public final class TextField {
     /** First visible character */
     private int scroll;
     public boolean editable = true;
+    /** Grey text shown while the field is empty and not focused (null = none) */
+    public String placeholder;
 
     public TextField(String text) {
         this.text = text == null ? "" : text;
@@ -157,6 +159,11 @@ public final class TextField {
      * @param known tells whether a canonical variable name is known
      */
     public void draw(Gfx g, int x, int y, int w, int h, boolean focused, boolean blink, java.util.function.Predicate<String> known) {
+        draw(g, x, y, w, h, focused, blink, known, false);
+    }
+
+    /** Like {@link #draw(Gfx, int, int, int, int, boolean, boolean, java.util.function.Predicate)}; plain: no placeholder colors */
+    public void draw(Gfx g, int x, int y, int w, int h, boolean focused, boolean blink, java.util.function.Predicate<String> known, boolean plain) {
         g.fill(x, y, x + w, y + h, focused ? 0xFFA0A0A0 : 0xFF606060);
         g.fill(x + 1, y + 1, x + w - 1, y + h - 1, editable ? 0xFF000000 : 0xFF202020);
         int inner = w - 6;
@@ -168,6 +175,7 @@ public final class TextField {
         vis = vis.substring(0, end);
         int tx = x + 3;
         int ty = y + (h - 8) / 2;
+        if (text.isEmpty() && placeholder != null && !focused) g.text(LegacyText.trim(g, placeholder, inner), tx, ty, 0x606060);
         if (hasSelection()) {
             int a = Math.max(scroll, Math.min(anchor, cursor)) - scroll;
             int b = Math.min(scroll + end, Math.max(anchor, cursor)) - scroll;
@@ -181,8 +189,10 @@ public final class TextField {
             int color = base;
             int j;
             char c = vis.charAt(i);
-            io.github.junjun1z.whathitme.core.text.Template.Placeholder p = c == '{' ? io.github.junjun1z.whathitme.core.text.Template.placeholderAt(vis, i) : null;
-            if (p != null) {
+            io.github.junjun1z.whathitme.core.text.Template.Placeholder p = c == '{' && !plain ? io.github.junjun1z.whathitme.core.text.Template.placeholderAt(vis, i) : null;
+            if (plain) {
+                j = vis.length();
+            } else if (p != null) {
                 j = p.end;
                 color = known.test(p.name) ? 0x55FFFF : 0xFF5555;
             } else if ((c == '&' || c == '§') && i + 1 < vis.length()) {

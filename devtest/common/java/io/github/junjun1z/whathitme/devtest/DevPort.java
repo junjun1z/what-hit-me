@@ -164,4 +164,17 @@ public interface DevPort {
         return false;
     }
 
+    /** The pack editor screen host is implemented by this version (enables PackEditorPlan) */
+    default boolean pack13() {
+        return false;
+    }
+
+    /** The pack editor screen is open */
+    default boolean packEditorOpen() {
+        return false;
+    }
+
+    /** Opens the What Hit Me? config screen and presses its "Pack editor..." button */
+    default void pressConfigPackButton() {}
+
 }

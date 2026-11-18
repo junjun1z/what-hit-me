@@ -18,8 +18,8 @@ import io.github.junjun1z.whathitme.core.data.Json;
 import io.github.junjun1z.whathitme.core.data.MatchKey;
 
 /**
- * Modpack definitions in config/whathitme/pack/: every .json file (recursively, in alphabetical path order) is read and
- * merged; later files override earlier entries of the same key. Keys: renameMap, hintMap (objects "key": "value", or
+ * Modpack definitions in config/whathitme/pack/: every .json file (recursively, by its "order" number, then in alphabetical
+ * path order; "enabled": false skips a file) is read and merged; later files override earlier entries of the same key. Keys: renameMap, hintMap (objects "key": "value", or
  * lists of "key = value"), defaultIgnoredDamageIds, lockedFeatures (lists) and deathTriggers (list of objects).
  * Priority: the .cfg files &gt; pack/*.json &gt; built-in automatic hints.
  */
@@ -67,6 +67,8 @@ public final class PackConfig {
     public final Set<String> locked = new TreeSet<>();
     public final List<DeathTrigger> triggers = new ArrayList<>();
     public final List<String> files = new ArrayList<>();
+    /** Files switched off with "enabled": false */
+    public final List<String> disabled = new ArrayList<>();
     public final List<String> errors = new ArrayList<>();
     /** Templates of the outputs (later files override whole templates) */
     public final Map<String, io.github.junjun1z.whathitme.core.text.Template> templates = new LinkedHashMap<>();
@@ -90,15 +92,21 @@ public final class PackConfig {
             File dir = new File(whmDir, "pack");
             if (!dir.isDirectory()) createSamples(dir);
             else addNewSamples(dir);
-            List<File> found = new ArrayList<>();
-            collect(dir, found);
-            Collections.sort(found, (a, b) -> rel(dir, a).compareTo(rel(dir, b)));
-            for (File f : found) {
-                String name = rel(dir, f);
+            // load order: "order" then path; "enabled": false switches a file off
+            for (io.github.junjun1z.whathitme.core.pack.PackFiles.Cat cat : io.github.junjun1z.whathitme.core.pack.PackFiles.scan(dir)) {
+                String name = cat.key();
+                if (cat.root == null) {
+                    c.errors.add(name + ": " + cat.error);
+                    Platform.log.warn("What Hit Me? pack file " + name + " skipped: " + cat.error, null);
+                    continue;
+                }
+                if (!cat.enabled) {
+                    c.disabled.add(name);
+                    continue;
+                }
                 try {
-                    Object root = Json.parse(new String(Files.readAllBytes(f.toPath()), StandardCharsets.UTF_8));
-                    c.merge(root, name);
-                    c.roots.add(new Object[] {name, root});
+                    c.merge(cat.root, name);
+                    c.roots.add(new Object[] {name, cat.root});
                     c.files.add(name);
                 } catch (Exception e) {
                     c.errors.add(name + ": " + e.getMessage());
@@ -124,6 +132,7 @@ public final class PackConfig {
         }
         c.roots.addAll(roots);
         c.files.addAll(files);
+        c.disabled.addAll(disabled);
         c.errors.addAll(errors);
         c.mergeRuntime();
         return c;
@@ -141,21 +150,6 @@ public final class PackConfig {
             }
         } catch (Throwable t) {
             Platform.log.warn("Could not merge the What Hit Me? script entries", t);
-        }
-    }
-
-    private static String rel(File dir, File f) {
-        String d = dir.getAbsolutePath();
-        String p = f.getAbsolutePath();
-        return (p.startsWith(d) ? p.substring(d.length() + 1) : p).replace('\\', '/').toLowerCase(Locale.ROOT);
-    }
-
-    private static void collect(File dir, List<File> out) {
-        File[] list = dir.listFiles();
-        if (list == null) return;
-        for (File f : list) {
-            if (f.isDirectory()) collect(f, out);
-            else if (f.getName().toLowerCase(Locale.ROOT).endsWith(".json")) out.add(f);
         }
     }
 
