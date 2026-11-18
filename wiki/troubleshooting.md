@@ -86,7 +86,7 @@ On Forge / NeoForge, players **without** the mod always see the vanilla message.
 - Rules need the mod on the server.
 
 **A quest condition is always false.**
-The quest mod is missing, or its version has an API the provider does not know (logged once in the server log). See the [tested versions](/modpack/conditions#tested-in-game). FTB Quests ids are hex ids; Better Questing GTNH ids are UUIDs.
+The quest mod is missing, or its version has an API the provider does not know (logged once in the server log). See the [tested versions](/modpack/conditions#quest-mod-matrix). FTB Quests ids are hex ids; Better Questing GTNH ids are UUIDs.
 
 ## Reporting a bug
 

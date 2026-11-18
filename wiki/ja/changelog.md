@@ -19,6 +19,8 @@
 
 - すべての pack セクションとサーバー設定を編集できるゲーム内[パックエディター](/ja/modpack/pack-editor)（`/whm pack`、設定画面の **パックエディター...**）。判定はサーバー、バックアップと元に戻す付き。pack ファイルに `order`・`enabled`・メモを書けます。個人モード（`/whm pack personal`）で自分のリネーム・ヒント・非表示 ID を編集。画面は対応するすべてのバージョンとローダーにあります（Forge 1.7.10 - 26.3、Fabric 1.14 - 26.3、NeoForge 1.20.1 - 26.3）。
 
+- クエスト mod がある、すべてのバージョンとローダーでクエスト条件に対応（[対応表](/ja/modpack/conditions#quest-mod-matrix)）：Better Questing 1.7.10 〜 1.12.2（すべての API 世代、Better Questing Unofficial も）と 1.20.1（Forge、NeoForge）、Game Stages 1.11.2 〜 1.20.3 と NeoForge 1.20.1、Heracles 1.20 と Fabric 1.21、FTB Quests 1.16.4（1604）、Forge / Fabric 1.20.4、1.21、26.1。すべてゲーム内でテストし、サーバーのルールでのクエスト条件も専用サーバーで確認しました。
+
 ## 1.2.0
 
 - pack フォルダー `config/whathitme/pack/`：`renameMap`、`hintMap`、`defaultIgnoredDamageIds`、`lockedFeatures`、`deathTriggers`。
