@@ -914,6 +914,7 @@ public final class ServerCore {
         Safe.run("script registration", ScriptRegistry::rebuild);
         CatalogCache.rescan(srv.registries());
         broadcastInfo();
+        Safe.run("pack editors", io.github.junjun1z.whathitme.core.pack.PackStore::refreshEditors);
         for (String w : ruleWarnings(srv)) Platform.log.warn("What Hit Me? " + w, null);
         String dm = deathMessageWarning(srv);
         if (dm != null) Platform.log.warn("What Hit Me? " + dm, null);

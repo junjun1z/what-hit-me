@@ -149,6 +149,9 @@ final class QaPlan {
                     t.info("editor open=" + p.packEditorOpen() + (e == null ? "" : " status=" + e.status() + " last=" + e.lastResult()));
                 });
                 break;
+            case "pecat":
+                t.waitFor("editor shows category " + a, () -> PackEditor.current != null && PackEditor.current.model().cat(a) != null, 60);
+                break;
             case "info":
                 t.act(() -> t.info(a));
                 break;

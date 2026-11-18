@@ -104,6 +104,22 @@ public final class PackStore {
         EDITORS.remove(id);
     }
 
+    /** After /whm reload (hand edits on disk): every open editor gets the new state */
+    public static synchronized void refreshEditors() {
+        if (EDITORS.isEmpty()) return;
+        rev++;
+        ServerPort srv = ServerCore.port;
+        for (UUID id : new ArrayList<>(EDITORS.keySet())) {
+            PlayerHandle to = srv == null ? null : srv.player(id);
+            if (to == null) {
+                EDITORS.remove(id);
+                continue;
+            }
+            final Map<String, Object> st = state(to, null);
+            Safe.run("pack editor state", () -> send(to, st));
+        }
+    }
+
     /** Number of open editors (self-test) */
     public static synchronized int editors() {
         return EDITORS.size();
