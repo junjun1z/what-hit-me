@@ -296,7 +296,8 @@ public final class SelfTest {
     /** Hit the player on the server, then wait out the invulnerability frames */
     void hit(Act a, float amount) {
         srv(a, amount);
-        sleep(14);
+        // > 10 server ticks apart even when the client catches up ticks: vanilla ignores an equal hit within 10 ticks of the last one
+        sleep(22);
     }
 
     void srv(Act a, float amount) {
