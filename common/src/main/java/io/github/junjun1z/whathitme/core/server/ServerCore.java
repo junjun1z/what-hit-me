@@ -62,6 +62,8 @@ public final class ServerCore {
         final boolean lethal;
         final boolean heavy;
         final int totems;
+        /** Another mod cancelled the death event of this hit (Forge / NeoForge) */
+        boolean cancelled;
 
         Pending(UUID id, DamageRecord record, boolean lethal, boolean heavy, int totems) {
             this.id = id;
@@ -432,7 +434,12 @@ public final class ServerCore {
     public static void onDeathCancelled(PlayerHandle p, Supplier<HitFacts> facts) {
         Safe.run("cancelled death event", () -> {
             UUID uid = p.uuid();
-            for (Pending q : PENDING) if (q.id.equals(uid) && q.lethal) return;
+            for (Pending q : PENDING) {
+                if (q.id.equals(uid) && q.lethal) {
+                    q.cancelled = true;
+                    return;
+                }
+            }
             PlayerHistory h = tracker().get(uid);
             long now = System.currentTimeMillis();
             DamageRecord last = h.lastDamage();
@@ -523,11 +530,25 @@ public final class ServerCore {
             PlayerHistory h = tracker().get(q.id);
             if (h.lastDeath() != null && h.lastDeath().time >= q.record.time) continue;
             int kind;
-            if (q.lethal) kind = p.totems() < q.totems ? Snapshot.TOTEM : Snapshot.PREVENTED;
-            else if (q.heavy && (c.mask & Flag.HEAVY_HIT_SNAPSHOT.bit()) != 0) kind = Snapshot.HEAVY;
+            if (q.lethal && p.totems() < q.totems) kind = Snapshot.TOTEM;
+            else if (q.lethal && (q.cancelled || !estimatedLethal(srv))) kind = Snapshot.PREVENTED;
+            else if ((q.heavy || q.lethal) && (c.mask & Flag.HEAVY_HIT_SNAPSHOT.bit()) != 0) kind = Snapshot.HEAVY;
             else continue;
             prevented(p, h, q.record, kind, now);
         }
+    }
+
+    /**
+     * Forge / NeoForge 1.13+ read a hit from the damage event: a later reduction by another mod (First Aid body parts,
+     * damage caps) makes "lethal" a guess there, so only a cancelled death event or a used totem counts as prevented.
+     * Fabric (ALLOW_DEATH) and the deferred health read of Forge 1.7.10 - 1.12.2 see real lethal hits.
+     */
+    static boolean estimatedLethal(ServerPort srv) {
+        String n = Safe.get("platform name", srv::platformName, "");
+        if (!n.startsWith("Forge ") && !n.startsWith("NeoForge ")) return false;
+        String v = n.substring(n.indexOf(' ') + 1);
+        for (String old : new String[] {"1.7", "1.8", "1.9", "1.10", "1.11", "1.12"}) if (v.equals(old) || v.startsWith(old + ".")) return false;
+        return true;
     }
 
     /** Marks the trigger record and saves / announces a totem, heavy hit or prevented death snapshot */
