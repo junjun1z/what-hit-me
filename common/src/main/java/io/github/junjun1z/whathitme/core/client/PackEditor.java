@@ -1246,8 +1246,12 @@ public final class PackEditor implements CoreScreen {
         }
         if (dialog != null) {
             ui.clearAreas();
+            // raised layer: 1.20 - 1.21.5 draw text slightly in front, so later fills at the same depth do not cover it
+            g.push();
+            g.translate(0, 0, 200f);
             g.fill(0, 0, w, h, 0x90000000);
             dialog.render(w, h);
+            g.pop();
         }
         if (tip != null && !tip.isEmpty()) g.tooltip(tip, mx, my, w, h);
     }

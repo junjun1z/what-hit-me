@@ -622,6 +622,15 @@ Ported (1.3.0): Forge 1.12.2 and `versions/1.21.1` (phase 1); Forge 1.7.10 - 1.1
 `versions/1.14.4` - `1.17.1` (`TemplateEditorScreen1xx`, `ConfigScreen1xx`, Fabric and Forge share them). `PackEditorPlan` uses a score
 instead of a tag before 1.9 and checks the advancement list only from 1.12. GUI scale check: a 960x720 window with GUI scale 3
 (320 x 240 GUI pixels, the smallest Minecraft allows) shows one pane at a time on 1.7.10 and 1.16.5.
+`versions/1.18.2` - `26.3` (r118 / r121 groups, every Fabric / Forge / NeoForge target that shares them): same five steps;
+`conditionValues` uses `Advancement` (`getDisplay()`, `getId()`) up to 1.20.1 and `AdvancementHolder` (`value().display()`, `id()`)
+from 1.20.2, tags `getTags()` (26.x `entityTags()`); 26.x opens screens through `Compat26`, 1.21.9+ presses buttons with a
+`KeyEvent`. Heracles lists its quests (`QuestHandler.quests()`, title through brigadier's `Message.getString()`, unmapped on every
+loader); `QuestPlan` checks it. GUI scale check also on 1.20.1 Forge and 26.3 Fabric. Note: the NeoForge 1.21.8 jar starts on
+1.21.7 / 1.21.8 only (use 1.21.7 for patch tests).
+- Dialogs are drawn on a raised layer (`translate(0, 0, 200)`): from 1.20 to 1.21.5 `GuiGraphics` draws text slightly in front
+  of its z, so a later fill at the same depth did not hide the text below a dialog (1.21.6+ uses a new stratum instead).
+- Forge 1.20.1 clients started with `--server localhost:<port>` hung in the login (IPv6 `::1`); `mp.sh` connects to `127.0.0.1`.
 - Script entries come from `ScriptRegistry.packRoots()` and are read-only in the editor.
 
 ## In-game self-test (development)
