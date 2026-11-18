@@ -2,6 +2,40 @@
 
 The release workflow publishes the section whose heading matches the pushed tag (for example `## [1.0.0]` for tag `1.0.0`) as the release notes.
 
+## [1.3.0]
+
+A release for modpack makers: rewrite every text the mod shows, replace death messages, keep bosses secret until the player has progressed, drive everything from quests and scripts, and edit the whole pack setup in game. Same versions as 1.2.0: **Forge 1.7.10 - 26.3, Fabric 1.14 - 26.3, NeoForge 1.20.1 - 26.3** (63 files, each started and tested in game, also on dedicated servers with and without the mod on the client). Nothing changes until you use the new features: without templates, rules or death messages every output looks exactly like 1.2.0, and existing config and pack files keep working.
+
+Documentation with examples for everything below: the [wiki](https://github.com/junjun1z/what-hit-me/tree/main/wiki) (English and Japanese).
+
+### Added
+
+- **Templates** for the six places the mod writes text: death screen hover details, death screen panel line, `/whm` history line and its hover (they share the first two), respawn chat summary, totem / heavy-hit alerts and the `[Copy]` recap (with the equipment block). `{variable}` placeholders (40+ variables for damage, damage type, attacker, weapon, position, time, badges, tip, totals, links, equipment; `mob_*` aliases), `{var|fallback}`, `{damage:2}` decimals, `&` colors and `lang:` lines. A line whose placeholders are all empty is dropped. Variables follow the display switches, so a template never shows what the server turned off. Sources: personal `whathitme-client-templates.json` > pack `"templates"` > built-in; lock them with `lockedFeatures` (`templates` or `templates.<output>`).
+- **Template editor** with a live preview drawn by the real output code: `/whm template`, or **Templates...** in the settings screen. Clickable variable list with descriptions, unknown variables in red, preview with your latest death or a sample death. **Save** (personal), **Save to pack** (single player with cheats), **Reset**. `/whm template preview <output>` and `/whm template reset [output]`.
+- **Custom death messages** (`deathMessages` in pack files, off by default): match key -> message template, for example `"*@twilightforest:lich": "{player} was outsmarted by the Lich"`. Fabric servers replace the message for everyone; Forge / NeoForge servers for players with the mod (the client swaps the chat line and the death screen text), the server log shows the custom text. `lang:` keys are translated per player.
+- **Progression rules** (`rules` in pack files): change the name and tip, hide fields and run commands depending on the player's progress, for example `???` and no tip until the boss quest is done. Fields `match`, `if` (all) / `any` (one of) / `unless` (none), `name`, `hint`, `hide` (`damage_id`, `attacker`, `mod`, `weapon`, `death_message`, `tip`, `properties`, `environment`, `owner`, `distance`, `position`), `enforce` (overrides personal renames, tips and templates; on by default when something is hidden), `commands` with `oncePerPlayer` / `cooldownSeconds`. The first matching rule wins. The server decides and removes hidden data before anything is sent; completing a quest reveals old entries too. A hidden death message becomes "{player} was killed by ???" / "{player} died".
+- **Conditions** for rules and death triggers (`!` negates): `advancement:` (1.12+), `tag:` (1.9+), `score:<objective><op><n>`, `stage:` (Game Stages), `ftbquests:` (FTB Quests), `bq:` (Better Questing, also the GTNH fork and Better Questing Unofficial), `heracles:` (Heracles / Odyssey Quests), `script:` (scripts). Quest mods are optional and read by reflection; each one is tested on every version and loader it exists for (matrix in the wiki).
+- `deathTriggers` accept `if` / `any` / `unless` and every template variable as a placeholder.
+- `/whm test ... --as <player> --assume <condition>`: preview rules, hidden fields and the death message with a player's real progress, or pretend a condition is met.
+- **`requireClientMod`** (common config, default `false`): the server refuses clients without What Hit Me? with a readable message. Forge / NeoForge servers whose rules hide death messages warn on start and on `/whm reload` while it is off, because players without the mod still see the vanilla message there.
+- **Script integration** for KubeJS, CraftTweaker and MineTweaker 3, on every version and loader where these script mods exist: register `script:` conditions and `{script:}` template variables, listen to `damageRecorded` (rename, tip, badge, hide, cancel), `death` (tip, hide, extra summary lines), `respawn` and `alert`, read the last death, history, stats and `/whm test` results, and add renames, tips, rules, death messages and templates at run time. Rebuilt cleanly on `/whm reload` and the script mod's reload. Other mods can use the same Java API (`io.github.junjun1z.whathitme.api`).
+- **In-game pack editor** `/whm pack` (and **Pack editor...** in the settings screen) for everything in the pack folder and `whathitme-common.cfg`: renames, tips, rules, death messages, templates, death triggers, ignored ids, locked features and the server settings. For single player with cheats and operators. The server checks every edit, writes the JSON, reloads at once and updates every player. Each JSON file is a category (sub-folders are groups) with order, on / off switch and memo; entries have memos too. Match key builder with searchable damage id and mob lists, condition picker with the advancements, scores, tags, quests, stages and script conditions the server knows, live preview "as player / assuming conditions", inline errors, a notice when someone else edits. Backups in `config/whathitme/.backup/` and 30 undo steps.
+- **Personal mode** of the pack editor (`/whm pack personal`, or the settings button without op): your own renames, tips and ignored ids as searchable lists instead of one-line comma lists.
+- Pack files may carry `order` (load order), `enabled` (`false` skips the file), `memo` and `entryMemos`; written by the pack editor, optional by hand.
+- New commented samples `pack/templates/`, `pack/deathmessages/`, `pack/rules/` (only added when those folders do not exist).
+- `/whm reload` also reports unknown template variables, rule and condition problems, missing quest / script mods and what scripts registered.
+
+### Changed
+
+- Network protocol 3. 1.0 - 1.2 clients and servers keep working with 1.3 (they get the 1.2 data, with hidden fields already removed).
+
+### Fixed
+
+- Forge 1.7.10 - 1.12.1: a heal in the same tick as a hit (food regeneration, Regeneration, any heal) was subtracted from that hit, so hits were recorded too low and a 1 ❤ hit such as a burning tick could be lost (merged lines showed x2 instead of x3).
+- Custom death messages with `lang:` keys on Fabric 1.19.4+: sent as a translation with the server's English text as fallback, so resource packs translate them for every client and a missing translation never shows the raw key (found in pre-release testing).
+- Pack editor dialogs no longer let the text below them show through on 1.20 - 1.21.5 (found in pre-release testing).
+- Forge 1.19 / 1.19.1 / 1.20.6 / 1.21.10+: custom death messages also replace the chat line where Forge posts no chat event for system messages, or the message arrives after the chat line (found in pre-release testing).
+
 ## [1.2.0]
 
 New features for players and modpack makers on every supported version: **Forge 1.7.10 - 26.3, Fabric 1.14 - 26.3, NeoForge 1.20.1 - 26.3** (63 files, each started and tested in game). Existing config files keep working.

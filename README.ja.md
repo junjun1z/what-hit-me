@@ -6,6 +6,8 @@
 
 [English README](README.md)
 
+ダウンロード: [Modrinth](https://modrinth.com/mod/what-hit-me) · [CurseForge](https://www.curseforge.com/minecraft/mc-mods/what-hit-me) · [GitHub Releases](https://github.com/junjun1z/what-hit-me/releases)。詳しい説明（英語・日本語）: [Wiki](wiki/)
+
 ![死亡画面のパネル](docs/screenshots/death-screen.png)
 
 - Minecraft 1.7.10〜26.3：Forge、Fabric（Fabric API が必要、Mod Menu は任意）、NeoForge の 63 ビルド。対応表は [docs/description.md](docs/description.md#supported-versions) にあります。
@@ -41,6 +43,7 @@
 - **ダメージIDのスキャン**: Mod のダメージIDを、誰かがそのダメージを受ける前から一覧に載せます（下記参照）。
 - **設定画面**: `/whm config` でどのバージョン・ローダーでも開けます。Forge / NeoForge では Mod 一覧から、Fabric では Mod Menu を入れていればそこからも開けます。パックでロックされた項目は操作できない状態で表示されます。
 - **自動ヒント**: ダメージの種類と属性に応じた対策を表示。ダメージIDごとに差し替え可能。
+- **テンプレート**（1.3.0）: マウスオーバーの詳細、パネル・履歴の行、リスポーン時の要約、通知、コピー文を `{変数}` で書き換えられます。ライブプレビュー付きの**テンプレートエディター**（`/whm template`）で編集できます。
 - 10言語対応。
 
 古い Minecraft のフォントは絵文字を表示できないため、ゲームのフォントにある記号（☠ ⚠ ❤ ⚡ Σ）と文字のラベルを使っています。
@@ -53,7 +56,7 @@
 | クライアントだけ | クライアント側の推定モード。自分の体力を比べ、減ったときだけ原因を推測します（落下、溶岩、炎、溺れ、窒息、奈落、近くのモブ、飛び道具、爆発、毒、ウィザー、空腹）。記録には `[クライアント推定]` が付きます。`/whm inspect` は使えません。 |
 | サーバーだけ | Mod を入れていないプレイヤー（素の Forge クライアントでも）に英語のチャットを送ります。リスポーン時の通知、トーテム・大ダメージの通知、すべての `/whm` コマンド。`[Copy ID]` は ID をチャット欄に入力します。`togglechat` と `ignore` はプレイヤーごとに保存されます。 |
 
-シングルプレイは「クライアントとサーバー」の扱いです。入れている人と入れていない人が混在するサーバーでは、各プレイヤーにそのクライアントで使える最良のモードが選ばれます。サーバー側で OFF にした機能（common 設定や `lockedFeatures`）は、サーバーがパケットを作る段階で取り除かれます。1.0 / 1.1 のクライアントと 1.2 のサーバーの組み合わせ（その逆も）でも動作します。
+シングルプレイは「クライアントとサーバー」の扱いです。入れている人と入れていない人が混在するサーバーでは、各プレイヤーにそのクライアントで使える最良のモードが選ばれます。サーバー側で OFF にした機能（common 設定や `lockedFeatures`）は、サーバーがパケットを作る段階で取り除かれます。1.0〜1.2 のクライアントと 1.3 のサーバーの組み合わせ（その逆も）でも動作します。`requireClientMod` で、全員のクライアントに Mod を必須にすることもできます。
 
 ## Mod パック製作者の方へ
 
@@ -61,6 +64,8 @@
 
 - 「何で死んだの？」という質問が減ります。攻撃者、その Mod、ダメージの種類をプレイヤーが自分で確認できます。
 - ダメージの種類・攻撃者・武器・ディメンションの組み合わせで、パック独自のヒントや表示名を出せます。不要な表示は隠せます。
+- 進むまで秘密にできます（1.3.0）。ボスのクエスト・進捗・ステージを終えるまでは `???` と表示し、ヒントも出しません。FTB Quests、Better Questing、Heracles、Game Stages、KubeJS、CraftTweaker に対応（どれも任意）。
+- パックの雰囲気に合わせられます（1.3.0）。すべての表示のテンプレート、カスタム死亡メッセージ、設定全体を編集できるゲーム内エディター。
 - 前提 Mod なし、ワールドデータなし、ログイン時のチャット表示なし。いつ追加・削除しても安全です。
 
 ### ファイル
@@ -69,9 +74,11 @@
 config/whathitme/
   whathitme-common.cfg    パック・サーバーの設定
   whathitme-client.cfg    個人の設定とパネルの配置
+  whathitme-client-templates.json   個人のテンプレート（1.3.0）
   hint_template.cfg       /whm dump が書き出すテンプレート
-  pack/                   パック定義: hints/ renames/ ignored/ triggers/ custom/（どのサブフォルダの *.json でも可）
+  pack/                   パック定義: hints/ renames/ ignored/ triggers/ custom/ templates/ deathmessages/ rules/（どのサブフォルダの *.json でも可）
   .cache/                 catalog_cache.json、stats_<uuid>.json、whathitme_dump.csv
+  .backup/                パックエディターが変更する前のファイル（1.3.0）
 ```
 
 | ファイル | 対象 | 内容 |
@@ -110,6 +117,7 @@ config/whathitme/
 | `summarySeconds` | 10 | 「直前X秒の合計」の秒数 |
 | `recapSeconds` | 30 | 死亡の詳細にさかのぼって含める秒数 |
 | `maxSnapshots` | 5 | プレイヤーごとのトーテム・大ダメージのスナップショット数 |
+| `requireClientMod` | false | 1.3.0: What Hit Me? を入れていないクライアントの参加を断る |
 
 **配置**（client ファイルのみ、カテゴリ `layout`）:
 
@@ -127,7 +135,7 @@ config/whathitme/
 
 ### pack フォルダ
 
-`config/whathitme/pack/` が無ければ、`hints/`、`renames/`、`ignored/`、`triggers/`、`custom/` を作り、それぞれに `_example.json` を置きます。例の中身はコメントアウトされているので、編集するまで何も起きません。`pack/` 以下の `.json` はすべて、パスのアルファベット順に読み込んでまとめます。後のファイルが前のファイルの同じキーを上書きします。コメント（`//`、`/* */`）と末尾のカンマも使えます。どのファイルにどのキーを書いても構いません。
+`config/whathitme/pack/` が無ければ、`hints/`、`renames/`、`ignored/`、`triggers/`、`custom/`、`templates/`、`deathmessages/`、`rules/` を作り、それぞれに `_example.json` を置きます。例の中身はコメントアウトされているので、編集するまで何も起きません。`pack/` 以下の `.json` はすべて、パスのアルファベット順（最上位に `"order"` の数値があればその順）に読み込んでまとめます。`"enabled": false` のファイルは読み込みません。後のファイルが前のファイルの同じキーを上書きします。コメント（`//`、`/* */`）と末尾のカンマも使えます。どのファイルにどのキーを書いても構いません。
 
 ```json
 {
@@ -152,7 +160,9 @@ config/whathitme/
 - `defaultIgnoredDamageIds`: 全員に対して最初から非表示にするキー。
 - `lockedFeatures`: 設定画面からも `/whm config` からも変更できなくする設定キー。シングルプレイでも変更できません。
 - `deathTriggers`: 下記参照。
-- `/whm reload` でフォルダを読み直し、読み込んだファイル数と、読めなかったファイル（そのファイルは飛ばします）を表示します。
+- `templates`、`deathMessages`、`rules`（1.3.0）: 下記参照。
+- `order`、`enabled`、`memo`、`entryMemos`（1.3.0）: 読み込み順、ON/OFF、メモ。パックエディターが書き込みます。
+- `/whm reload` でフォルダを読み直し、読み込んだファイル数、読めなかったファイル（そのファイルは飛ばします）、不明なテンプレート変数、ルールの問題を表示します。
 
 ### 複合キー
 
@@ -178,11 +188,106 @@ config/whathitme/
 
 ### 死亡トリガー（deathTriggers）
 
-各項目は `match`（複合キー）と `command`、任意で `oncePerPlayer`（初期値 `false`。プレイヤーの統計ファイルに記録されるので再起動後も有効）と `cooldownSeconds`（プレイヤーごと、初期値 `0`）を持ちます。置き換え文字: `{player}`、`{x}`、`{y}`、`{z}`（死亡したブロック座標）、`{damage}`（致命傷の体力ポイント、小数1桁）。コマンドはサーバー側だけで、コンソールの権限で実行されます。一致したトリガーはすべて、ファイルの順に実行されます。先頭の `/` はあってもなくても構いません。
+各項目は `match`（複合キー）と `command`、任意で `oncePerPlayer`（初期値 `false`。プレイヤーの統計ファイルに記録されるので再起動後も有効）と `cooldownSeconds`（プレイヤーごと、初期値 `0`）を持ちます。置き換え文字: `{player}`、`{x}`、`{y}`、`{z}`（死亡したブロック座標）、`{damage}`（致命傷の体力ポイント、小数1桁）。1.3.0 からはすべてのテンプレート変数も使え、`if` / `any` / `unless` の条件（進行度ルールを参照）も書けます。コマンドはサーバー側だけで、コンソールの権限で実行されます。一致したトリガーはすべて、ファイルの順に実行されます。先頭の `/` はあってもなくても構いません。
+
+### テンプレート（1.3.0）
+
+表示を1行ずつ書き換えられます。出力は `hover`（マウスオーバーの詳細。履歴やチャットの行の詳細にも使用）、`line`（死亡画面パネルの行と `/whm history` の行）、`summary`（リスポーン時のチャット）、`alert`（トーテム・大ダメージの通知）、`copy`（`[コピー]` の文）です。
+
+```json
+{
+  "templates": {
+    "summary": [
+      "&6&l===== {player} died =====",
+      "&cKilled by &f{killing_blow} &c({damage} ❤)",
+      "&7Weapon: {weapon}",
+      "&aTip: {tip}",
+      "&b{recap_link}"
+    ]
+  }
+}
+```
+
+- `{変数}`、`{変数|代わりの文字}`、`{damage:2}`（小数の桁数）、`&` のカラーコード、`lang:<キー>` の行。変数がすべて空の行は表示しません（武器がなければ「Weapon:」の行が消えます）。
+- 変数は表示の ON/OFF に従います。OFF の項目（ルールで隠した項目も）は空になるので、サーバーが止めた情報をテンプレートで見せることはできません。
+- 優先順位: 個人の `whathitme-client-templates.json` > pack の `templates` > 内蔵（どの言語でも 1.2.0 と同じ表示）。`lockedFeatures` に `templates` または `templates.<出力>` を書くとロックできます。
+- **テンプレートエディター**: `/whm template`、または設定画面の **Templates...**。実際の表示と同じコードで描くライブプレビュー、クリックで挿入できる変数一覧、直前の死亡またはサンプルの死亡でプレビュー。**Save to pack**（チートを有効にしたシングルプレイ）で `pack/templates/<出力>.json` に保存します。`/whm template preview <出力>` でチャットに表示できます。
+
+### カスタム死亡メッセージ（1.3.0）
+
+`deathMessages` で、一致した死亡のバニラの死亡メッセージを置き換えます（初期状態では何もしません）。キーは複合キー、値は1行のテンプレートです。
+
+```json
+{
+  "deathMessages": {
+    "mekanism:acid": "{player} dissolved in acid",
+    "*@twilightforest:lich": "{player} was outsmarted by the Lich"
+  }
+}
+```
+
+| サーバー | Mod ありのプレイヤー | Mod なしのプレイヤー |
+|---|---|---|
+| Fabric | カスタムメッセージ | カスタムメッセージ |
+| Forge / NeoForge | カスタムメッセージ（チャットと死亡画面） | バニラのメッセージ（`requireClientMod` を使ってください） |
+
+サーバーのログにもカスタムメッセージが出ます。`lang:` キーはプレイヤーごとに翻訳されます。
+
+### 進行度ルール（1.3.0）
+
+`rules` は、プレイヤーの進行度に応じて表示名とヒントを変え、項目を隠し、コマンドを実行します。最初に一致したルールが使われます。
+
+```json
+{
+  "rules": [
+    {
+      "match": "*@twilightforest:lich",
+      "unless": ["advancement:twilightforest:progress_lich"],
+      "name": "&k???",
+      "hint": "",
+      "hide": ["damage_id", "attacker", "mod", "weapon", "death_message"]
+    }
+  ]
+}
+```
+
+- 項目: `match`、`if`（すべて）、`any`（どれか1つ）、`unless`（どれも満たさない）、`name`、`hint`（`""` でヒントなし）、`hide`、`enforce`（個人の表示名・ヒント・テンプレートを使わせない。`hide` があれば自動で ON）、`commands`、`oncePerPlayer`、`cooldownSeconds`。
+- `hide`: `damage_id`、`attacker`、`mod`、`weapon`、`death_message`、`tip`、`properties`、`environment`、`owner`、`distance`、`position`。隠した情報は送る前にサーバーで取り除きます。死亡メッセージを隠すと「{player} was killed by ???」または「{player} died」になります。
+- 条件（`!` で否定）: `advancement:<ID>`（1.12 以降）、`tag:<タグ>`（1.9 以降）、`score:<目的><比較><数>`、`stage:<名前>`（Game Stages）、`ftbquests:<ID>`（FTB Quests）、`bq:<ID>`（Better Questing、GTNH 版も）、`heracles:<ID>`（Heracles / Odyssey Quests）、`script:<名前>`（スクリプト）。クエスト mod は任意で、それぞれ存在するすべてのバージョン・ローダーで試験しています。
+- 表示を作るたびに判定するので、クエストを終えると過去の記録も見えるようになります。サーバーに Mod が必要です。
+- `/whm test <ダメージID> ... --as <プレイヤー> --assume <条件>` で、そのプレイヤーの実際の進行度での結果を確認できます。
+
+### `requireClientMod`（1.3.0）
+
+`whathitme-common.cfg` で `requireClientMod=true` にすると、What Hit Me? を入れていないプレイヤーを分かりやすいメッセージ付きで断ります（入っているかだけを確認し、バージョンは見ません）。Forge / NeoForge では、ルールで死亡メッセージを隠していてこの設定が OFF のとき、警告をログに出します。バニラのクライアントにはバニラの死亡メッセージが見えてしまうためです。
+
+### スクリプト連携（1.3.0）
+
+KubeJS、CraftTweaker、MineTweaker 3 のスクリプトに、それらが存在するすべてのバージョン・ローダーで対応しています（KubeJS 1.12.2〜26.1.2、CraftTweaker 1.12.2〜1.21.1、MineTweaker 3 / CraftTweaker 3.x 1.7.10〜1.11.2）。
+
+```js
+// kubejs/server_scripts/whathitme.js
+WhatHitMeEvents.register(event => {
+  event.condition('veteran', 'Has killed the Wither', player => player.stages.has('wither_down'))
+  event.addRule({ match: '*@minecraft:wither', unless: ['script:veteran'], name: '???', hide: ['attacker', 'mod'] })
+})
+```
+
+スクリプトの条件（`script:<名前>`）、テンプレート変数（`{script:<名前>}`）、イベント（`damageRecorded`、`death`、`respawn`、`alert`）、読み取り（直前の死亡、履歴、統計、`/whm test` の結果）、実行時の表示名・ヒント・ルール・死亡メッセージ・テンプレートの追加。`/whm reload` とスクリプト mod の再読み込みで作り直されます。他の Mod 向けの Java API: `io.github.junjun1z.whathitme.api.WhatHitMeApi`。
+
+### ゲーム内パックエディター（1.3.0）
+
+`/whm pack`（または設定画面の **Pack editor...**）で、ここまでの設定をすべてゲーム内で編集できます。表示名、ヒント、ルール、死亡メッセージ、テンプレート、死亡トリガー、非表示 ID、ロックする設定、サーバーの設定。チートを有効にしたシングルプレイと OP が使えます。
+
+- サーバーが編集内容を確認して JSON ファイルに書き込み、すぐに再読み込みして全員に反映します。保存は項目を確定したときで、1文字ごとではありません。
+- JSON ファイル1つが1カテゴリー、サブフォルダーはグループです。順番、ON/OFF、メモはファイルに保存されます。エディターが書き直すファイルの手書きのコメントは消えるので、メモ欄を使ってください。
+- 検索できるダメージ ID・モブ一覧付きのマッチキー作成、サーバーにある進捗・スコア・タグ・クエスト・ステージ・スクリプト条件から選べる条件の選択、「このプレイヤーとして / この条件を満たしたとして」のプレビュー、入力欄の下のエラー表示、他の OP が保存したときの通知。
+- `config/whathitme/.backup/` にバックアップ、30 回まで元に戻せます。
+- 個人モード（`/whm pack personal`、権限不要）: 自分の表示名・ヒント・非表示 ID を一覧で編集できます。
 
 ### `/whm test`
 
-`/whm test <ダメージID> [エンティティID] [アイテムID] [ディメンションID]`（OP）は、仮の致命傷を作り、表示名、ヒント、実行されるはずの死亡トリガー（置き換え文字を埋めた形で表示するだけで、実行はしません）、チャットのプレビューを表示します。`-` で引数を飛ばせます。ディメンションを省くと実行した人のディメンションになります。
+`/whm test <ダメージID> [エンティティID] [アイテムID] [ディメンションID] [--as <プレイヤー>] [--assume <条件>]`（OP）は、仮の致命傷を作り、表示名、ヒント、一致したルールと隠される項目、実行されるはずの死亡トリガー（置き換え文字を埋めた形で表示するだけで、実行はしません）、死亡メッセージ、チャットのプレビューを表示します。`-` で引数を飛ばせます。ディメンションを省くと実行した人のディメンションになります。
 
 ### ダメージIDのスキャンと `/whm dump`
 
@@ -223,9 +328,13 @@ Mod のダメージIDは、誰かがそのダメージを受ける前から一�
 | `/whm rename <ID> <名前...>` | 表示名の変更（空で削除） | OP |
 | `/whm sethint <ID> <ヒント...>` | ヒントの設定（空で削除） | OP |
 | `/whm inspect <プレイヤー>` | オンラインのプレイヤーの直前の死亡と履歴 | OP |
-| `/whm test <ダメージID> [エンティティ] [アイテム] [ディメンション]` | 表示名・ヒント・死亡トリガー・チャットのプレビュー | OP |
+| `/whm test <ダメージID> [エンティティ] [アイテム] [ディメンション] [--as <プレイヤー>] [--assume <条件>]` | 表示名・ヒント・ルール・死亡トリガー・死亡メッセージ・チャットのプレビュー | OP |
 | `/whm dump` | `whathitme_dump.csv` と `hint_template.cfg` を書き出す | OP |
 | `/whm reload` | 設定ファイルと pack フォルダの再読み込み、カタログの再スキャン | OP |
+| `/whm template` | テンプレートエディターを開く（1.3.0） | 全員（Mod 入りクライアント） |
+| `/whm template preview <出力>` / `reset [出力]` | テンプレートをチャットに表示 / 個人のテンプレートを削除（1.3.0） | 全員 |
+| `/whm pack` | パックエディターを開く（1.3.0） | OP（サーバーに Mod が必要） |
+| `/whm pack personal` | 自分の表示名・ヒント・非表示 ID を編集するパックエディター（1.3.0） | 全員（Mod 入りクライアント） |
 | `/whm server <サブコマンド>` | Mod 入りクライアントからサーバー側で実行 | サーバーに Mod が必要 |
 | `/whm help` | コマンド一覧 | 全員 |
 
@@ -242,12 +351,12 @@ English、日本語、简体中文、繁體中文、한국어、Русский�
 Gradle の実行には JDK 25 が必要です。各ターゲットの Java 8 / 17 / 21 / 25 ツールチェーンは自動でダウンロードされます。
 
 ```
-./gradlew collectJars -Pmod_version=1.2.0
+./gradlew collectJars -Pmod_version=1.3.0
 ```
 
 Minecraft バージョン / ローダーごとに 1 ターゲットで、すべての jar が `build/dist/` にコピーされます。構成、アーキテクチャ、バージョンの追加方法、移植のメモ、ゲーム内セルフテストは [BUILD.md](BUILD.md) を参照してください。
 
-リリース: `1.2.0` のようなタグを push すると `.github/workflows/release.yml` が全ターゲットをビルドし、`publish.json` に載っている jar を [CHANGELOG.md](CHANGELOG.md) の該当バージョンの節を添えて GitHub Releases、Modrinth、CurseForge に公開します。
+リリース: `1.3.0` のようなタグを push すると `.github/workflows/release.yml` が全ターゲットをビルドし、`publish.json` に載っている jar を [CHANGELOG.md](CHANGELOG.md) の該当バージョンの節を添えて GitHub Releases、Modrinth、CurseForge に公開します。
 
 ## ライセンス
 

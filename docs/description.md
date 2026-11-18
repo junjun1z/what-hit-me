@@ -6,6 +6,8 @@ See exactly what killed you. **Works in any modpack, with any combination of mod
 
 What Hit Me? records the damage a player takes and explains a death in plain words: the killing blow, the attacker and its mod, how much armor helped, whether the damage ignored armor, and what to do about it next time. It runs on the client, on the server, or both, and adds no blocks or items. Minecraft 1.7.10 - 26.3 on Forge, Fabric and NeoForge: 63 builds, each one started and tested in game.
 
+**New in 1.3.0 for modpack makers:** templates for every text the mod shows, custom death messages, progression rules that keep bosses secret until a quest is done (FTB Quests, Better Questing, Heracles, Game Stages, advancements, scores), KubeJS / CraftTweaker / MineTweaker scripts, and an in-game editor for the whole pack setup. Full documentation with examples: [wiki](https://github.com/junjun1z/what-hit-me/tree/main/wiki).
+
 ![Death screen panel](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/docs/screenshots/death-screen.png)
 
 ## Built to stay out of the way
@@ -32,6 +34,7 @@ What Hit Me? records the damage a player takes and explains a death in plain wor
 - **Effects.** `/whm effects` lists active potion effects with their mod, level, time left and whether milk cures them (`[Milk ✔]` / `[Milk ✖]`).
 - **Search.** `/whm search` finds damage types, mobs and effects in your pack: `#bypasses_armor`, `#magic`, `#fire`, `#explosion`, `#projectile`, `#absolute`, `#scanned`, `@modid`, or plain text.
 - **Settings screen everywhere.** `/whm config` opens the settings screen on every version and loader. It is also in the mods list on Forge and NeoForge, and in Mod Menu on Fabric when Mod Menu is installed (optional).
+- **Make it yours.** Rewrite the hover details, panel lines, chat summary, alerts and copy text with your own templates in the in-game template editor, with a live preview (`/whm template`).
 
 | Respawn chat | History | Effects |
 |---|---|---|
@@ -52,6 +55,8 @@ What Hit Me? records the damage a player takes and explains a death in plain wor
 - Fewer "what killed me?" questions in your Discord and issue tracker. Players see the attacker, the mod and the damage type themselves.
 - Guide players through your pack's dangers with your own names and tips, matched by damage type, attacker, weapon and dimension.
 - Safe to add late: no dependencies, no world data, no blocks or items, nothing in chat on join. Remove it any time.
+- Keep secrets until players get there: a boss shows as `???` with no tip until its quest, advancement or stage is done.
+- Make every text match your pack: templates, custom death messages, and an in-game editor for all of it.
 
 ### Health-overhaul mods
 
@@ -86,7 +91,9 @@ On first start the mod creates `config/whathitme/pack/` with the subfolders `hin
 - `renameMap` / `hintMap`: display names and tips. `&` color codes work. A value of `lang:<key>` (or a plain translation key) is translated on each player's client, so a resource pack can provide the text in every language.
 - `defaultIgnoredDamageIds`: damage ids hidden for everyone by default.
 - `lockedFeatures`: config keys players cannot change from the settings screen or `/whm config`, even in single player. Locked entries are shown greyed out.
-- Priority: entries in the `.cfg` files > pack JSON files > built-in automatic tips. `/whm reload` re-reads everything without a restart and reports how many pack files were read and which ones had errors.
+- `templates`, `deathMessages`, `rules`: see below. New samples in `templates/`, `deathmessages/` and `rules/`.
+- `order`, `enabled`, `memo`, `entryMemos`: load order (`"order": 10`), on / off switch (`"enabled": false` skips the file) and notes. The in-game pack editor writes them; by hand they are optional.
+- Priority: entries in the `.cfg` files > pack JSON files > built-in automatic tips. `/whm reload` re-reads everything without a restart and reports how many pack files were read, which ones had errors, unknown template variables and rule problems.
 
 ### Composite match keys
 
@@ -114,13 +121,139 @@ All conditions of a key must match. When several keys match, the most specific o
 
 `deathTriggers` run a server command when a player's death matches `match`:
 
-- Placeholders: `{player}`, `{x}`, `{y}`, `{z}` (block coordinates of the death) and `{damage}` (health points of the killing blow).
+- Placeholders: `{player}`, `{x}`, `{y}`, `{z}` (block coordinates of the death) and `{damage}` (health points of the killing blow), plus every template variable.
+- Conditions: `if` / `any` / `unless` with the same conditions as progression rules (below), checked against the dead player's progress.
 - `oncePerPlayer`: only the first matching death of each player (remembered across restarts). `cooldownSeconds`: per player.
 - Commands run on the server only, with console permission. Every matching trigger runs, in file order.
 
 ### Testing: `/whm test`
 
-`/whm test <damage_id> [entity_id] [item_id] [dim_id]` builds a dummy death and shows the resulting name, the tip, the death triggers that would run (they are not run) and a preview of the chat summary. Use `-` to skip an argument. Arguments Tab-complete, including damage ids found by the scanner.
+`/whm test <damage_id> [entity_id] [item_id] [dim_id]` builds a dummy death and shows the resulting name, the tip, the matching progression rule and what it hides, the death triggers that would run (they are not run), the death message and a preview of the chat summary. Use `-` to skip an argument. Arguments Tab-complete, including damage ids found by the scanner. Add `--as <player>` to use a player's real progress and `--assume <condition>` (repeatable) to pretend a condition is met.
+
+### Templates
+
+Rewrite what the mod shows, line by line, with `{variables}`. Nothing changes until you write one: the built-in output is exactly the 1.2.0 text in every language.
+
+| Output | What it changes |
+|---|---|
+| `hover` | Hover details of a record (death screen, `/whm` history, chat summary) |
+| `line` | One line of the death screen panel and of `/whm history` |
+| `summary` | The respawn chat summary |
+| `alert` | Totem / prevented death / heavy-hit chat alerts |
+| `copy` | The `[Copy]` / `[Copy Recap]` text, including the equipment block |
+
+```json
+{
+  "templates": {
+    "line": ["&4{killing} &8{time_ago} &f{name} &c-{damage} ❤ &7({max_hp_percent}% max) &e{badges}"],
+    "summary": [
+      "&6&l===== {player} died =====",
+      "&cKilled by &f{killing_blow} &c({damage} ❤)",
+      "&7Weapon: {weapon} &d{weapon_enchants}",
+      "&aTip: {tip}",
+      "&b{recap_link}"
+    ]
+  }
+}
+```
+
+- Syntax: `{variable}`, `{variable|fallback}`, `{damage:2}` for decimals, `&` color codes, a line `lang:<key>` for translated text. A line whose placeholders are all empty is left out, so "Weapon:" disappears when there is no weapon. Long lines wrap in the tooltip and the panel.
+- Variables follow the display switches: a variable that is turned off on the server or by the player is empty. Templates never reveal what the server disabled.
+- Where they come from: a player's personal `whathitme-client-templates.json` > the pack's `templates` > built-in. Lock outputs with `lockedFeatures` (`templates` or `templates.<output>`). Players without the mod get the pack templates in the server's English chat.
+
+| Group | Variables |
+|---|---|
+| Damage | `{damage}` (hearts), `{damage_hp}`, `{raw_damage}` (before armor), `{mitigation}` (%), `{absorbed}`, `{health_after}`, `{max_health}`, `{max_hp_percent}`, `{hits}` |
+| Damage type | `{name}`, `{damage_name}`, `{damage_id}`, `{damage_mod}`, `{properties}`, `{death_message}` |
+| Attacker | `{attacker_name}`, `{attacker_id}`, `{attacker_mod}`, `{attacker_distance}`, `{attacker_owner}`, `{direct}`, `{weapon}`, `{weapon_id}`, `{weapon_enchants}` (`{mob_...}` = `{attacker_...}`) |
+| Context | `{environment}`, `{dimension}`, `{x}` `{y}` `{z}`, `{time_ago}`, `{time}` |
+| Other | `{badges}`, `{killing}`, `{tip}`, `{player}`, `{script:<name>}` |
+| Summary / alert / copy | `{killing_blow}`, `{total}`, `{total_hits}`, `{total_seconds}`, `{recap_link}`, `{toggle_notice}`, `{alert_kind}`, `{details_link}`, `{timeline}`, `{equipment}`, `{effects}`, `{recap}` |
+
+**Template editor:** `/whm template` or **Templates...** in the settings screen, on every version and loader. Each line is a text field; click a variable to insert it; unknown variables turn red. The live preview is drawn by the same code as the real output (tooltip, panel line, chat lines or copy text), with your latest death or a sample death. **Save** keeps it for you; **Save to pack** (single player with cheats) writes `pack/templates/<output>.json` for your pack. Outputs locked by the pack are shown read-only.
+
+### Custom death messages
+
+`deathMessages` replaces the vanilla death message ("Steve was slain by Zombie") for the deaths you choose. Off by default: with no entries nothing changes. Keys are composite match keys, values are one-line templates with every variable, `&` colors and `lang:` keys.
+
+```json
+{
+  "deathMessages": {
+    "mekanism:acid": "{player} dissolved in acid",
+    "*@twilightforest:lich": "{player} was outsmarted by the Lich",
+    "mob:minecraft:zombie @item:*sword*": "{player} was cut down by {attacker_name} wielding {weapon|a blade}"
+  }
+}
+```
+
+| Server | Players with the mod | Players without the mod | Server log |
+|---|---|---|---|
+| Fabric (every version) | Custom message | Custom message | Custom message |
+| Forge / NeoForge (every version) | Custom message (chat line and death screen are replaced) | Vanilla message | `[What Hit Me?] Death message: ...` |
+
+Forge and NeoForge have no event to change the death message, so players without the mod keep the vanilla text there. If that matters, turn on `requireClientMod`.
+
+### Progression rules and quest mods
+
+`rules` change what a death shows depending on the player's progress. The server checks them every time it builds an output and removes hidden data before anything is sent, so finishing a quest reveals old entries too and nothing leaks to the client.
+
+```json
+{
+  "rules": [
+    {
+      "match": "*@twilightforest:lich",
+      "unless": ["ftbquests:1A2B3C4D5E6F7081"],
+      "name": "&k???",
+      "hint": "",
+      "hide": ["damage_id", "attacker", "mod", "weapon", "death_message"]
+    }
+  ]
+}
+```
+
+- Fields: `match`, `if` (all must be true), `any` (one of), `unless` (none), `name`, `hint` (`""` = no tip), `hide`, `enforce` (personal renames, tips and templates do not apply; on when `hide` is set), `commands`, `oncePerPlayer`, `cooldownSeconds`. The first matching rule wins.
+- `hide`: `damage_id`, `attacker`, `mod`, `weapon`, `death_message`, `tip`, `properties`, `environment`, `owner`, `distance`, `position`. A hidden death message becomes "Steve was killed by ???" (or "Steve died"), translated for players with the mod.
+
+| Condition (`!` negates) | True when |
+|---|---|
+| `advancement:<id>` | The player has the advancement (Minecraft 1.12+) |
+| `tag:<tag>` | The player has the scoreboard tag (1.9+) |
+| `score:<objective><op><n>` | The score compares true (`>=`, `>`, `<=`, `<`, `=`, `!=`) |
+| `stage:<name>` | Game Stages: Forge 1.11.2 - 1.20.3, NeoForge 1.20.1 |
+| `ftbquests:<id>` | FTB Quests: the quest or chapter is done by the player's team (1.12.2 - 26.1.2 as published) |
+| `bq:<id>` | Better Questing: Forge 1.7.10 - 1.12.2 (also the GTNH fork and Better Questing Unofficial), Forge / NeoForge 1.20.1 |
+| `heracles:<id>` | Heracles / Odyssey Quests: 1.20 / 1.20.1, 1.21 / 1.21.1 |
+| `script:<name>` | A condition registered by a script |
+
+Quest mods are never required; their conditions load only when the mod is installed. Each quest mod was tested in game on every Minecraft version and loader it exists for. `/whm reload` reports unknown conditions and missing mods; `/whm test ... --as <player> --assume <condition>` shows the result for a player.
+
+### requireClientMod
+
+`requireClientMod=true` in `whathitme-common.cfg` refuses players without What Hit Me? with a readable message (only the presence is checked, not the version). Use it on Forge / NeoForge when rules hide the killer from the death message: the server warns on start and on `/whm reload` while it is off.
+
+### Script integration: KubeJS, CraftTweaker, MineTweaker
+
+Scripts can register `script:` conditions and `{script:}` template variables, listen to `damageRecorded`, `death`, `respawn` and `alert`, read the last death, history, stats and `/whm test` results, and add renames, tips, rules, death messages and templates at run time. Supported on every version and loader where the script mod exists: KubeJS (1.12.2 - 26.1.2), CraftTweaker (1.12.2 - 1.21.1), MineTweaker 3 / CraftTweaker 3.x (1.7.10 - 1.11.2, also the GTNH fork).
+
+```js
+// kubejs/server_scripts/whathitme.js
+WhatHitMeEvents.register(event => {
+  event.condition('veteran', 'Has killed the Wither', player => player.stages.has('wither_down'))
+  event.addRule({ match: '*@minecraft:wither', unless: ['script:veteran'], name: '???', hide: ['attacker', 'mod'] })
+})
+```
+
+Everything is rebuilt on `/whm reload` and the script mod's reload. A failing script function is logged once and never breaks a recap. Other mods can use the same Java API (`io.github.junjun1z.whathitme.api.WhatHitMeApi`).
+
+### In-game pack editor
+
+`/whm pack` (or **Pack editor...** in the settings screen) edits everything above without touching a file: renames, tips, rules, death messages, templates, death triggers, ignored ids, locked features and the server settings. For single player with cheats and operators, on every version and loader.
+
+- The server checks every edit, writes the JSON file and reloads at once; every player gets the change. Saved when you confirm an entry.
+- Each JSON file of the pack folder is a category (sub-folders are groups) with load order, on / off switch and a memo; entries have memos too. Comments written by hand in a file the editor rewrites are lost, the memo fields replace them.
+- Match key builder with searchable damage id and mob lists, condition picker with the advancements, scores, tags, quests, stages and script conditions the server knows, a preview "as player / assuming conditions", inline errors, and a notice when another operator saves.
+- Backups in `config/whathitme/.backup/` and 30 undo steps.
+- Players without permission get the personal mode (`/whm pack personal`): their own renames, tips and ignored ids as searchable lists.
 
 ### Every damage id, before anyone takes it
 
@@ -147,9 +280,11 @@ Single player counts as "client and server". Mixed servers work too: each player
 config/whathitme/
   whathitme-common.cfg    pack and server settings (sent to modded clients)
   whathitme-client.cfg    personal settings and panel layout
+  whathitme-client-templates.json   personal templates
   hint_template.cfg       written by /whm dump
   pack/                   pack definitions (*.json, any subfolder)
   .cache/                 catalog_cache.json, stats_<uuid>.json, whathitme_dump.csv
+  .backup/                previous versions of files changed by the pack editor
 ```
 
 An element is shown only when it is `true` in **both** `.cfg` files, so a pack or server can turn something off for everyone, and each player can turn off more for themselves. Players can add their own renames and tips on top of yours. Tips have three switches: `enableAutoHints` and `enableCustomHints` (common file) and `showHints` (client file); an old `showHintsAndTips=false` is carried over to all three.
@@ -181,9 +316,13 @@ All commands are `/whm` (alias `/whathitme`) and Tab-complete. "Op" means permis
 | `/whm rename <id> <name...>` | Custom display name (empty removes it) | Op |
 | `/whm sethint <id> <tip...>` | Custom tip (empty removes it) | Op |
 | `/whm inspect <player>` | Last death and history of an online player | Op |
-| `/whm test <damage_id> [entity] [item] [dim]` | Preview the name, tip, death triggers and chat for a dummy death | Op |
+| `/whm test <damage_id> [entity] [item] [dim] [--as <player>] [--assume <cond>]` | Preview the name, tip, rule, death triggers, death message and chat for a dummy death | Op |
 | `/whm dump` | Write `whathitme_dump.csv` and `hint_template.cfg` | Op |
 | `/whm reload` | Reload the config files and the pack folder, rescan the catalog | Op |
+| `/whm template` | Open the template editor | Everyone (mod on the client) |
+| `/whm template preview <output>` / `reset [output]` | Show a template in chat / delete your personal templates | Everyone |
+| `/whm pack` | Open the pack editor | Op (mod on the server) |
+| `/whm pack personal` | Edit your own renames, tips and ignored ids as lists | Everyone (mod on the client) |
 | `/whm server <subcommand>` | From a modded client: run the subcommand on the server (server-wide settings) | Needs the mod on the server |
 | `/whm help` | Command list | Everyone |
 
@@ -242,7 +381,10 @@ Players without the mod see English text sent by the server.
 On Forge and NeoForge, no. On Fabric, only Fabric API; Mod Menu is optional. See *Supported versions* above.
 
 **Do players have to install it?**
-No. On a server with the mod, players without it still get the chat summary and commands in English. Installing it on the client adds the death screen panel, translations, the settings screen and clipboard buttons.
+No. On a server with the mod, players without it still get the chat summary and commands in English. Installing it on the client adds the death screen panel, translations, the settings screen and clipboard buttons. A server can require it with `requireClientMod=true`.
+
+**Does it need a quest or script mod?**
+No. FTB Quests, Better Questing, Heracles, Game Stages, KubeJS, CraftTweaker and MineTweaker are optional; their support loads only when they are installed. Without them, rules can still use advancements, scoreboard tags and scores.
 
 **Can I use it on a server that does not have it?**
 Yes. The client estimates the damage from its own health and nearby entities. Those entries are marked `[Client Est.]` and are less detailed.
