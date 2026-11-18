@@ -69,6 +69,11 @@ public final class SelfTest {
             new ScriptPlan(this).planMp();
             return true;
         }
+        if (mode.equals("mp-pack-a") || mode.equals("mp-pack-b")) {
+            // pack editor with two modded clients: a = operator, b = Alex (refused, then op)
+            new PackMpPlan(this).plan(mode.endsWith("a"));
+            return true;
+        }
         if (mode.equals("mp-two")) {
             new MultiplayerPlan(this).planTwo();
             return true;

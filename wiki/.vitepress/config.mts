@@ -71,7 +71,7 @@ const en = {
   names: 'Names, tips & ignored ids', locked: 'Locked features & permissions', triggers: 'Death triggers',
   scanner: 'Scanner, dump & /whm test', templates: 'Templates (1.3.0+)', editor: 'Template editor (1.3.0+)',
   deathMessages: 'Custom death messages (1.3.0+)', rules: 'Progression rules (1.3.0+)', conditions: 'Conditions & quest mods (1.3.0+)',
-  requireMod: 'requireClientMod (1.3.0+)', scripts: 'Script integration (1.3.0+)', packEditor: 'Pack editor (planned)',
+  requireMod: 'requireClientMod (1.3.0+)', scripts: 'Script integration (1.3.0+)', packEditor: 'Pack editor (1.3.0+)',
   more: 'More', cookbook: 'Cookbook', faq: 'Troubleshooting & FAQ', changelog: 'Changelog',
 }
 
@@ -84,7 +84,7 @@ const ja = {
   names: '名前・ヒント・非表示 ID', locked: '設定のロックと権限', triggers: '死亡トリガー',
   scanner: 'スキャナー・dump・/whm test', templates: 'テンプレート (1.3.0+)', editor: 'テンプレートエディター (1.3.0+)',
   deathMessages: 'カスタム死亡メッセージ (1.3.0+)', rules: '進行度ルール (1.3.0+)', conditions: '条件とクエスト mod (1.3.0+)',
-  requireMod: 'requireClientMod (1.3.0+)', scripts: 'スクリプト連携（1.3.0+）', packEditor: 'pack エディター（予定）',
+  requireMod: 'requireClientMod (1.3.0+)', scripts: 'スクリプト連携（1.3.0+）', packEditor: 'パックエディター（1.3.0+）',
   more: 'その他', cookbook: 'レシピ集', faq: 'トラブルシューティング・FAQ', changelog: '更新履歴',
 }
 

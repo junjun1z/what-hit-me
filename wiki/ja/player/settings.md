@@ -24,6 +24,7 @@
 - 変更は **Done** を押したときに保存・適用されます。シングルプレイではサーバー側にもすぐ反映されます。
 - modpack が [`lockedFeatures`](/ja/modpack/locked-features) でロックしたキーは操作できない状態で表示されます。
 - **Templates...** ボタンで[テンプレートエディター](/ja/modpack/template-editor)が開きます <Badge type="tip" text="1.3.0+" />。
+- **パックエディター...** ボタン <Badge type="tip" text="1.3.0+" /> で[パックエディター](/ja/modpack/pack-editor)が開きます。OP 権限がないとき（またはワールドの外）は**個人モード**で開き、自分の `renameMap`・`hintMap`・`ignoredDamageIds` を 1 行のカンマ区切りではなく、検索できる一覧・マッチキーの組み立て・プレビュー付きで編集できます。`/whm pack personal` でも同じです。
 
 ::: tip 表示には両方のファイルが必要
 表示項目は**両方**のファイルで `true` のときだけ表示されます。自分のスイッチがオンなのに出てこない場合は、pack かサーバーがオフにしています。

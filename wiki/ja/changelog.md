@@ -17,7 +17,7 @@
 
 - [スクリプト連携](/ja/modpack/scripts)：KubeJS と CraftTweaker のスクリプトから `script:` 条件、`{script:}` テンプレート変数、イベント、実行時の設定を追加（公開 Java API `io.github.junjun1z.whathitme.api`）。
 
-1.3.0 で予定しているが、まだ実装されていないもの：[ゲーム内 pack エディター](/ja/modpack/pack-editor)。
+- すべての pack セクションとサーバー設定を編集できるゲーム内[パックエディター](/ja/modpack/pack-editor)（`/whm pack`、設定画面の **パックエディター...**）。判定はサーバー、バックアップと元に戻す付き。pack ファイルに `order`・`enabled`・メモを書けます。個人モード（`/whm pack personal`）で自分のリネーム・ヒント・非表示 ID を編集。画面は今のところ Forge 1.12.2 と 1.21.1（Fabric / Forge / NeoForge）。
 
 ## 1.2.0
 

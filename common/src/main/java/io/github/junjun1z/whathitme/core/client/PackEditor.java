@@ -259,6 +259,8 @@ public final class PackEditor implements CoreScreen {
     /** Last result message (self-test) */
     private String lastResult = "";
     private volatile int results;
+    /** Last "someone else changed ..." notice (self-test) */
+    private volatile String lastNotice = "";
     private volatile int states;
 
     /**
@@ -329,6 +331,10 @@ public final class PackEditor implements CoreScreen {
     /** Number of results / states received (self-test waits on them) */
     public int results() {
         return results;
+    }
+
+    public String lastNotice() {
+        return lastNotice;
     }
 
     public int states() {
@@ -898,6 +904,7 @@ public final class PackEditor implements CoreScreen {
                     List<String> files = new ArrayList<>();
                     for (Object f : Json.list(notice.get("files"))) files.add(PackModel.str(f));
                     flash(tr("whathitme.pack.notice", who, String.join(", ", files)), true);
+                    lastNotice = who + ": " + String.join(", ", files);
                     if (draft != null && draft.dirty() && draft.orig != null && files.contains(draft.orig.cat.path)) {
                         banner = tr("whathitme.pack.conflict", who);
                     }

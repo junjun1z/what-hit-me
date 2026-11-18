@@ -566,6 +566,49 @@ Notes for the port phase:
 - Mixed packs: KubeJS and CraftTweaker can be installed together; each registers under its own owner (`kubejs`, `crafttweaker`).
   Test them in separate instances (the test scripts use the same names).
 
+## Porting 1.3.0 pack editor
+
+The pack editor (`/whm pack`, section G of 1.3.0) is entirely in the core: the server store (`core.pack.PackStore`: validation,
+backups in `config/whathitme/.backup/`, undo, reload + broadcast), the file model (`PackFiles`: load order by the top-level `order`,
+`enabled`, `memo`; `JsonPatch` changes those keys without touching comments), the client model and backends (`PackModel`,
+`PackClient` = server, `PackPersonal` = own `whathitme-client.cfg` lists) and the screen (`core.client.PackEditor` on the core
+widgets `Ui` / `TextField`, drawn with `Gfx`). Messages travel as chunked JSON inside the existing packets (`PackProto`: client
+`Request` kind 9, server `Message` with key `whathitme.pack.wire`), so loaders and networks need no change. The references are
+Forge 1.12.2 (`loaders/forge_rfg/1.12.2`) and `versions/1.21.1` (Fabric, Forge and NeoForge 1.21.1).
+
+An unported version already has everything on the server side: a ported client can edit the pack of any 1.3 server, and `PackFiles`
+order / enabled work in every jar. Without the client part, `/whm pack` prints `whathitme.pack.unavailable`.
+
+| Port method / call | Default | Reference implementation | Feature |
+| --- | --- | --- | --- |
+| `ClientPort.openPackEditor(personal)` | `false` (= "not available on this version") | sets a flag; the client tick opens the host with `new PackEditor(personal)` (1.12.2: `ClientEvents.onTick`, 1.21.1: `ClientPortMc.tickConfigScreen`) | `/whm pack [personal]` |
+| Screen host | - | the template editor host takes any `core.client.CoreScreen`: `GuiTemplateEditor(parent, screen)` / `TemplateEditorScreen121(parent, screen)`; `editor` stays the `TemplateEditor` (or null), `screen` is what is hosted | editor screen |
+| "Pack editor..." button | - | next to "Templates..." in the config screen (`whathitme.config.packeditor`), opens `new PackEditor(false)` (pack mode for operators of a server with the mod, otherwise personal mode) | config screen |
+| `ServerPort.conditionValues(prefix)` | empty list | `advancement` (ids of advancements with a display), `score` (objective names), `tag` (tags of online players) | condition picker lists |
+
+Porting steps per version:
+1. Change the template editor host to hold a `CoreScreen` (keep the old constructor creating a `TemplateEditor`); forward render /
+   mouse / wheel / key / char to `screen` exactly as for the template editor (same key mapping, key repeat on, not pausing).
+2. `openPackEditor` in the client port + open it on the client tick, like `openTemplateEditor`.
+3. Add the "Pack editor..." button left of "Templates..." in the config screen (1.7.10 - 1.10.2: in `WhmGuiFactory.Screen`).
+4. `ServerPort.conditionValues` with the version's advancement / scoreboard API (skip `advancement` before 1.12).
+5. Self-test: `DevPort.pack13()` true, `packEditorOpen()` (host instanceof + `screen instanceof PackEditor`; `templateEditorOpen()`
+   must now also check `editor != null`), `pressConfigPackButton()`. `PackEditorPlan` then runs in `sp` (mode `sp-pack` runs only it).
+
+Tests (whm-tools/packed13/): `run.sh <instance> <target> sp|sp-pack` (screenshots of every tab and dialog are copied to the scratchpad),
+`mp.sh <server dir> <port> <instance> <target>` = dedicated server + the operator client (`mp-pack-a`) + a second modded client
+`<instance>_PackB` logged in as Alex (`mp-pack-b`: refused by the client and by the server, made op, sees the operator's edit and
+the notice, edits the same category; the operator gets the notice back). `lay.sh` compiles the core and renders the editor offline
+in 10 languages x 9 window sizes (320x240 ... 1920x1080) x every tab / pane / dialog: nothing may be drawn off screen. `harness/`
+(PackCheck) checks the server store offline: path traversal, sizes, entries, order patching with comments kept, enabled, transfer,
+folders, settings, undo.
+
+Notes:
+- Small windows: below 400 GUI pixels the editor shows one pane at a time (tree / list / detail) with a back button; forms scroll.
+- The editor needs `ClientCore.serverHasMod` and `ClientCore.op()` for pack mode (1.7.10 / 1.8 clients do not know their op level:
+  the server still refuses, the editor then shows "no permission").
+- Script entries come from `ScriptRegistry.packRoots()` and are read-only in the editor.
+
 ## In-game self-test (development)
 
 Build with `-Pselftest`. Use only `build/devlibs/whathitme-selftest.jar` (the mod + self-test, for clients **and test

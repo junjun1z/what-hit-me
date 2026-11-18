@@ -23,7 +23,7 @@ When you update from 1.2 to 1.3, the new `templates/`, `deathmessages/` and `rul
 ## How files are read
 
 1. Every `.json` file below `pack/` is collected, **in any subfolder**.
-2. The files are sorted by their path (lower case, alphabetical), for example `hints/_example.json` before `hints/nether.json` before `rules/bosses.json`.
+2. The files are sorted by their path (lower case, alphabetical), for example `hints/_example.json` before `hints/nether.json` before `rules/bosses.json`. <Badge type="tip" text="1.3.0+" /> A top-level `"order": <number>` sorts first (files without it count as 0), and `"enabled": false` skips a file without deleting it; the [pack editor](/modpack/pack-editor) writes both, plus `"memo"` notes.
 3. They are merged in that order. **Later files override earlier entries** with the same key.
 4. A file that cannot be parsed is skipped; `/whm reload` names it and the server log shows the reason.
 

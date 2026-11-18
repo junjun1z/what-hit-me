@@ -27,6 +27,8 @@ All commands start with `/whm` (alias `/whathitme`) and Tab-complete.
 | `/whm template` <Badge type="tip" text="1.3.0+" /> | Open the template editor | Everyone (modded client) |
 | `/whm template preview <output>` <Badge type="tip" text="1.3.0+" /> | Render a template with your latest death | Everyone |
 | `/whm template reset [output]` <Badge type="tip" text="1.3.0+" /> | Delete your personal templates | Everyone (modded client) |
+| `/whm pack` <Badge type="tip" text="1.3.0+" /> | Open the [pack editor](/modpack/pack-editor) | Op (modded client, server with the mod) |
+| `/whm pack personal` <Badge type="tip" text="1.3.0+" /> | Pack editor in personal mode (your own lists) | Everyone (modded client) |
 | `/whm server <subcommand>` | From a modded client: run it on the server | Needs the mod on the server |
 | `/whm help` | Command list | Everyone |
 

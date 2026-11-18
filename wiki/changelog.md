@@ -17,7 +17,7 @@ The full changelog is in [CHANGELOG.md on GitHub](https://github.com/junjun1z/wh
 
 - [Script integration](/modpack/scripts): KubeJS and CraftTweaker scripts add `script:` conditions, `{script:}` template variables, event listeners and runtime entries (public Java API `io.github.junjun1z.whathitme.api`).
 
-Planned for 1.3.0 but not implemented yet: the [in-game pack editor](/modpack/pack-editor).
+- In-game [pack editor](/modpack/pack-editor) (`/whm pack`, **Pack editor...** in the settings screen) for every pack section and the server settings, server-authoritative with backups and undo; pack files may carry `order`, `enabled` and memos. Personal mode (`/whm pack personal`) for your own renames, tips and ignored ids. Screen on Forge 1.12.2 and 1.21.1 (Fabric / Forge / NeoForge) so far.
 
 ## 1.2.0
 

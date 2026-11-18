@@ -24,6 +24,8 @@
 | `/whm test <damage_id> [entity] [item] [dim] [--as <player>] [--assume <condition>]...` | 名前・ヒント・ルール・死亡トリガー・死亡メッセージ・チャットのプレビュー | OP |
 | `/whm dump` | `whathitme_dump.csv` と `hint_template.cfg` を書き出す | OP |
 | `/whm reload` | 設定ファイルと pack フォルダーを読み直し、カタログを再スキャン | OP |
+| `/whm pack` <Badge type="tip" text="1.3.0+" /> | [パックエディター](/ja/modpack/pack-editor)を開く | OP（mod 入りクライアント、mod 入りサーバー） |
+| `/whm pack personal` <Badge type="tip" text="1.3.0+" /> | 個人モードのパックエディター（自分のリスト） | 全員（mod 入りクライアント） |
 | `/whm template` <Badge type="tip" text="1.3.0+" /> | テンプレートエディターを開く | 全員（mod 入りクライアント） |
 | `/whm template preview <output>` <Badge type="tip" text="1.3.0+" /> | 自分の最新の死亡でテンプレートを表示 | 全員 |
 | `/whm template reset [output]` <Badge type="tip" text="1.3.0+" /> | 個人用テンプレートを削除 | 全員（mod 入りクライアント） |

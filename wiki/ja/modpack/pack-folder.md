@@ -23,7 +23,7 @@ config/whathitme/pack/
 ## ファイルの読み込み方 {#how-files-are-read}
 
 1. `pack/` 以下の `.json` ファイルを、**サブフォルダーも含めて**すべて集めます。
-2. パス（小文字）のアルファベット順に並べます。たとえば `hints/_example.json` → `hints/nether.json` → `rules/bosses.json` の順です。
+2. パス（小文字）のアルファベット順に並べます。たとえば `hints/_example.json` → `hints/nether.json` → `rules/bosses.json` の順です。<Badge type="tip" text="1.3.0+" /> 最上位の `"order": <数値>` があればそれで先に並べ（ないファイルは 0）、`"enabled": false` のファイルは消さずに読み込みから外します。[パックエディター](/ja/modpack/pack-editor)はこの 2 つと `"memo"`（メモ）を書きます。
 3. その順番で合成します。同じキーがあれば**後のファイルが前の項目を上書き**します。
 4. 解析できないファイルは読み飛ばされます。`/whm reload` がファイル名を表示し、サーバーのログに理由が出ます。
 

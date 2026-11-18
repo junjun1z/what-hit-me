@@ -288,6 +288,8 @@ public final class PackConfig {
         {"custom/_example.json", "{\n"
             + "  // Any file may contain any of the keys renameMap, hintMap, defaultIgnoredDamageIds, lockedFeatures, deathTriggers, templates, deathMessages, rules.\n"
             + "  // Files are read in alphabetical path order; later files override earlier entries.\n"
+            + "  // Optional: \"order\": 10 (load order, lower first, default 0), \"enabled\": false (skip this file), \"memo\": \"...\" (a note).\n"
+            + "  // In game: /whm pack opens the pack editor (operators).\n"
             + "}\n"},
     };
 

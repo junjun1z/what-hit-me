@@ -24,6 +24,7 @@ Each group has categories: display switches, filters / names / tips, and the dea
 - Changes are saved and applied when you press **Done**. In single player the server side is updated at once.
 - Keys the modpack locked with [`lockedFeatures`](/modpack/locked-features) are drawn disabled.
 - The **Templates...** button opens the [template editor](/modpack/template-editor) <Badge type="tip" text="1.3.0+" />.
+- The **Pack editor...** button <Badge type="tip" text="1.3.0+" /> opens the [pack editor](/modpack/pack-editor). Without operator permission (or outside a world) it opens in **personal mode**: your own `renameMap`, `hintMap` and `ignoredDamageIds` as searchable lists with the match key builder and a preview, instead of one-line comma lists. The same is `/whm pack personal`.
 
 ::: tip A display element needs both files
 An element is shown only when it is `true` in **both** files. If something does not appear although your personal switch is on, the pack or server has turned it off.
