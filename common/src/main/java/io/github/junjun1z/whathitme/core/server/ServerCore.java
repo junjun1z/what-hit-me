@@ -588,6 +588,8 @@ public final class ServerCore {
 
     public static void serverStarted(ServerPort p) {
         port = p;
+        // single player: pack files edited since the game started apply to the world being opened
+        Safe.run("config reload", WhmConfig::reloadCommon);
         Safe.run("script registration", ScriptRegistry::rebuild);
         Safe.run("rule warnings", () -> {
             for (String w : ruleWarnings(p)) Platform.log.warn("What Hit Me? " + w, null);
