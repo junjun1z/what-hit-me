@@ -1,0 +1,6 @@
+// KubeJS 1.1 (Minecraft 1.12.2, Forge, events.listen scripts on Nashorn): compile only, never a dependency of the jar.
+// Only on CurseForge: CurseMaven. Target property: kubejs_file (CurseForge file id)
+repositories { maven { url 'https://cursemaven.com'; content { includeGroup 'curse.maven' } } }
+dependencies {
+    compileOnly("curse.maven:kubejs-238086:${project.property('kubejs_file')}") { transitive = false }
+}

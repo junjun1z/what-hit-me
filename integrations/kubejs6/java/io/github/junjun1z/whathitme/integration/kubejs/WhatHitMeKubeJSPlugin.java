@@ -14,7 +14,7 @@ import dev.latvian.mods.kubejs.script.BindingsEvent;
 import dev.latvian.mods.kubejs.script.ScriptType;
 
 /**
- * KubeJS 6 plugin (Minecraft 1.18.2 - 1.20.1; listed in kubejs.plugins.txt, so it is only loaded when KubeJS is
+ * KubeJS 6 plugin (Minecraft 1.19.2 - 1.20.1, the KubeJS 7 beta of NeoForge 1.20.4; listed in kubejs.plugins.txt, so it is only loaded when KubeJS is
  * installed): the global WhatHitMe and the event group WhatHitMeEvents of server scripts.
  */
 public class WhatHitMeKubeJSPlugin extends KubeJSPlugin {

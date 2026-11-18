@@ -1,0 +1,9 @@
+// KubeJS 5 (Minecraft 1.18.2, Forge and Fabric, onEvent scripts): compile only, never a dependency of the jar.
+// Not on a Maven repository any more: Modrinth's Maven. Target properties: kubejs_version, rhino_version
+// (Modrinth version numbers without the loader suffix)
+repositories { maven { url 'https://api.modrinth.com/maven'; content { includeGroup 'maven.modrinth' } } }
+def kjsLoader = project.property('loader') == 'fabric' ? 'fabric' : 'forge'
+dependencies {
+    modCompileOnly("maven.modrinth:kubejs:${project.property('kubejs_version')}+${kjsLoader}") { transitive = false }
+    modCompileOnly("maven.modrinth:rhino:${project.property('rhino_version')}+${kjsLoader}") { transitive = false }
+}

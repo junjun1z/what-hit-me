@@ -1,0 +1,6 @@
+// CraftTweaker 7 (Minecraft 1.16.5, Forge): the crafttweaker sources with the annotation package of CraftTweaker 7
+// (api.annotations), used with crafttweaker8 (script runs). Compile only. Target property: crafttweaker_version
+repositories { maven { url 'https://maven.blamejared.com' } }
+dependencies {
+    modCompileOnly("com.blamejared.crafttweaker:CraftTweaker-${project.property('mc_version')}:${project.property('crafttweaker_version')}") { transitive = false }
+}

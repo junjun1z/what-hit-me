@@ -1,4 +1,4 @@
-// KubeJS 7 (Minecraft 1.21.x, NeoForge): compile only, never a dependency of the jar.
+// KubeJS 7 / 8 API (Minecraft 1.21.1 and 26.1.2, NeoForge): compile only, never a dependency of the jar.
 // Target properties: kubejs_version, rhino_version
 repositories { maven { url 'https://maven.latvian.dev/releases' } }
 dependencies {

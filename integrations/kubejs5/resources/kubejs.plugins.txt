@@ -1,0 +1,1 @@
+io.github.junjun1z.whathitme.integration.kubejs.WhatHitMeKubeJSPlugin

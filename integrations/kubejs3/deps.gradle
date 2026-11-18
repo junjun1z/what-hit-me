@@ -1,0 +1,9 @@
+// KubeJS 2 / 3 (package dev.latvian.kubejs; Minecraft 1.14.4 - 1.16.5, the 1.17.1 Fabric port): compile only, never a
+// dependency of the jar. Only on CurseForge: CurseMaven. Target properties: kubejs_file (CurseForge file id of the
+// loader's KubeJS jar), rhino_file (Rhino file id; not for the Nashorn versions)
+repositories { maven { url 'https://cursemaven.com'; content { includeGroup 'curse.maven' } } }
+def kjsProject = project.property('loader') == 'fabric' ? 'kubejs-fabric-395864' : 'kubejs-238086'
+dependencies {
+    modCompileOnly("curse.maven:${kjsProject}:${project.property('kubejs_file')}") { transitive = false }
+    if (project.hasProperty('rhino_file')) modCompileOnly("curse.maven:rhino-416294:${project.property('rhino_file')}") { transitive = false }
+}

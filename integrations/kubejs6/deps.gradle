@@ -1,8 +1,9 @@
-// KubeJS 6 (Minecraft 1.18.2 - 1.20.1, Forge and Fabric): compile only, never a dependency of the jar.
-// Target properties: kubejs_version, rhino_version (the loader is part of the artifact name)
+// KubeJS 6 API (Minecraft 1.19.2 - 1.20.1 Forge / Fabric, and the KubeJS 7 beta on NeoForge 1.20.4 that still has it):
+// compile only, never a dependency of the jar. Target properties: kubejs_version, rhino_version
 repositories { maven { url 'https://maven.latvian.dev/releases' } }
-def kjsLoader = project.property('loader') == 'fabric' ? 'fabric' : 'forge'
+def kjsLoader = project.property('loader') == 'fabric' ? 'fabric' : project.property('loader') == 'neoforge' ? 'neoforge' : 'forge'
+def kjsCfg = kjsLoader == 'neoforge' ? 'compileOnly' : 'modCompileOnly'
 dependencies {
-    modCompileOnly("dev.latvian.mods:kubejs-${kjsLoader}:${project.property('kubejs_version')}") { transitive = false }
-    modCompileOnly("dev.latvian.mods:rhino-${kjsLoader}:${project.property('rhino_version')}") { transitive = false }
+    add(kjsCfg, "dev.latvian.mods:kubejs-${kjsLoader}:${project.property('kubejs_version')}") { transitive = false }
+    add(kjsCfg, "dev.latvian.mods:rhino-${kjsLoader}:${project.property('rhino_version')}") { transitive = false }
 }

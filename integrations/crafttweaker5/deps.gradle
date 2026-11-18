@@ -1,0 +1,6 @@
+// CraftTweaker 5 / 6 (Minecraft 1.14.4 / 1.15.2, Forge): the crafttweaker7 sources with the MCPlayerEntity wrapper instead
+// of the Minecraft player, used with crafttweaker5run. Compile only. Target property: crafttweaker_version
+repositories { maven { url 'https://maven.blamejared.com' } }
+dependencies {
+    modCompileOnly("com.blamejared.crafttweaker:CraftTweaker-${project.property('mc_version')}:${project.property('crafttweaker_version')}") { transitive = false }
+}

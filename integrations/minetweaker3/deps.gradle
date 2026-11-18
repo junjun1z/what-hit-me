@@ -1,0 +1,6 @@
+// MineTweaker 3 / CraftTweaker 3.x (Minecraft 1.7.10 - 1.11.2): compile only, never a dependency of the jar. Only on
+// CurseForge: CurseMaven. Target property: minetweaker_file = "<curseforge slug>-<project id>:<file id>"
+repositories { maven { url 'https://cursemaven.com'; content { includeGroup 'curse.maven' } } }
+dependencies {
+    compileOnly("curse.maven:${project.property('minetweaker_file')}") { transitive = false }
+}

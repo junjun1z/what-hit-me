@@ -18,8 +18,9 @@ import net.minecraft.world.entity.player.Player;
 import org.openzen.zencode.java.ZenCodeType;
 
 /**
- * CraftTweaker 1.16.5+ (new ZenScript): mods.whathitme.WhatHitMe. Loaded only by CraftTweaker (@ZenRegister). The scripts
- * run again on every /reload; everything they registered is removed first (WhatHitMeCTPlugin).
+ * CraftTweaker 8+ (new ZenScript, Minecraft 1.17.1+): mods.whathitme.WhatHitMe. Loaded only by CraftTweaker
+ * (@ZenRegister). The scripts run again on every /reload; everything they registered is removed first
+ * (CTRun tells a new run).
  */
 @ZenRegister
 @ZenCodeType.Name("mods.whathitme.WhatHitMe")
@@ -31,14 +32,8 @@ public class WhatHitMeCT {
 
     private WhatHitMeCT() {}
 
-    /** A script run finished (CraftTweaker tells after the run); the next registration starts a new run */
-    private static volatile boolean runEnded;
     /** > 0 while a script function called by What Hit Me? runs (its registrations do not start a new run) */
     private static int inHook;
-
-    static void runEnded() {
-        runEnded = true;
-    }
 
     /** Runs a script function; what it registers belongs to the current run */
     private static <T> T callback(java.util.function.Supplier<T> f) {
@@ -57,8 +52,7 @@ public class WhatHitMeCT {
     /** The first registration of a new run (/reload) forgets what the previous run registered */
     private static void startRun() {
         synchronized (HOOKS) {
-            if (!runEnded || inHook > 0) return;
-            runEnded = false;
+            if (inHook > 0 || !CTRun.newRun()) return;
             HOOKS.clear();
         }
         WhatHitMeApi.clear(OWNER);

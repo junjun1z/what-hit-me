@@ -15,7 +15,7 @@ public class WhatHitMeCTPlugin implements ICraftTweakerPlugin {
     @Override
     public void registerListeners(IListenerRegistrationHandler handler) {
         handler.onExecuteRun(cfg -> {
-            if (cfg.runKind() == ScriptRunConfiguration.RunKind.EXECUTE && "crafttweaker".equals(cfg.loader().name())) WhatHitMeCT.runEnded();
+            if (cfg.runKind() == ScriptRunConfiguration.RunKind.EXECUTE && "crafttweaker".equals(cfg.loader().name())) CTRun.ended();
         });
     }
 }
