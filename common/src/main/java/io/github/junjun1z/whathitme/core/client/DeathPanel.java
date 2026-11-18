@@ -121,7 +121,7 @@ public final class DeathPanel {
                 top.addAll(LegacyText.wrap(g, Fmt.DARK_AQUA + f.properties(key.flags).toPlain(lang), inner, 2));
             }
             shown.addAll(f.visible(s.records, 100));
-            footer.add(f.total(s.records, s.time).toLegacy(lang));
+            footer.addAll(LegacyText.wrap(g, f.total(s.records, s.time).toLegacy(lang), inner, 2));
             Txt vital = f.vital(key);
             if (vital != null) top.addAll(LegacyText.wrap(g, Fmt.LIGHT_PURPLE + vital.toPlain(lang), inner, 2));
             Txt tip = key != null && f.o.on(Flag.HINTS_AND_TIPS) ? f.tip(key) : null;
