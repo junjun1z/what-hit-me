@@ -55,6 +55,53 @@ public final class BetterQuestingProvider implements ConditionProvider {
         return null;
     }
 
+    /** Quest ids with their names: numeric ids (getEntries) or the GTNH fork's UUIDs (a BiMap) */
+    @Override
+    public java.util.List<String> suggestions() throws Exception {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        if (api == null || ref == null) return out;
+        Object key = Reflect.staticField(ref, "QUEST_DB");
+        Method getApi = Reflect.staticMethod(api, "getAPI", key.getClass());
+        Object db = getApi == null ? null : getApi.invoke(null, key);
+        if (db == null) return out;
+        Class<?> props = Reflect.first("betterquesting.api.properties.NativeProps");
+        Object name = props == null ? null : Reflect.staticField(props, "NAME");
+        if (db instanceof java.util.Map) {
+            for (Object o : ((java.util.Map<?, ?>) db).entrySet()) {
+                java.util.Map.Entry<?, ?> e = (java.util.Map.Entry<?, ?>) o;
+                out.add(Reflect.entry(String.valueOf(e.getKey()), name(e.getValue(), name)));
+            }
+        } else {
+            for (Object e : Reflect.list(db, "getEntries", null)) {
+                out.add(Reflect.entry(String.valueOf(Reflect.read(e, "getID", null)), name(Reflect.read(e, "getValue", null), name)));
+            }
+        }
+        java.util.Collections.sort(out, (a, b) -> {
+            String x = a.split("	")[0], y = b.split("	")[0];
+            try {
+                return Integer.compare(Integer.parseInt(x), Integer.parseInt(y));
+            } catch (NumberFormatException ex) {
+                return a.compareTo(b);
+            }
+        });
+        return out;
+    }
+
+    private static Object name(Object quest, Object prop) {
+        if (quest == null || prop == null) return null;
+        for (Method m : quest.getClass().getMethods()) {
+            if (m.getName().equals("getProperty") && m.getParameterCount() == 1) {
+                try {
+                    Reflect.open(m);
+                    return m.invoke(quest, prop);
+                } catch (Throwable ignored) {
+                    return null;
+                }
+            }
+        }
+        return null;
+    }
+
     @Override
     public boolean test(PlayerHandle p, String arg) throws Exception {
         Object id = parse(arg);

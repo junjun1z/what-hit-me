@@ -212,7 +212,7 @@ public final class PackEditor implements CoreScreen {
         }
     }
 
-    private final boolean canPack;
+    private boolean canPack;
     private PackBackend backend;
     private boolean personal;
     private final PackModel model = new PackModel();
@@ -882,6 +882,13 @@ public final class PackEditor implements CoreScreen {
         String type = PackModel.str(m.get("type"));
         switch (type) {
             case "denied":
+                if (!personal && !Safe.get("op level", () -> ClientCore.port.knowsOpLevel(), true)) {
+                    // the client could not know: the server says no, so show the own lists
+                    canPack = false;
+                    start(true);
+                    flash(tr("whathitme.pack.noperm"), false);
+                    break;
+                }
                 denied = true;
                 loaded = true;
                 flash(tr("whathitme.error.noperm"), false);

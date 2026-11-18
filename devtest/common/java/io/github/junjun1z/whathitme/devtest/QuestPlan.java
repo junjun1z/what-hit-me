@@ -268,6 +268,39 @@ final class QuestPlan {
 
     private static final String HER_ID = "whmt_quest";
 
+    private static java.util.List<String> sugg(String prefix) {
+        return io.github.junjun1z.whathitme.core.rules.Conditions.suggestions(prefix, io.github.junjun1z.whathitme.core.server.ServerCore.port);
+    }
+
+    private static boolean listed(java.util.List<String> l, String id) {
+        String want = id.startsWith("#") ? id.substring(1) : id;
+        for (String v : l) if (v.split("	")[0].equalsIgnoreCase(want)) return true;
+        return false;
+    }
+
+    /** Pack editor condition picker lists of the quest mods */
+    private void suggestions() {
+        t.act(() -> t.info("suggestions: stage " + sugg("stage").size() + " bq " + sugg("bq") + " ftbquests " + sugg("ftbquests").size()
+            + " first " + (sugg("ftbquests").isEmpty() ? "-" : sugg("ftbquests").get(0))));
+        if (mod("betterquesting")) {
+            t.check("Better Questing: the pack editor lists the quest id", () -> listed(sugg("bq"), bqUuids() ? BQ_UUID.toString() : String.valueOf(BQ_ID)),
+                (Supplier<?>) () -> sugg("bq"));
+        }
+        if (mod("ftbquests")) {
+            t.check("FTB Quests: the pack editor lists the quest id with a title", () -> listed(sugg("ftbquests"), ftbId) && sugg("ftbquests").size() > 1,
+                (Supplier<?>) () -> ftbId + " " + sugg("ftbquests"));
+        }
+        if (mod("gamestages")) {
+            t.check("Game Stages: known stages listed without error", () -> {
+                try {
+                    return new io.github.junjun1z.whathitme.core.rules.mods.GameStagesProvider().suggestions() != null;
+                } catch (Exception e) {
+                    throw new RuntimeException(e);
+                }
+            }, null);
+        }
+    }
+
     void plan() {
         File rules = new File(Platform.whmConfigDir(), "pack/testq/rules.json");
         // Heracles loads config/heracles/quests/*.json with the world; an empty object is a quest with defaults
@@ -342,6 +375,7 @@ final class QuestPlan {
         t.check("no provider warnings for installed mods", () -> (!mod("gamestages") || !has("Game Stages is not installed")) && !has("provider failed")
             && (!mod("ftbquests") || !has("FTB Quests is not installed")) && (!mod("betterquesting") || !has("Better Questing is not installed")) && (!mod("heracles") || !has("Heracles API")),
             (Supplier<?>) t::chatText);
+        suggestions();
         if (mod("heracles")) vanilla(() -> "/heracles reset " + HER_ID + " " + p.playerName(), 30);
         test("Rule: none matches", "nothing done yet: no rule", true);
         if (mod("gamestages")) {

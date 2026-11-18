@@ -84,6 +84,27 @@ final class ServerPort111 implements ServerPort {
     private static final java.util.Set<String> CONDITIONS = new java.util.HashSet<>(Arrays.asList("tag", "score"));
 
     @Override
+    public List<String> conditionValues(String prefix) {
+        java.util.Set<String> out = new java.util.TreeSet<>();
+        switch (prefix) {
+            case "score":
+                for (Object o : server.getEntityWorld().getScoreboard().getScoreObjectives()) {
+                    out.add(((net.minecraft.scoreboard.ScoreObjective) o).getName());
+                }
+                break;
+            case "tag":
+                for (String n : onlinePlayerNames()) {
+                    EntityPlayerMP p = server.getPlayerList().getPlayerByUsername(n);
+                    if (p != null) out.addAll(p.getTags());
+                }
+                break;
+            default:
+                break;
+        }
+        return new java.util.ArrayList<>(out);
+    }
+
+    @Override
     public java.util.Set<String> builtinConditions() {
         return CONDITIONS;
     }

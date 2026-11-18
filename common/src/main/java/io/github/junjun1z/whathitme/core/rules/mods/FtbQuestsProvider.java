@@ -52,6 +52,38 @@ public final class FtbQuestsProvider implements ConditionProvider {
         return a.startsWith("#") ? a.substring(1) : a;
     }
 
+    /** Chapters and their quests: "hex id	chapter" / "hex id	chapter / quest" */
+    @Override
+    public java.util.List<String> suggestions() throws Exception {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        Object file = modern != null ? modernFile() : legacy != null ? Reflect.staticField(legacy, "INSTANCE") : null;
+        if (file == null) return out;
+        java.util.Collection<?> chapters = Reflect.list(file, "getAllChapters", "chapters");
+        for (Object ch : chapters) {
+            String ct = title(ch);
+            out.add(Reflect.entry(code(ch), ct));
+            for (Object q : Reflect.list(ch, "getQuests", "quests")) {
+                String qt = title(q);
+                out.add(Reflect.entry(code(q), ct.isEmpty() ? qt : qt.isEmpty() ? ct : ct + " / " + qt));
+            }
+        }
+        return out;
+    }
+
+    private static String code(Object o) {
+        Object c = Reflect.read(o, "getCodeString", null);
+        if (c != null) return String.valueOf(c);
+        Object id = Reflect.read(o, "getId", "id");
+        return id instanceof Long ? String.format("%016X", id) : String.format("%08X", id);
+    }
+
+    /** Raw title (1.12.2 / 1.15.2 getUnformattedTitle, 1.16.5 title field, 2101+ getRawTitle) */
+    private static String title(Object o) {
+        Object t = Reflect.read(o, "getUnformattedTitle", null);
+        if (t == null) t = Reflect.read(o, "getRawTitle", "title");
+        return t == null ? "" : String.valueOf(t).replaceAll("§.", "").trim();
+    }
+
     @Override
     public boolean test(PlayerHandle p, String arg) throws Exception {
         String id = strip(arg);

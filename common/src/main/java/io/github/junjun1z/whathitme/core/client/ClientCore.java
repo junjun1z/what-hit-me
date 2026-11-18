@@ -642,8 +642,28 @@ public final class ClientCore {
         if (!personal) {
             if (!serverHasMod) throw CommandText.err(m, "whathitme.pack.needserver");
             if (!op()) throw CommandText.err(m, "whathitme.pack.noperm");
+            if (!Safe.get("op level", port::knowsOpLevel, true)) {
+                askPack(m);
+                return;
+            }
         }
         if (!Safe.get("pack editor", () -> port.openPackEditor(personal), false)) throw CommandText.err(m, "whathitme.pack.unavailable");
+    }
+
+    /** The client does not know its op level: ask the server first, open the editor only when it answers with the state */
+    private static void askPack(Msg m) {
+        io.github.junjun1z.whathitme.core.pack.PackClient c = new io.github.junjun1z.whathitme.core.pack.PackClient();
+        java.util.concurrent.atomic.AtomicBoolean done = new java.util.concurrent.atomic.AtomicBoolean();
+        c.listen(msg -> {
+            String type = String.valueOf(msg.get("type"));
+            if (!"denied".equals(type) && !"state".equals(type) || !done.compareAndSet(false, true)) return;
+            c.listen(null);
+            if ("denied".equals(type)) print(m.tr(Fmt.RED, "whathitme.pack.noperm"));
+            else if (!Safe.get("pack editor", () -> port.openPackEditor(false), false)) print(m.tr(Fmt.RED, "whathitme.pack.unavailable"));
+        });
+        java.util.Map<String, Object> op = new java.util.LinkedHashMap<>();
+        op.put("op", "state");
+        c.send(op);
     }
 
     /** /whm template [preview &lt;output&gt; | reset [output]] */

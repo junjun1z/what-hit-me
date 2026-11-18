@@ -31,6 +31,7 @@ public final class WhmGuiFactory implements IModGuiFactory {
     /** The config screen (Forge creates it through its GuiScreen parent constructor) plus a "Templates..." button */
     public static final class Screen extends GuiConfig {
         private static final int TEMPLATES = 3013;
+        private static final int PACK = 3014;
 
         public Screen(GuiScreen parentScreen) {
             super(parentScreen, elements(), Platform.MODID, false, false, I18n.format("whathitme.config.title"));
@@ -42,6 +43,21 @@ public final class WhmGuiFactory implements IModGuiFactory {
             String label = I18n.format("whathitme.config.templates");
             int w = Math.max(70, io.github.junjun1z.whathitme.mc.Gfx17.INSTANCE.width(label) + 12);
             buttonList.add(new net.minecraft.client.gui.GuiButton(TEMPLATES, width - w - 4, 4, w, 20, label));
+            String pl = I18n.format("whathitme.config.packeditor");
+            int pw = Math.max(70, io.github.junjun1z.whathitme.mc.Gfx17.INSTANCE.width(pl) + 12);
+            buttonList.add(new net.minecraft.client.gui.GuiButton(PACK, width - w - 4 - pw - 2, 4, pw, 20, pl));
+        }
+
+        /** Same as clicking "Pack editor..." (self-test); false when the button is missing */
+        public boolean pressPackEditor() {
+            for (Object o : buttonList) {
+                net.minecraft.client.gui.GuiButton b = (net.minecraft.client.gui.GuiButton) o;
+                if (b.id == PACK) {
+                    actionPerformed(b);
+                    return true;
+                }
+            }
+            return false;
         }
 
         /** Same as clicking "Templates..." (self-test); false when the button is missing */
@@ -60,6 +76,11 @@ public final class WhmGuiFactory implements IModGuiFactory {
         protected void actionPerformed(net.minecraft.client.gui.GuiButton button) {
             if (button.id == TEMPLATES) {
                 mc.displayGuiScreen(new GuiTemplateEditor(this));
+                return;
+            }
+            if (button.id == PACK) {
+                // pack mode for operators of a server with the mod, otherwise the personal lists
+                mc.displayGuiScreen(new GuiTemplateEditor(this, new io.github.junjun1z.whathitme.core.client.PackEditor(false)));
                 return;
             }
             super.actionPerformed(button);

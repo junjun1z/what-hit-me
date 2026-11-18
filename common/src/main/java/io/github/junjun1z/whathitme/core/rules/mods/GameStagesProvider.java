@@ -24,4 +24,17 @@ public final class GameStagesProvider implements ConditionProvider {
         if (m == null) throw new NoSuchMethodException("GameStageHelper.hasStage(player, String)");
         return Reflect.truth(m.invoke(null, player, arg));
     }
+
+    /** The stages Game Stages knows (its known stages list) */
+    @Override
+    public java.util.List<String> suggestions() throws Exception {
+        java.util.List<String> out = new java.util.ArrayList<>();
+        Method m = helper == null ? null : Reflect.staticMethod(helper, "getKnownStages");
+        Object v = m == null ? null : m.invoke(null);
+        if (v instanceof java.util.Collection) {
+            for (Object o : (java.util.Collection<?>) v) out.add(String.valueOf(o));
+        }
+        java.util.Collections.sort(out);
+        return out;
+    }
 }

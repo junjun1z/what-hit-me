@@ -32,6 +32,11 @@ public interface ClientPort {
     /** The player may use level 2 commands on the server */
     boolean hasOpPermission();
 
+    /** False when the client is not told its op level (1.7.10 / 1.8 on a server): then the server decides */
+    default boolean knowsOpLevel() {
+        return true;
+    }
+
     /** Names in the player list */
     List<String> onlinePlayerNames();
 

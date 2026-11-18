@@ -4,19 +4,29 @@ import org.lwjgl.glfw.GLFW;
 
 import com.mojang.blaze3d.vertex.PoseStack;
 
+import io.github.junjun1z.whathitme.core.client.CoreScreen;
 import io.github.junjun1z.whathitme.core.client.TemplateEditor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.network.chat.TextComponent;
 
-/** Screen host of the core template editor on 1.17.1: forwards drawing, mouse, keys and typed characters. */
+/** Screen host of the core screens (template editor, pack editor) on 1.17.1: forwards drawing, mouse, keys and typed characters. */
 public final class TemplateEditorScreen117 extends Screen {
 
     private final Screen parent;
-    public final TemplateEditor editor = new TemplateEditor();
+    /** The hosted screen */
+    public final CoreScreen screen;
+    /** The template editor when this hosts one, else null */
+    public final TemplateEditor editor;
 
     public TemplateEditorScreen117(Screen parent) {
-        super(new TextComponent("What Hit Me? Templates"));
+        this(parent, new TemplateEditor());
+    }
+
+    public TemplateEditorScreen117(Screen parent, CoreScreen screen) {
+        super(new TextComponent("What Hit Me?"));
         this.parent = parent;
+        this.screen = screen;
+        this.editor = screen instanceof TemplateEditor ? (TemplateEditor) screen : null;
     }
 
     @Override
@@ -32,30 +42,30 @@ public final class TemplateEditorScreen117 extends Screen {
     @Override
     public void render(PoseStack pose, int mouseX, int mouseY, float partialTick) {
         renderBackground(pose);
-        editor.render(new Gfx117(pose, this), width, height, mouseX, mouseY);
-        if (editor.wantsClose()) onClose();
+        screen.render(new Gfx117(pose, this), width, height, mouseX, mouseY);
+        if (screen.wantsClose()) onClose();
     }
 
     @Override
     public void onClose() {
-        editor.closed();
+        screen.closed();
         if (minecraft != null) minecraft.setScreen(parent);
     }
 
     @Override
     public void removed() {
         minecraft.keyboardHandler.setSendRepeatsToGui(false);
-        editor.closed();
+        screen.closed();
     }
 
     @Override
     public boolean mouseClicked(double mouseX, double mouseY, int button) {
-        return editor.mouseDown(button, mouseX, mouseY, hasShiftDown()) || super.mouseClicked(mouseX, mouseY, button);
+        return screen.mouseDown(button, mouseX, mouseY, hasShiftDown()) || super.mouseClicked(mouseX, mouseY, button);
     }
 
     @Override
     public boolean mouseScrolled(double mouseX, double mouseY, double delta) {
-        return delta != 0 && editor.scroll(mouseX, mouseY, delta);
+        return delta != 0 && screen.scroll(mouseX, mouseY, delta);
     }
 
     private static int map(int key) {
@@ -99,13 +109,13 @@ public final class TemplateEditorScreen117 extends Screen {
     @Override
     public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
         int k = map(keyCode);
-        if (k != 0 && editor.key(k, hasControlDown(), hasShiftDown())) return true;
+        if (k != 0 && screen.key(k, hasControlDown(), hasShiftDown())) return true;
         return super.keyPressed(keyCode, scanCode, modifiers);
     }
 
     @Override
     public boolean charTyped(char c, int modifiers) {
-        if (c >= 32 && c != 127 && c != '\u00a7') return editor.typed(c);
+        if (c >= 32 && c != 127 && c != '\u00a7') return screen.typed(c);
         return false;
     }
 }

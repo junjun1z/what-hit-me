@@ -5,6 +5,7 @@ import java.io.IOException;
 import org.lwjgl.input.Keyboard;
 import org.lwjgl.input.Mouse;
 
+import io.github.junjun1z.whathitme.core.client.CoreScreen;
 import io.github.junjun1z.whathitme.core.client.TemplateEditor;
 import io.github.junjun1z.whathitme.mc.Gfx19;
 import net.minecraft.client.gui.GuiScreen;
@@ -12,15 +13,24 @@ import net.minecraft.util.ChatAllowedCharacters;
 import net.minecraftforge.fml.relauncher.Side;
 import net.minecraftforge.fml.relauncher.SideOnly;
 
-/** Screen host of the core template editor on 1.9.4: forwards drawing, mouse, keys and typed characters. */
+/** Screen host of the core screens (template editor, pack editor) on 1.9.4: forwards drawing, mouse, keys and typed characters. */
 @SideOnly(Side.CLIENT)
 public final class GuiTemplateEditor extends GuiScreen {
 
     private final GuiScreen parent;
-    public final TemplateEditor editor = new TemplateEditor();
+    /** The hosted screen */
+    public final CoreScreen screen;
+    /** The template editor when this hosts one, else null */
+    public final TemplateEditor editor;
 
     public GuiTemplateEditor(GuiScreen parent) {
+        this(parent, new TemplateEditor());
+    }
+
+    public GuiTemplateEditor(GuiScreen parent, CoreScreen screen) {
         this.parent = parent;
+        this.screen = screen;
+        this.editor = screen instanceof TemplateEditor ? (TemplateEditor) screen : null;
     }
 
     @Override
@@ -31,7 +41,7 @@ public final class GuiTemplateEditor extends GuiScreen {
     @Override
     public void onGuiClosed() {
         Keyboard.enableRepeatEvents(false);
-        editor.closed();
+        screen.closed();
     }
 
     @Override
@@ -42,13 +52,13 @@ public final class GuiTemplateEditor extends GuiScreen {
     @Override
     public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         drawDefaultBackground();
-        editor.render(Gfx19.INSTANCE, width, height, mouseX, mouseY);
-        if (editor.wantsClose()) mc.displayGuiScreen(parent);
+        screen.render(Gfx19.INSTANCE, width, height, mouseX, mouseY);
+        if (screen.wantsClose()) mc.displayGuiScreen(parent);
     }
 
     @Override
     protected void mouseClicked(int mouseX, int mouseY, int button) throws IOException {
-        editor.mouseDown(button, mouseX, mouseY, isShiftKeyDown());
+        screen.mouseDown(button, mouseX, mouseY, isShiftKeyDown());
     }
 
     @Override
@@ -58,7 +68,7 @@ public final class GuiTemplateEditor extends GuiScreen {
         if (wheel != 0) {
             int mx = Mouse.getEventX() * width / mc.displayWidth;
             int my = height - Mouse.getEventY() * height / mc.displayHeight - 1;
-            editor.scroll(mx, my, wheel);
+            screen.scroll(mx, my, wheel);
         }
     }
 
@@ -103,7 +113,7 @@ public final class GuiTemplateEditor extends GuiScreen {
     @Override
     protected void keyTyped(char typedChar, int keyCode) throws IOException {
         int k = map(keyCode);
-        if (k != 0 && editor.key(k, isCtrlKeyDown(), isShiftKeyDown())) return;
-        if (ChatAllowedCharacters.isAllowedCharacter(typedChar)) editor.typed(typedChar);
+        if (k != 0 && screen.key(k, isCtrlKeyDown(), isShiftKeyDown())) return;
+        if (ChatAllowedCharacters.isAllowedCharacter(typedChar)) screen.typed(typedChar);
     }
 }

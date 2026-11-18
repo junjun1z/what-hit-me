@@ -62,6 +62,11 @@ public final class ClientEvents {
             ClientPort18.openEditor = false;
             Safe.run("template editor", () -> mc.displayGuiScreen(new GuiTemplateEditor(mc.currentScreen)));
         }
+        if (ClientPort18.openPack != 0) {
+            boolean personal = ClientPort18.openPack == 2;
+            ClientPort18.openPack = 0;
+            Safe.run("pack editor", () -> mc.displayGuiScreen(new GuiTemplateEditor(mc.currentScreen, new io.github.junjun1z.whathitme.core.client.PackEditor(personal))));
+        }
         if (mc.thePlayer == null || mc.theWorld == null) return;
         ClientCore.tick(new FallbackEnv18(mc));
     }

@@ -77,6 +77,11 @@ final class ClientPort17 implements ClientPort {
     }
 
     @Override
+    public boolean knowsOpLevel() {
+        return mc().getIntegratedServer() != null;
+    }
+
+    @Override
     public List<String> onlinePlayerNames() {
         List<String> names = new ArrayList<>();
         if (mc().getNetHandler() != null) {
@@ -120,6 +125,15 @@ final class ClientPort17 implements ClientPort {
     @Override
     public boolean openTemplateEditor() {
         openEditor = true;
+        return true;
+    }
+
+    /** Set by /whm pack, opened by {@link ClientEvents} on the next client tick (1 = pack, 2 = personal) */
+    static volatile int openPack;
+
+    @Override
+    public boolean openPackEditor(boolean personal) {
+        openPack = personal ? 2 : 1;
         return true;
     }
 

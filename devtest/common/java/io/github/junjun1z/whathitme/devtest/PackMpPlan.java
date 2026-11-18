@@ -66,7 +66,12 @@ final class PackMpPlan {
         t.screenshot("whm_pack_mp");
         // without permission
         t.act(() -> p.say("/deop " + p.playerName()));
-        t.waitFor("no longer operator", () -> !ClientCore.port.hasOpPermission(), 400);
+        if (ClientCore.port.knowsOpLevel()) {
+            t.waitFor("no longer operator", () -> !ClientCore.port.hasOpPermission(), 400);
+        } else {
+            // 1.7.10 / 1.8: the client is not told, the server answers the open request
+            t.sleep(40);
+        }
         t.clearChat();
         t.act(() -> p.command("/whm pack"));
         t.waitFor("client refuses /whm pack without permission", () -> t.chatHas("Only operators"), 100);
@@ -83,6 +88,10 @@ final class PackMpPlan {
         t.waitFor("server refuses an edit from a non-operator", () -> "denied".equals(denied), 200);
         t.act(() -> p.command("/whm pack personal"));
         t.waitFor("personal mode still opens", () -> p.packEditorOpen() && e() != null && e().personal(), 100);
+        t.act(p::closeScreen);
+        t.sleep(10);
+        t.act(p::pressConfigPackButton);
+        t.waitFor("config button opens the own lists without permission", () -> p.packEditorOpen() && e() != null && e().personal() && e().loaded(), 200);
         t.act(p::closeScreen);
         t.sleep(20);
     }

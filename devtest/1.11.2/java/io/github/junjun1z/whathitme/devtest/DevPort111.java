@@ -193,7 +193,26 @@ final class DevPort111 implements DevPort {
 
     @Override
     public boolean templateEditorOpen() {
-        return mc().currentScreen instanceof io.github.junjun1z.whathitme.forge.GuiTemplateEditor;
+        return mc().currentScreen instanceof io.github.junjun1z.whathitme.forge.GuiTemplateEditor
+            && ((io.github.junjun1z.whathitme.forge.GuiTemplateEditor) mc().currentScreen).editor != null;
+    }
+
+    @Override
+    public boolean pack13() {
+        return true;
+    }
+
+    @Override
+    public boolean packEditorOpen() {
+        return mc().currentScreen instanceof io.github.junjun1z.whathitme.forge.GuiTemplateEditor
+            && ((io.github.junjun1z.whathitme.forge.GuiTemplateEditor) mc().currentScreen).screen instanceof io.github.junjun1z.whathitme.core.client.PackEditor;
+    }
+
+    @Override
+    public void pressConfigPackButton() {
+        io.github.junjun1z.whathitme.forge.WhmGuiFactory.WithTemplates s = new io.github.junjun1z.whathitme.forge.WhmGuiFactory.WithTemplates(null);
+        mc().displayGuiScreen(s);
+        s.pressPackEditor();
     }
 
     @Override

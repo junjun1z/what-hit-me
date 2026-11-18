@@ -55,6 +55,41 @@ final class Reflect {
         return null;
     }
 
+    /** The value of a public no-argument method, else of a public field of that name; null = neither */
+    static Object read(Object o, String method, String field) {
+        try {
+            Method m = method == null ? null : method(o.getClass(), method);
+            if (m != null) {
+                open(m);
+                return m.invoke(o);
+            }
+            return field == null ? null : o.getClass().getField(field).get(o);
+        } catch (Throwable e) {
+            return null;
+        }
+    }
+
+    /** Public methods of non-public implementation classes need this */
+    static void open(Method m) {
+        try {
+            m.setAccessible(true);
+        } catch (Throwable ignored) {
+            // keep the normal access check
+        }
+    }
+
+    /** {@link #read} as a collection (empty when missing) */
+    static java.util.Collection<?> list(Object o, String method, String field) {
+        Object v = read(o, method, field);
+        return v instanceof java.util.Collection ? (java.util.Collection<?>) v : java.util.Collections.emptyList();
+    }
+
+    /** "id" or "id	title" for the pack editor; formatting codes removed */
+    static String entry(String id, Object title) {
+        String t = title == null ? "" : String.valueOf(title).replaceAll("§.", "").replace('	', ' ').trim();
+        return t.isEmpty() ? id : id + "	" + t;
+    }
+
     private static Class<?> box(Class<?> c) {
         if (!c.isPrimitive()) return c;
         if (c == int.class) return Integer.class;

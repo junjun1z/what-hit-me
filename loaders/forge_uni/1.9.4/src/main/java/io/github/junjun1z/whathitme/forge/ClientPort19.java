@@ -118,6 +118,15 @@ final class ClientPort19 implements ClientPort {
         return true;
     }
 
+    /** Set by /whm pack, opened by {@link ClientEvents} on the next client tick (1 = pack, 2 = personal) */
+    static volatile int openPack;
+
+    @Override
+    public boolean openPackEditor(boolean personal) {
+        openPack = personal ? 2 : 1;
+        return true;
+    }
+
     @Override
     public String playerName() {
         return mc().thePlayer == null ? "" : mc().thePlayer.getName();

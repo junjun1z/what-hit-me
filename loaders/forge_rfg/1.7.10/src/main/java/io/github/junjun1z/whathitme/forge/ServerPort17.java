@@ -67,6 +67,21 @@ final class ServerPort17 implements ServerPort {
     private static final java.util.Set<String> CONDITIONS = new java.util.HashSet<>(Arrays.asList("score"));
 
     @Override
+    public List<String> conditionValues(String prefix) {
+        java.util.Set<String> out = new java.util.TreeSet<>();
+        switch (prefix) {
+            case "score":
+                for (Object o : server.worldServerForDimension(0).getScoreboard().getScoreObjectives()) {
+                    out.add(((net.minecraft.scoreboard.ScoreObjective) o).getName());
+                }
+                break;
+            default:
+                break;
+        }
+        return new java.util.ArrayList<>(out);
+    }
+
+    @Override
     public java.util.Set<String> builtinConditions() {
         return CONDITIONS;
     }
