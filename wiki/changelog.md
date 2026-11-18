@@ -25,6 +25,8 @@ The full changelog is in [CHANGELOG.md on GitHub](https://github.com/junjun1z/wh
 
 - Fix (Forge 1.7.10 - 1.12.1): a hit healed in the same tick (food regeneration, Regeneration) was recorded with too little damage, and a 1 ❤ hit such as a burning tick could be lost (merged lines showed x2 instead of x3).
 
+- Fixes from the pre-release test pass: one deeply nested pack file no longer stops the whole pack folder from loading, and wrong section types / too deep folders are reported; `.cfg` files saved in another encoding than UTF-8 are no longer reset to the defaults; decimal settings refuse `NaN`; `/whm reload` on a modded client lists the pack files and the files with errors; `/whm pack` against an older server says so instead of loading forever; 1.2 clients on a 1.3 server get English text instead of raw keys; `/kill` shows `∞% Max HP` instead of `2147483647%`; First Aid hits on Forge / NeoForge 1.13+ are heavy hits, not prevented deaths; single player re-reads the pack folder when a world opens; open pack editors refresh after `/whm reload`; undoing a case-only category rename no longer deletes the file on Windows; the death screen panel wraps the total line.
+
 ## 1.2.0
 
 - Pack folder `config/whathitme/pack/` with `renameMap`, `hintMap`, `defaultIgnoredDamageIds`, `lockedFeatures`, `deathTriggers`.

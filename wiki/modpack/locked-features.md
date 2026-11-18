@@ -50,5 +50,5 @@ What Hit Me? has no permission nodes. It uses the vanilla operator level:
 | The server console | Everything server-side; death triggers and rule commands run with console permission |
 
 ::: info Locks beat op
-A key in `lockedFeatures` cannot be changed by anyone through the screen or commands, operators included. Edit the file and run `/whm reload` instead.
+A key in `lockedFeatures` cannot be changed by anyone through the settings screen or `/whm config`, operators included. Edit the file and run `/whm reload` instead, or use the **Server settings** tab of the [pack editor](/modpack/pack-editor) (operators; it edits the files themselves).
 :::

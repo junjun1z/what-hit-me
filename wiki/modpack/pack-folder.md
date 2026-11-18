@@ -25,7 +25,8 @@ When you update from 1.2 to 1.3, the new `templates/`, `deathmessages/` and `rul
 1. Every `.json` file below `pack/` is collected, **in any subfolder**.
 2. The files are sorted by their path (lower case, alphabetical), for example `hints/_example.json` before `hints/nether.json` before `rules/bosses.json`. <Badge type="tip" text="1.3.0+" /> A top-level `"order": <number>` sorts first (files without it count as 0), and `"enabled": false` skips a file without deleting it; the [pack editor](/modpack/pack-editor) writes both, plus `"memo"` notes.
 3. They are merged in that order. **Later files override earlier entries** with the same key.
-4. A file that cannot be parsed is skipped; `/whm reload` names it and the server log shows the reason.
+4. A file that cannot be parsed is skipped; `/whm reload` names it and the server log shows the reason. The other files still load. <Badge type="tip" text="1.3.0+" /> A section with the wrong type (for example `"hintMap": 5` or a rename value that is an object) is skipped with a warning; a single rule or death trigger object instead of a list is read as one entry, also with a warning. Files more than 8 sub-folders deep are listed as errors.
+5. Save the files as UTF-8 (with or without BOM). A file in another encoding is read with the system encoding and a warning in the log.
 
 The folder names are only for your own order. **Any file may contain any of the keys.** Organize by topic (`pack/nether.json`), by type (`pack/hints/...`) or by mod (`pack/twilightforest.json`), whatever you like.
 
@@ -95,8 +96,9 @@ Both forms are the same:
 
 ## Applying changes
 
-- Run `/whm reload` (op). It reports `files read` and `files with errors`, plus warnings for unknown template variables, unknown rule hide fields and condition problems.
+- Run `/whm reload` (op). It reports `files read` and `files with errors` (with the file names), plus warnings for unknown template variables, unknown rule hide fields, wrong section types and condition problems. An open [pack editor](/modpack/pack-editor) shows the new files at once.
 - On a dedicated server the server reloads and sends the new definitions to every modded client at once.
+- <Badge type="tip" text="1.3.0+" /> Opening a world in single player (or starting a server) reads the pack folder and `whathitme-common.cfg` again, so edits made while the game was running apply to the next world without `/whm reload`.
 
 ::: warning Client-only installs
 When the server does not have the mod, each client uses its **own** `config/whathitme/pack/`. Progression rules and death triggers need the mod on the server and do nothing there.

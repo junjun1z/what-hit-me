@@ -40,9 +40,11 @@ Where no binding exists, scripts can still drive What Hit Me?: set a scoreboard 
 |---|---|---|
 | **Fabric API** | Required on Fabric (on 1.21 / 1.21.1: 0.116 or newer) | every Fabric version |
 | **Mod Menu** | Opens the What Hit Me? settings screen from the mod list (optional) | every Fabric version |
-| **Health-overhaul mods** (First Aid style) | A death with total health left is marked `[Localized / Vital Hit]`; the max HP share uses the max health at the time of the hit | every version |
+| **Health-overhaul mods** (First Aid style) | A death with total health left is marked `[Localized / Vital Hit]`; the max HP share uses the max health at the time of the hit. A big hit that First Aid spreads over the body parts is a heavy hit, not a prevented death (1.3.0). First Aid applies some hits more than once internally, so a merged line can show more damage than the attack did | every version (tested: First Aid 1.12.2, 1.20.1) |
 | **Mods that name their mobs** (levels, subspecies, for example Lycanites Mobs) | The name the mod builds is shown instead of the plain registry name | every version |
-| **Mods that cancel or undo a death** (revive, second-life mods) | The moment is saved as a snapshot with a "Lethal damage was prevented" alert | every version |
+| **Mods that cancel or undo a death** (revive, second-life mods) | A cancelled death or a death undone right after is saved as a snapshot with a "Lethal damage was prevented" alert. Knock-out mods that stop the damage before the death (Hardcore Revival) show a heavy hit alert instead. PlayerRevive keeps the player at 0 health while bleeding: What Hit Me? counts the knock-down as the death (recap, statistics, death triggers) and does not notice a later revive | every version (tested on Forge 1.20.1) |
+| **Chat mods** (Chat Heads, Chat Patches, Compact Chat) | Work together with custom / hidden death messages; Compact Chat merges two identical replaced lines into one with `(2)` | tested on 1.20.1 Forge, 1.21.1 Fabric / NeoForge |
+| **Grave mods** (Corpse) | No interaction; the recap is unchanged | tested on 1.12.2 / 1.20.1 Forge, 1.21.1 NeoForge |
 | **Any mod with damage** | Damage ids and attackers of every mod are recorded; the scanner lists them before anyone gets hurt | every version |
 
 See [Death screen panel](/player/death-screen), [Scanner](/modpack/scanner) and [Damage ids & badges](/reference/damage-ids).

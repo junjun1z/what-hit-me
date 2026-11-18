@@ -9,7 +9,7 @@
 | Server-authoritative | The client only sends edits. The server checks them, writes the JSON file, reloads the pack at once and sends the new state to everyone, so every player gets the change without `/whm reload`. |
 | Saving | When an entry is confirmed: **Done**, Enter in a field, or selecting another entry / tab / category. Nothing is saved per keystroke. |
 | Backup and undo | Before a file changes, its previous version is copied to `config/whathitme/.backup/<time>/` (a server setting change copies `whathitme-common.cfg`). The 60 newest backup folders are kept. **Undo** restores the files of your last change: 30 steps per player, kept until the server stops (personal mode: 30 steps while the screen is open). |
-| Versions | The screen exists on every supported version and loader: Forge 1.7.10 - 26.3, Fabric 1.14 - 26.3, NeoForge 1.20.1 - 26.3. Clients of 1.7.10 / 1.8.9 are not told their operator level, so `/whm pack` asks the server first (a non-operator gets the "only operators" message, the settings button opens the own lists). |
+| Versions | The screen exists on every supported version and loader: Forge 1.7.10 - 26.3, Fabric 1.14 - 26.3, NeoForge 1.20.1 - 26.3. Clients of 1.7.10 / 1.8.9 are not told their operator level, so `/whm pack` asks the server first (a non-operator gets the "only operators" message, the settings button opens the own lists). The server needs What Hit Me? 1.3 or newer: with an older one `/whm pack` says so and the settings button opens your own lists. |
 
 
 ## Layout
