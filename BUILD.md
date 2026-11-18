@@ -585,6 +585,7 @@ order / enabled work in every jar. Without the client part, `/whm pack` prints `
 | Screen host | - | the template editor host takes any `core.client.CoreScreen`: `GuiTemplateEditor(parent, screen)` / `TemplateEditorScreen121(parent, screen)`; `editor` stays the `TemplateEditor` (or null), `screen` is what is hosted | editor screen |
 | "Pack editor..." button | - | next to "Templates..." in the config screen (`whathitme.config.packeditor`), opens `new PackEditor(false)` (pack mode for operators of a server with the mod, otherwise personal mode) | config screen |
 | `ServerPort.conditionValues(prefix)` | empty list | `advancement` (ids of advancements with a display), `score` (objective names), `tag` (tags of online players) | condition picker lists |
+| `ClientPort.knowsOpLevel()` | `true` | `false` on Forge 1.7.10 / 1.8.9 on a server (`getIntegratedServer() == null`) | `/whm pack` asks the server first |
 
 Porting steps per version:
 1. Change the template editor host to hold a `CoreScreen` (keep the old constructor creating a `TemplateEditor`); forward render /
@@ -606,8 +607,21 @@ folders, settings, undo.
 
 Notes:
 - Small windows: below 400 GUI pixels the editor shows one pane at a time (tree / list / detail) with a back button; forms scroll.
-- The editor needs `ClientCore.serverHasMod` and `ClientCore.op()` for pack mode (1.7.10 / 1.8 clients do not know their op level:
-  the server still refuses, the editor then shows "no permission").
+- The editor needs `ClientCore.serverHasMod` and `ClientCore.op()` for pack mode. 1.7.10 / 1.8 clients do not know their op level
+  (`knowsOpLevel()` false, `hasOpPermission()` true on a server): `/whm pack` sends a `state` request first and opens the editor only
+  when the state comes back, a `denied` answer prints `whathitme.pack.noperm`; an editor opened from the config button switches to
+  personal mode when the server answers `denied`.
+- Quest mod values (`ConditionProvider.suggestions`, reflection only): FTB Quests chapters + quests (`getAllChapters()` or the
+  `chapters` field, `getQuests()` / `quests`, `getCodeString()`, title from `getUnformattedTitle()` / `getRawTitle()` / `title`),
+  Game Stages `GameStageHelper.getKnownStages()` (1.14+ from `config/gamestages/known_stages.json`), Better Questing
+  `getEntries()` (numeric ids) or the GTNH fork's `BiMap<UUID, IQuest>`, names from `getProperty(NativeProps.NAME)`. `QuestPlan`
+  checks them after the quest checks (a Better Questing quest without tasks completes itself after a while).
+
+Ported (1.3.0): Forge 1.12.2 and `versions/1.21.1` (phase 1); Forge 1.7.10 - 1.11.2 (`GuiTemplateEditor` + `WhmGuiFactory.Screen`,
+1.11.2 `WhmGuiFactory.WithTemplates`; `conditionValues`: `score` from `getScoreObjectives()`, `tag` from 1.9, no advancements) and
+`versions/1.14.4` - `1.17.1` (`TemplateEditorScreen1xx`, `ConfigScreen1xx`, Fabric and Forge share them). `PackEditorPlan` uses a score
+instead of a tag before 1.9 and checks the advancement list only from 1.12. GUI scale check: a 960x720 window with GUI scale 3
+(320 x 240 GUI pixels, the smallest Minecraft allows) shows one pane at a time on 1.7.10 and 1.16.5.
 - Script entries come from `ScriptRegistry.packRoots()` and are read-only in the editor.
 
 ## In-game self-test (development)

@@ -9,7 +9,7 @@
 | Server-authoritative | The client only sends edits. The server checks them, writes the JSON file, reloads the pack at once and sends the new state to everyone, so every player gets the change without `/whm reload`. |
 | Saving | When an entry is confirmed: **Done**, Enter in a field, or selecting another entry / tab / category. Nothing is saved per keystroke. |
 | Backup and undo | Before a file changes, its previous version is copied to `config/whathitme/.backup/<time>/`. **Undo** restores the files of your last change (30 steps per editor). |
-| Versions | The screen exists on Forge 1.12.2, Fabric 1.21.1 and Forge / NeoForge 1.21.1 for now; other versions print "not available on this version" and keep working with the files. |
+| Versions | The screen exists on Forge 1.7.10 - 1.12.2, Fabric / Forge 1.14.4 - 1.17.1 and Fabric / Forge / NeoForge 1.21.1 for now; other versions print "not available on this version" and keep working with the files. Clients of 1.7.10 / 1.8.9 are not told their operator level, so `/whm pack` asks the server first (a non-operator gets the "only operators" message, the settings button opens the own lists). |
 
 
 ## Layout
@@ -64,7 +64,7 @@ Searchable lists of the damage ids and mobs the server knows (registries, the da
 
 ### Condition picker
 
-The condition prefixes with the values the server can list: advancements, scoreboard objectives, tags of online players, script conditions, and for quest mods what their API offers. Greyed prefixes are not available on this server (mod missing / version). **not (!)** negates; for `score:` choose the comparison and the number. Any value can also be typed. See [conditions](/modpack/conditions).
+The condition prefixes with the values the server can list: advancements, scoreboard objectives, tags of online players, script conditions, and for quest mods what their API offers (FTB Quests chapters and quests with their titles, Game Stages known stages, Better Questing quests with their names, also the GTNH version). Advancements exist from 1.12, tags from 1.9. Greyed prefixes are not available on this server (mod missing / version). **not (!)** negates; for `score:` choose the comparison and the number. Any value can also be typed. See [conditions](/modpack/conditions).
 
 
 ### Inline checks
