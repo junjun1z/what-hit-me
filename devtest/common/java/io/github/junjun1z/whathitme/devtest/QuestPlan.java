@@ -233,6 +233,22 @@ final class QuestPlan {
         }
     }
 
+    /** Better Questing 1.2.114 (1.9): its reset command compares each entry with the UUID array, so nothing is removed */
+    static String bqV1Reset(java.util.UUID player) {
+        try {
+            Class<?> v1 = cls("betterquesting.quests.QuestDatabase");
+            if (v1 == null || cls("betterquesting.api.api.QuestingAPI") != null) return "-";
+            Object q = v1.getMethod("getQuestByID", int.class).invoke(null, BQ_ID);
+            if (!(Boolean) q.getClass().getMethod("isComplete", java.util.UUID.class).invoke(q, player)) return "done by the command";
+            Field f = q.getClass().getDeclaredField("completeUsers");
+            f.setAccessible(true);
+            ((List<?>) f.get(q)).clear();
+            return "command left the quest complete (1.2.114 bug), cleared by reflection";
+        } catch (Throwable e) {
+            return "error " + e;
+        }
+    }
+
     /** Creates Better Questing quest BQ_ID / BQ_UUID (no tasks) */
     static String createBqQuest() {
         if (bqUuids()) {
@@ -247,17 +263,44 @@ final class QuestPlan {
             }
         }
         try {
+            Class<?> v1 = cls("betterquesting.quests.QuestDatabase");
+            Class<?> v4 = cls("funwayguy.betterquesting.questing.quests.QuestDatabase");
+            if (cls("betterquesting.api.api.QuestingAPI") == null && v1 != null) {
+                // 1.x (1.8.9 / 1.9.4): static database
+                Object q = v1.getMethod("GetOrRegisterQuest", int.class).invoke(null, BQ_ID);
+                // a quest without tasks completes itself (1.2.114 right after a reset): require itself so it stays locked
+                @SuppressWarnings("unchecked")
+                List<Object> pre = (List<Object>) q.getClass().getField("preRequisites").get(q);
+                if (!pre.contains(q)) pre.add(q);
+                return "created v1 " + q;
+            }
+            if (cls("betterquesting.api.api.QuestingAPI") == null && v4 != null) {
+                // 4.x (1.20.1): createNew(id) adds the quest
+                Object db = v4.getField("INSTANCE").get(null);
+                Object e = db.getClass().getMethod("getEntry", int.class).invoke(db, BQ_ID);
+                if (e instanceof java.util.Optional && ((java.util.Optional<?>) e).isPresent()) return "exists";
+                db.getClass().getMethod("createNew", int.class).invoke(db, BQ_ID);
+                return "created v4";
+            }
             Class<?> api = Class.forName("betterquesting.api.api.QuestingAPI");
             Object key = Class.forName("betterquesting.api.api.ApiReference").getField("QUEST_DB").get(null);
             Object db = null;
             for (Method m : api.getMethods()) if (m.getName().equals("getAPI")) db = m.invoke(null, key);
             for (Method m : db.getClass().getMethods()) {
-                if (m.getName().equals("getValue") && m.getParameterCount() == 1 && m.getParameterTypes()[0] == int.class && m.invoke(db, BQ_ID) != null) return "exists";
+                if (m.getName().equals("getValue") && m.getParameterCount() == 1 && (m.getParameterTypes()[0] == int.class || m.getParameterTypes()[0] == Integer.class)
+                    && m.invoke(db, BQ_ID) != null) return "exists";
             }
             for (Method m : db.getClass().getMethods()) {
                 if (m.getName().equals("createNew") && m.getParameterCount() == 1 && m.getParameterTypes()[0] == int.class) {
                     m.invoke(db, BQ_ID);
                     return "created";
+                }
+            }
+            // 2.x (1.11.2 / 1.12.1): createNew() then add(quest, id)
+            Object q = db.getClass().getMethod("createNew").invoke(db);
+            for (Method m : db.getClass().getMethods()) {
+                if (m.getName().equals("add") && m.getParameterCount() == 2 && m.getParameterTypes()[1] == Integer.class) {
+                    return "created v2 " + m.invoke(db, q, BQ_ID);
                 }
             }
             return "no createNew";
@@ -417,6 +460,7 @@ final class QuestPlan {
                 t.check("Better Questing (GTNH): bq:<Base64 id> completed", () -> has("Name: WHMT-BQ64"), (Supplier<?>) () -> t.chatText());
             }
             vanilla(() -> "/bq_admin reset " + bqCommandId() + " " + p.playerName(), 30);
+            t.act(() -> t.info("bq reset: " + bqV1Reset(p.playerId())));
             test("WHMT-BQ", "Better Questing: quest reset", false);
         }
         if (mod("ftbquests")) {
