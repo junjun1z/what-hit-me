@@ -90,6 +90,7 @@ public final class ScriptRegistry {
     /** > 0 while hooks run: registrations are marked as made by a hook */
     private static int inHook;
     private static volatile boolean applyScheduled;
+    private static volatile boolean rebuildScheduled;
     private static volatile boolean entriesChanged;
 
     private ScriptRegistry() {}
@@ -277,6 +278,7 @@ public final class ScriptRegistry {
 
     /** Removes what hooks registered and runs every hook again; the runtime pack entries are merged at the end */
     public static void rebuild() {
+        rebuildScheduled = false;
         List<Map.Entry<String, Runnable>> hooks;
         synchronized (LOCK) {
             CONDITIONS.values().removeIf(f -> f.hook);
@@ -308,6 +310,17 @@ public final class ScriptRegistry {
         }
         entriesChanged = false;
         applyNow();
+    }
+
+    /** rebuild() on the next server tick; nothing without a running server */
+    public static void rebuildLater() {
+        ServerPort srv = ServerCore.port;
+        if (srv == null || rebuildScheduled) return;
+        rebuildScheduled = true;
+        boolean ok = Safe.get("schedule", () -> srv.schedule(() -> {
+            if (rebuildScheduled) rebuild();
+        }), false);
+        if (!ok) rebuildScheduled = false;
     }
 
     // runtime pack entries

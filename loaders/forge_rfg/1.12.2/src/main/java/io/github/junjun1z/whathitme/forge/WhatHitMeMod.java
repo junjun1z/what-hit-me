@@ -3,6 +3,7 @@ package io.github.junjun1z.whathitme.forge;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import io.github.junjun1z.whathitme.core.script.ScriptBindings;
 import io.github.junjun1z.whathitme.core.Platform;
 import io.github.junjun1z.whathitme.core.Safe;
 import io.github.junjun1z.whathitme.core.data.CatalogCache;
@@ -28,7 +29,7 @@ import net.minecraftforge.fml.common.event.FMLServerStoppedEvent;
  * commands and the config files to it.
  */
 @Mod(modid = Platform.MODID, name = "What Hit Me?", useMetadata = true, acceptableRemoteVersions = "*", acceptedMinecraftVersions = "[1.12,1.12.2]",
-    guiFactory = "io.github.junjun1z.whathitme.forge.WhmGuiFactory")
+    dependencies = "before:kubejs", guiFactory = "io.github.junjun1z.whathitme.forge.WhmGuiFactory")
 public class WhatHitMeMod {
 
     public static final Logger LOG = LogManager.getLogger("WhatHitMe");
@@ -74,6 +75,8 @@ public class WhatHitMeMod {
         WhmConfig.init(event.getModConfigurationDirectory(), proxy.isClient(), ForgeCfgBackend::new);
         WhmNetwork.init();
         proxy.preInit(event);
+        // before KubeJS loads its scripts in its own pre init
+        Safe.run("script bindings", ScriptBindings::load);
     }
 
     @Mod.EventHandler

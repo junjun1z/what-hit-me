@@ -5,6 +5,7 @@ import org.apache.logging.log4j.Logger;
 
 import io.github.junjun1z.whathitme.core.Platform;
 import io.github.junjun1z.whathitme.core.Safe;
+import io.github.junjun1z.whathitme.core.script.ScriptBindings;
 import io.github.junjun1z.whathitme.core.data.CatalogCache;
 import io.github.junjun1z.whathitme.core.config.WhmConfig;
 import io.github.junjun1z.whathitme.core.server.ServerCore;
@@ -78,6 +79,7 @@ public class WhatHitMeMod {
 
     @Mod.EventHandler
     public void init(FMLInitializationEvent event) {
+        Safe.run("script bindings", ScriptBindings::load);
         ServerEvents ev = new ServerEvents();
         MinecraftForge.EVENT_BUS.register(ev);
         cpw.mods.fml.common.FMLCommonHandler.instance().bus().register(ev);

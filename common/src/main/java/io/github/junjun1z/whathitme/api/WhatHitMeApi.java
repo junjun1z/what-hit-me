@@ -100,6 +100,14 @@ public final class WhatHitMeApi {
         ScriptRegistry.rebuild();
     }
 
+    /**
+     * {@link #rebuild()} on the next server tick, for script mods that only announce a reload before their scripts run.
+     * Nothing happens while no server runs (the server start rebuilds anyway).
+     */
+    public static void rebuildLater() {
+        ScriptRegistry.rebuildLater();
+    }
+
     // reading
 
     /** The player, null when not online or no server runs */

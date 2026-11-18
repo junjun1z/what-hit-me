@@ -343,7 +343,7 @@ final class PackEditorPlan {
         t.act(() -> p.say("/scoreboard objectives remove whmt_vet"));
         t.sleep(5);
         t.cmd("/whm reload", "reloaded", 60);
-        t.check("clean after the pack editor plan", () -> !WhmConfig.pack.renameMap.containsKey("minecraft:lava") && WhmConfig.pack.rules.isEmpty(), null);
+        t.check("clean after the pack editor plan", () -> !WhmConfig.pack.renameMap.containsKey("minecraft:lava") && V13RulesPlan.fileRules() == 0, null);
     }
 
     static void deleteTree(File f) {

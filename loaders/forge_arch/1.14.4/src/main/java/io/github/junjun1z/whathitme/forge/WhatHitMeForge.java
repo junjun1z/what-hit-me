@@ -8,6 +8,8 @@ import org.apache.commons.lang3.tuple.Pair;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import io.github.junjun1z.whathitme.core.Safe;
+import io.github.junjun1z.whathitme.core.script.ScriptBindings;
 import io.github.junjun1z.whathitme.core.Platform;
 import io.github.junjun1z.whathitme.core.config.CfgFile;
 import io.github.junjun1z.whathitme.core.config.WhmConfig;
@@ -87,6 +89,7 @@ public class WhatHitMeForge {
         WhmConfig.init(Platform.configDir, client, CfgFile::new);
         // the server list shows the mod as compatible whatever the other side has
         ModLoadingContext.get().registerExtensionPoint(ExtensionPoint.DISPLAYTEST, () -> Pair.of(() -> FMLNetworkConstants.IGNORESERVERONLY, (remote, isServer) -> true));
+        Safe.run("script bindings", ScriptBindings::load);
         ForgeNet.init();
         MinecraftForge.EVENT_BUS.register(new ForgeServerEvents());
         if (client) ForgeClient.init();

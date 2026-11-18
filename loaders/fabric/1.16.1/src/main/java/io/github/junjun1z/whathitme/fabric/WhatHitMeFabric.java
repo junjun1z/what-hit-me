@@ -11,6 +11,7 @@ import java.util.Map;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import io.github.junjun1z.whathitme.core.script.ScriptBindings;
 import io.github.junjun1z.whathitme.core.Platform;
 import io.github.junjun1z.whathitme.core.Safe;
 import io.github.junjun1z.whathitme.core.data.CatalogCache;
@@ -95,6 +96,7 @@ public final class WhatHitMeFabric implements ModInitializer {
             ctx.getTaskQueue().execute(() -> ServerCore.onPacket(new FabricPlayer(player), p));
         });
 
+        Safe.run("script bindings", ScriptBindings::load);
         ServerStartCallback.EVENT.register(server -> {
             port = new ServerPortMc(server, FabricPlayer::new);
             ServerCore.serverStarted(port);
