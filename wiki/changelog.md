@@ -29,6 +29,8 @@ The full changelog is in [CHANGELOG.md on GitHub](https://github.com/junjun1z/wh
 
 - No limit on the names, tips, templates and other lists a 1.3 server sends to 1.3 clients (before, each list was cut at 1000 entries for players with the mod). 1.2 clients still get the first 1000 entries of each list; `/whm reload` and the server log warn about longer lists. See [Large packs](/modpack/names-and-tips#large-packs).
 
+- A very large reply (a long history or death recap with long tips, a huge `/whm dump`) could disconnect the player (packet limit 1 MiB, 2 MiB on Forge 1.7.10). 1.3 clients get large replies in parts on every version, and `/whm dump` lists every damage id (it stopped at 4000); 1.2 clients get what fits in one packet, with a note on how many records or entries were left out.
+
 ## 1.2.0
 
 - Pack folder `config/whathitme/pack/` with `renameMap`, `hintMap`, `defaultIgnoredDamageIds`, `lockedFeatures`, `deathTriggers`.
