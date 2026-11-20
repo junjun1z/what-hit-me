@@ -24,7 +24,7 @@
 | バニラの死亡メッセージを置き換える <Badge type="tip" text="1.3.0+" /> | `deathMessages` | [カスタム死亡メッセージ](/ja/modpack/death-messages) |
 | 進行度に応じて名前・ヒント・非表示を変える <Badge type="tip" text="1.3.0+" /> | `rules` | [進行度ルール](/ja/modpack/rules) |
 | すべてのクライアントに mod を必須にする <Badge type="tip" text="1.3.0+" /> | `requireClientMod` | [requireClientMod](/ja/modpack/require-client-mod) |
-| クエストの進行度を使う（FTB Quests、Better Questing、Heracles、Game Stages） <Badge type="tip" text="1.3.0+" /> | `if` / `any` / `unless` の条件 | [条件とクエスト mod](/ja/modpack/conditions) |
+| クエストの進行度を使う（FTB Quests、Better Questing、Heracles、Game Stages） <Badge type="tip" text="1.3.0+" /> | `if` / `any` / `unless` の条件 | [クエスト mod](/ja/modpack/quest-mods)、[条件](/ja/modpack/conditions) |
 | KubeJS / CraftTweaker / MineTweaker から動かす <Badge type="tip" text="1.3.0+" /> | `script:`、`{script:}`、イベント、API | [スクリプト連携](/ja/modpack/scripts) |
 | ここまでの設定をゲーム内で編集する <Badge type="tip" text="1.3.0+" /> | `/whm pack` | [パックエディター](/ja/modpack/pack-editor) |
 

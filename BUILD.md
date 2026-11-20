@@ -560,7 +560,7 @@ Adding a binding for a version:
 3. Reuse a binding directory when the script mod's API is the same; otherwise copy the nearest one and change only the
    script mod calls. Binding classes must only be loaded by the script mod (KubeJS: `kubejs.plugins.txt`; CraftTweaker:
    annotation scan of `@ZenRegister` / `@CraftTweakerPlugin`), never referenced from the loader code.
-4. Test (below), then add the version to the wiki tables (`wiki/modpack/scripts.md`, `wiki/guide/integrations.md`, both languages).
+4. Test (below), then add the version to the wiki tables (`wiki/modpack/scripts.md`, the page of the script mod: `kubejs.md` / `crafttweaker.md` / `minetweaker.md`, and `wiki/guide/integrations.md`, both languages).
 
 Bindings (a target lists several directories; shared code first):
 

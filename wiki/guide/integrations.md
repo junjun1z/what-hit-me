@@ -10,23 +10,23 @@ Used by [progression rules](/modpack/rules) and [death triggers](/modpack/death-
 
 | Mod | Condition | Minecraft / loader | Mod versions tested |
 |---|---|---|---|
-| **FTB Quests** | `ftbquests:<quest or chapter id>` (team progress) | Forge 1.12.2, 1.15.2, 1.16.4 / 1.16.5, 1.18.2, 1.19.2, 1.20.1, 1.20.4; Fabric 1.16.5, 1.18.2, 1.19.2, 1.20.1, 1.20.2, 1.20.4, 1.21 / 1.21.1, 1.21.11, 26.1 - 26.1.2; NeoForge 1.20.4, 1.20.6, 1.21 / 1.21.1, 1.21.11, 26.1.2 | 1202.9 - 26.1.2.10 |
-| **Better Questing** (also the GTNH fork and Better Questing Unofficial) | `bq:<quest id>` | Forge 1.7.10 - 1.12.2 (every minor version), Forge / NeoForge 1.20.1 | 1.1 - 3.5, GTNH 3.9.2, Unofficial 4.3.2, 4.0.71 |
-| **Heracles / Odyssey Quests** | `heracles:<quest id>` | Fabric / Forge 1.20, 1.20.1 (also NeoForge 1.20.1); Fabric 1.21 / 1.21.1; NeoForge 1.21.1 | 0.0.7, 1.1.13, 2.0.3 |
-| **Game Stages** | `stage:<name>` | Forge 1.11.2 - 1.20.3, NeoForge 1.20.1 | 1.0.11 - 17.0.1 |
+| [**FTB Quests**](/modpack/ftb-quests) | `ftbquests:<quest or chapter id>` (team progress) | Forge 1.12.2, 1.15.2, 1.16.4 / 1.16.5, 1.18.2, 1.19.2, 1.20.1, 1.20.4; Fabric 1.16.5, 1.18.2, 1.19.2, 1.20.1, 1.20.2, 1.20.4, 1.21 / 1.21.1, 1.21.11, 26.1 - 26.1.2; NeoForge 1.20.4, 1.20.6, 1.21 / 1.21.1, 1.21.11, 26.1.2 | 1202.9 - 26.1.2.10 |
+| [**Better Questing**](/modpack/better-questing) (also the GTNH fork and Better Questing Unofficial) | `bq:<quest id>` | Forge 1.7.10 - 1.12.2 (every minor version), Forge / NeoForge 1.20.1 | 1.1 - 3.5, GTNH 3.9.2, Unofficial 4.3.2, 4.0.71 |
+| [**Heracles / Odyssey Quests**](/modpack/heracles) | `heracles:<quest id>` | Fabric / Forge 1.20, 1.20.1 (also NeoForge 1.20.1); Fabric 1.21 / 1.21.1; NeoForge 1.21.1 | 0.0.7, 1.1.13, 2.0.3 |
+| [**Game Stages**](/modpack/game-stages) | `stage:<name>` | Forge 1.11.2 - 1.20.3, NeoForge 1.20.1 | 1.0.11 - 17.0.1 |
 | Vanilla advancements, scoreboard tags and scores | `advancement:`, `tag:`, `score:` | every version (advancements 1.12+, tags 1.9+) | - |
 
-The exact table per Minecraft version and loader, with the reasons for the gaps, is in [Conditions & quest mods](/modpack/conditions#quest-mod-matrix).
+The exact table per Minecraft version and loader, with the reasons for the gaps, is in the [quest mod matrix](/modpack/quest-mods#quest-mod-matrix). Each quest mod has its own page with the condition syntax, how to find ids and examples: [FTB Quests](/modpack/ftb-quests), [Better Questing](/modpack/better-questing), [Heracles / Odyssey Quests](/modpack/heracles), [Game Stages](/modpack/game-stages).
 
 ## Script mods <Badge type="tip" text="1.3.0+" />
 
-Scripts add `script:` conditions, `{script:}` template variables, event listeners (`damageRecorded`, `death`, `respawn`, `alert`), read access and runtime entries. See [Script integration](/modpack/scripts).
+Scripts add `script:` conditions, `{script:}` template variables, event listeners (`damageRecorded`, `death`, `respawn`, `alert`), read access and runtime entries. See [Script integration](/modpack/scripts) and the pages for [KubeJS](/modpack/kubejs), [CraftTweaker](/modpack/crafttweaker), [MineTweaker 3](/modpack/minetweaker) and the [API reference](/modpack/script-api).
 
 | Mod | Form | Minecraft / loader | Script mod versions |
 |---|---|---|---|
-| **KubeJS** | global `WhatHitMe`, events `WhatHitMeEvents.*` (older: `onEvent` / `events.listen`) | NeoForge 26.1.2, 1.21.1, 1.20.4; Forge / Fabric 1.20.1, 1.19.2, 1.18.2, 1.16.5; Fabric 1.17.1, 1.16.1; Forge 1.15.2, 1.14.4, 1.12.2 | 1.1 (1.12.2) - 8 (26.1.2) |
-| **CraftTweaker** | ZenScript `mods.whathitme.WhatHitMe` | Fabric / NeoForge 1.21.1, 1.20.6; Forge / Fabric / NeoForge 1.20.4; Forge / Fabric 1.18.2 - 1.20.2; Forge 1.17.1, 1.16.5, 1.15.2, 1.14.4, 1.12.2 | 4.1 (1.12.2), 5 - 21 |
-| **MineTweaker 3** / CraftTweaker 3.x (also the GTNH fork) | ZenScript `mods.whathitme.WhatHitMe` with `Api` / `Player` objects | Forge 1.7.10, 1.8.9, 1.9.4, 1.10.2, 1.11.2 | MineTweaker 3.0.10B and CraftTweaker 3.0.9 partly; CraftTweaker 3.1.0, GTNH 3.5.0 fully |
+| [**KubeJS**](/modpack/kubejs) | global `WhatHitMe`, events `WhatHitMeEvents.*` (older: `onEvent` / `events.listen`) | NeoForge 26.1.2, 1.21.1, 1.20.4; Forge / Fabric 1.20.1, 1.19.2, 1.18.2, 1.16.5; Fabric 1.17.1, 1.16.1; Forge 1.15.2, 1.14.4, 1.12.2 | 1.1 (1.12.2) - 8 (26.1.2) |
+| [**CraftTweaker**](/modpack/crafttweaker) | ZenScript `mods.whathitme.WhatHitMe` | Fabric / NeoForge 1.21.1, 1.20.6; Forge / Fabric / NeoForge 1.20.4; Forge / Fabric 1.18.2 - 1.20.2; Forge 1.17.1, 1.16.5, 1.15.2, 1.14.4, 1.12.2 | 4.1 (1.12.2), 5 - 21 |
+| [**MineTweaker 3**](/modpack/minetweaker) / CraftTweaker 3.x (also the GTNH fork) | ZenScript `mods.whathitme.WhatHitMe` with `Api` / `Player` objects | Forge 1.7.10, 1.8.9, 1.9.4, 1.10.2, 1.11.2 | MineTweaker 3.0.10B and CraftTweaker 3.0.9 partly; CraftTweaker 3.1.0, GTNH 3.5.0 fully |
 
 No script mod exists for the other versions (1.21.3 - 1.21.11, 26.2, 26.3, KubeJS on Fabric / Forge 1.21+).
 

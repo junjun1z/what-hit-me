@@ -24,7 +24,7 @@
 | Replace vanilla death messages <Badge type="tip" text="1.3.0+" /> | `deathMessages` | [Custom death messages](/modpack/death-messages) |
 | Change names, tips and hidden fields with progress <Badge type="tip" text="1.3.0+" /> | `rules` | [Progression rules](/modpack/rules) |
 | Require the mod on every client <Badge type="tip" text="1.3.0+" /> | `requireClientMod` | [requireClientMod](/modpack/require-client-mod) |
-| Use quest progress (FTB Quests, Better Questing, Heracles, Game Stages) <Badge type="tip" text="1.3.0+" /> | `if` / `any` / `unless` conditions | [Conditions & quest mods](/modpack/conditions) |
+| Use quest progress (FTB Quests, Better Questing, Heracles, Game Stages) <Badge type="tip" text="1.3.0+" /> | `if` / `any` / `unless` conditions | [Quest mods](/modpack/quest-mods), [Conditions](/modpack/conditions) |
 | Drive it from KubeJS / CraftTweaker / MineTweaker <Badge type="tip" text="1.3.0+" /> | `script:`, `{script:}`, events, API | [Script integration](/modpack/scripts) |
 | Edit all of this in game <Badge type="tip" text="1.3.0+" /> | `/whm pack` | [Pack editor](/modpack/pack-editor) |
 

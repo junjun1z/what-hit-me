@@ -86,7 +86,7 @@ Forge / NeoForge では、mod **なし**のプレイヤーには常にバニラ�
 - ルールにはサーバーの mod が必要です。
 
 **クエストの条件がいつも偽になる。**
-クエスト mod が入っていないか、そのバージョンの API が対応していない形です（サーバーのログに 1 回だけ出ます）。[テスト済みのバージョン](/ja/modpack/conditions#quest-mod-matrix)を確認してください。FTB Quests の ID は 16 進数、Better Questing の GTNH 版の ID は UUID です。
+クエスト mod が入っていないか、そのバージョンの API が対応していない形です（サーバーのログに 1 回だけ出ます）。[テスト済みのバージョン](/ja/modpack/quest-mods#quest-mod-matrix)を確認してください。FTB Quests の ID は 16 進数、Better Questing の GTNH 版の ID は UUID です。
 
 ## パックエディターとスクリプト <Badge type="tip" text="1.3.0+" />
 

@@ -10,23 +10,23 @@ What Hit Me? は、どの mod ともそのまま一緒に動きます。どの m
 
 | mod | 条件 | Minecraft / ローダー | 試験した mod のバージョン |
 |---|---|---|---|
-| **FTB Quests** | `ftbquests:<クエストまたはチャプターの ID>`（チームの進行度） | Forge 1.12.2、1.15.2、1.16.4 / 1.16.5、1.18.2、1.19.2、1.20.1、1.20.4。Fabric 1.16.5、1.18.2、1.19.2、1.20.1、1.20.2、1.20.4、1.21 / 1.21.1、1.21.11、26.1 〜 26.1.2。NeoForge 1.20.4、1.20.6、1.21 / 1.21.1、1.21.11、26.1.2 | 1202.9 〜 26.1.2.10 |
-| **Better Questing**（GTNH 版と Better Questing Unofficial も） | `bq:<クエスト ID>` | Forge 1.7.10 〜 1.12.2（各マイナーバージョン）、Forge / NeoForge 1.20.1 | 1.1 〜 3.5、GTNH 3.9.2、Unofficial 4.3.2、4.0.71 |
-| **Heracles / Odyssey Quests** | `heracles:<クエスト ID>` | Fabric / Forge 1.20、1.20.1（NeoForge 1.20.1 も）、Fabric 1.21 / 1.21.1、NeoForge 1.21.1 | 0.0.7、1.1.13、2.0.3 |
-| **Game Stages** | `stage:<名前>` | Forge 1.11.2 〜 1.20.3、NeoForge 1.20.1 | 1.0.11 〜 17.0.1 |
+| [**FTB Quests**](/ja/modpack/ftb-quests) | `ftbquests:<クエストまたはチャプターの ID>`（チームの進行度） | Forge 1.12.2、1.15.2、1.16.4 / 1.16.5、1.18.2、1.19.2、1.20.1、1.20.4。Fabric 1.16.5、1.18.2、1.19.2、1.20.1、1.20.2、1.20.4、1.21 / 1.21.1、1.21.11、26.1 〜 26.1.2。NeoForge 1.20.4、1.20.6、1.21 / 1.21.1、1.21.11、26.1.2 | 1202.9 〜 26.1.2.10 |
+| [**Better Questing**](/ja/modpack/better-questing)（GTNH 版と Better Questing Unofficial も） | `bq:<クエスト ID>` | Forge 1.7.10 〜 1.12.2（各マイナーバージョン）、Forge / NeoForge 1.20.1 | 1.1 〜 3.5、GTNH 3.9.2、Unofficial 4.3.2、4.0.71 |
+| [**Heracles / Odyssey Quests**](/ja/modpack/heracles) | `heracles:<クエスト ID>` | Fabric / Forge 1.20、1.20.1（NeoForge 1.20.1 も）、Fabric 1.21 / 1.21.1、NeoForge 1.21.1 | 0.0.7、1.1.13、2.0.3 |
+| [**Game Stages**](/ja/modpack/game-stages) | `stage:<名前>` | Forge 1.11.2 〜 1.20.3、NeoForge 1.20.1 | 1.0.11 〜 17.0.1 |
 | バニラの進捗・スコアボードのタグ・スコア | `advancement:`、`tag:`、`score:` | 全バージョン（進捗は 1.12 以降、タグは 1.9 以降） | - |
 
-Minecraft のバージョン・ローダーごとの正確な表と、対応できない組み合わせの理由は[条件とクエスト mod](/ja/modpack/conditions#quest-mod-matrix)にあります。
+Minecraft のバージョン・ローダーごとの正確な表と、対応できない組み合わせの理由は[クエスト mod の対応表](/ja/modpack/quest-mods#quest-mod-matrix)にあります。条件の書き方、ID の調べ方、例は mod ごとのページにあります：[FTB Quests](/ja/modpack/ftb-quests)、[Better Questing](/ja/modpack/better-questing)、[Heracles / Odyssey Quests](/ja/modpack/heracles)、[Game Stages](/ja/modpack/game-stages)。
 
 ## スクリプト mod <Badge type="tip" text="1.3.0+" />
 
-スクリプトで `script:` の条件、`{script:}` のテンプレート変数、イベント（`damageRecorded`、`death`、`respawn`、`alert`）、読み取り、実行時の設定を追加できます。[スクリプト連携](/ja/modpack/scripts)を見てください。
+スクリプトで `script:` の条件、`{script:}` のテンプレート変数、イベント（`damageRecorded`、`death`、`respawn`、`alert`）、読み取り、実行時の設定を追加できます。[スクリプト連携](/ja/modpack/scripts)と、[KubeJS](/ja/modpack/kubejs)・[CraftTweaker](/ja/modpack/crafttweaker)・[MineTweaker 3](/ja/modpack/minetweaker)・[API リファレンス](/ja/modpack/script-api)の各ページを見てください。
 
 | mod | 書き方 | Minecraft / ローダー | スクリプト mod のバージョン |
 |---|---|---|---|
-| **KubeJS** | グローバル `WhatHitMe`、イベント `WhatHitMeEvents.*`（古い版は `onEvent` / `events.listen`） | NeoForge 26.1.2、1.21.1、1.20.4。Forge / Fabric 1.20.1、1.19.2、1.18.2、1.16.5。Fabric 1.17.1、1.16.1。Forge 1.15.2、1.14.4、1.12.2 | 1.1（1.12.2）〜 8（26.1.2） |
-| **CraftTweaker** | ZenScript の `mods.whathitme.WhatHitMe` | Fabric / NeoForge 1.21.1、1.20.6。Forge / Fabric / NeoForge 1.20.4。Forge / Fabric 1.18.2 〜 1.20.2。Forge 1.17.1、1.16.5、1.15.2、1.14.4、1.12.2 | 4.1（1.12.2）、5 〜 21 |
-| **MineTweaker 3** / CraftTweaker 3.x（GTNH 版も） | ZenScript の `mods.whathitme.WhatHitMe`（`Api` / `Player` オブジェクト経由） | Forge 1.7.10、1.8.9、1.9.4、1.10.2、1.11.2 | MineTweaker 3.0.10B と CraftTweaker 3.0.9 は一部のみ。CraftTweaker 3.1.0、GTNH 3.5.0 はすべて |
+| [**KubeJS**](/ja/modpack/kubejs) | グローバル `WhatHitMe`、イベント `WhatHitMeEvents.*`（古い版は `onEvent` / `events.listen`） | NeoForge 26.1.2、1.21.1、1.20.4。Forge / Fabric 1.20.1、1.19.2、1.18.2、1.16.5。Fabric 1.17.1、1.16.1。Forge 1.15.2、1.14.4、1.12.2 | 1.1（1.12.2）〜 8（26.1.2） |
+| [**CraftTweaker**](/ja/modpack/crafttweaker) | ZenScript の `mods.whathitme.WhatHitMe` | Fabric / NeoForge 1.21.1、1.20.6。Forge / Fabric / NeoForge 1.20.4。Forge / Fabric 1.18.2 〜 1.20.2。Forge 1.17.1、1.16.5、1.15.2、1.14.4、1.12.2 | 4.1（1.12.2）、5 〜 21 |
+| [**MineTweaker 3**](/ja/modpack/minetweaker) / CraftTweaker 3.x（GTNH 版も） | ZenScript の `mods.whathitme.WhatHitMe`（`Api` / `Player` オブジェクト経由） | Forge 1.7.10、1.8.9、1.9.4、1.10.2、1.11.2 | MineTweaker 3.0.10B と CraftTweaker 3.0.9 は一部のみ。CraftTweaker 3.1.0、GTNH 3.5.0 はすべて |
 
 ほかのバージョン（1.21.3 〜 1.21.11、26.2、26.3、Fabric / Forge 1.21 以降の KubeJS）にはスクリプト mod がありません。
 

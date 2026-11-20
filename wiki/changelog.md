@@ -19,7 +19,7 @@ The full changelog is in [CHANGELOG.md on GitHub](https://github.com/junjun1z/wh
 
 - In-game [pack editor](/modpack/pack-editor) (`/whm pack`, **Pack editor...** in the settings screen) for every pack section and the server settings, server-authoritative with backups and undo; pack files may carry `order`, `enabled` and memos. Personal mode (`/whm pack personal`) for your own renames, tips and ignored ids. Screen on every supported version and loader (Forge 1.7.10 - 26.3, Fabric 1.14 - 26.3, NeoForge 1.20.1 - 26.3).
 
-- Quest mod conditions on every version and loader where the quest mod exists ([matrix](/modpack/conditions#quest-mod-matrix)): Better Questing 1.7.10 - 1.12.2 (every API generation, also Better Questing Unofficial) and 1.20.1 (Forge, NeoForge), Game Stages 1.11.2 - 1.20.3 and NeoForge 1.20.1, Heracles 1.20 and Fabric 1.21, FTB Quests 1.16.4 (1604), 1.20.4 Forge / Fabric, 1.21 and 26.1; each tested in game, quest conditions in server rules tested on dedicated servers.
+- Quest mod conditions on every version and loader where the quest mod exists ([matrix](/modpack/quest-mods#quest-mod-matrix)): Better Questing 1.7.10 - 1.12.2 (every API generation, also Better Questing Unofficial) and 1.20.1 (Forge, NeoForge), Game Stages 1.11.2 - 1.20.3 and NeoForge 1.20.1, Heracles 1.20 and Fabric 1.21, FTB Quests 1.16.4 (1604), 1.20.4 Forge / Fabric, 1.21 and 26.1; each tested in game, quest conditions in server rules tested on dedicated servers.
 
 - `/whm reload` also lists what scripts registered and script functions that failed.
 
