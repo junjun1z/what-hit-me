@@ -55,6 +55,8 @@ public final class ClientCore {
     public static Packets.ServerInfo serverInfo;
     /** Protocol 3 server info parts of the newest sequence */
     private static final Packets.InfoAssembler INFO_PARTS = new Packets.InfoAssembler();
+    /** Parts of other large server packets (recaps, entry lists) */
+    private static final Packets.InfoAssembler PACKET_PARTS = new Packets.InfoAssembler();
     static boolean helloSent;
 
     /** Latest death recap (server or client estimate) */
@@ -91,6 +93,7 @@ public final class ClientCore {
         serverHasMod = false;
         serverInfo = null;
         INFO_PARTS.reset();
+        PACKET_PARTS.reset();
         helloSent = false;
         currentDeath = null;
         pendingSummary = null;
@@ -293,10 +296,13 @@ public final class ClientCore {
 
     private static void packet(Packets.Packet p) {
         if (p instanceof Packets.ServerInfo) onServerInfo((Packets.ServerInfo) p);
-        else if (p instanceof Packets.InfoPart) {
+        else if (p instanceof Packets.InfoPart && ((Packets.InfoPart) p).whole) {
+            Packets.Packet all = PACKET_PARTS.addPacket((Packets.InfoPart) p);
+            if (all != null) packet(all);
+        } else if (p instanceof Packets.InfoPart) {
             Packets.ServerInfo all = INFO_PARTS.add((Packets.InfoPart) p);
             if (all != null) onServerInfo(all);
-        }        else if (p instanceof Packets.Recap) onRecap((Packets.Recap) p);
+        } else if (p instanceof Packets.Recap) onRecap((Packets.Recap) p);
         else if (p instanceof Packets.Entries) onEntries((Packets.Entries) p);
         else if (p instanceof Packets.Message) onMessage((Packets.Message) p);
     }

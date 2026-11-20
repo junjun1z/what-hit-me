@@ -18,7 +18,7 @@ public final class PackProto {
     public static final String KEY = "whathitme.pack.wire";
     /**
      * Characters per chunk; UTF-8 needs up to 3 bytes per character. Client packets are limited to 32767 bytes, server
-     * packets on 1.7.10 to 65535 (unsigned short length)
+     * packets to 1 MiB (Forge 1.7.10: 2097050 bytes)
      */
     public static final int UP_CHUNK = 8000;
     public static final int DOWN_CHUNK = 20000;

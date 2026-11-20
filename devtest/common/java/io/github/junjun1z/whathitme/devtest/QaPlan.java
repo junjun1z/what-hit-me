@@ -15,7 +15,8 @@ import io.github.junjun1z.whathitme.devtest.DevPort.Act;
  * QA script runner (mode "qa"): runs config/whathitme/qa.txt line by line. Lines: world NAME | connect | setup | mobs |
  * act ACT [amount] | cmd TEXT | say TEXT | wait TICKS | clear | expect TEXT | absent TEXT | count TEXT N | log | shot NAME |
  * respawn | dead | write REL|TEXT (\n = new line, path below the game dir) | delete REL | pack | packclose | pestatus |
- * info TEXT | serverinfo LIST N. Lines starting with # are comments.
+ * info TEXT | serverinfo LIST N | death N (last death recap has N+ records) | filelines REL N | connected. Lines starting
+ * with # are comments.
  */
 final class QaPlan {
 
@@ -70,6 +71,14 @@ final class QaPlan {
         List<String> l = list(name);
         String s = l.get(l.size() - 1);
         return s.length() > 60 ? s.substring(0, 60) : s;
+    }
+
+    private static int lines(File f) {
+        try {
+            return f.isFile() ? Files.readAllLines(f.toPath(), StandardCharsets.UTF_8).size() : -1;
+        } catch (Exception e) {
+            return -1;
+        }
     }
 
     private static int count(String text, String s) {
@@ -189,6 +198,29 @@ final class QaPlan {
                 t.act(() -> t.info("server info " + x[0] + ": " + infoList(x[0]) + (infoList(x[0]) > 0 ? ", last " + lastOf(x[0]) : "")));
                 break;
             }
+            case "death": {
+                // death N: the client has a death recap with at least N records (logs its protocol 3 size)
+                int n = Integer.parseInt(a.trim());
+                t.waitFor("death recap with " + n + "+ records", () -> ClientCore.currentDeath != null && ClientCore.currentDeath.records.size() >= n, 200);
+                t.act(() -> {
+                    io.github.junjun1z.whathitme.core.data.Snapshot s = ClientCore.currentDeath;
+                    io.github.junjun1z.whathitme.core.data.DamageRecord k = s == null ? null : s.key();
+                    int bytes = s == null ? 0 : io.github.junjun1z.whathitme.core.net.Packets.encode(new io.github.junjun1z.whathitme.core.net.Packets.Recap(2, "", 0, 0, s, 3)).length;
+                    t.info("death recap: " + (s == null ? 0 : s.records.size()) + " records, " + bytes + " bytes, key tip " + (k == null || k.mark == null ? -1 : k.mark.hint.length()) + " chars");
+                });
+                break;
+            }
+            case "filelines": {
+                int k = a.lastIndexOf(' ');
+                File f = new File(p.gameDir(), a.substring(0, k));
+                int n = Integer.parseInt(a.substring(k + 1));
+                t.waitFor(f.getName() + " has " + n + "+ lines", () -> lines(f) >= n, 200);
+                t.act(() -> t.info(f.getName() + ": " + lines(f) + " lines"));
+                break;
+            }
+            case "connected":
+                t.check("still connected", p::connected, (Supplier<?>) t::chatText);
+                break;
             default:
                 t.ok("unknown qa line " + c, false, a);
         }

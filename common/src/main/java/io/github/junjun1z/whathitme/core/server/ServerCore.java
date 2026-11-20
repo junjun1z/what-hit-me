@@ -375,7 +375,7 @@ public final class ServerCore {
         for (UUID id : tracker().modded()) {
             if (tracker().protocol(id) < 3) continue;
             PlayerHandle t = srv.player(id);
-            if (t != null) Safe.run("death message packet", () -> t.send(new Packets.Recap(Packets.Recap.DEATH_MESSAGE, who, 0, 0, k, 3)));
+            if (t != null) Safe.run("death message packet", () -> deliver(t, new Packets.Recap(Packets.Recap.DEATH_MESSAGE, who, 0, 0, k, 3)));
         }
     }
 
@@ -714,7 +714,25 @@ public final class ServerCore {
      * @param owner the player the records belong to (their rules apply)
      */
     private static void send(PlayerHandle to, PlayerHandle owner, int kind, String who, int index, int count, Snapshot s) {
-        to.send(new Packets.Recap(kind, who, index, count, prepare(s, RuleEval.of(owner)), tracker().protocol(to.uuid())));
+        deliver(to, new Packets.Recap(kind, who, index, count, prepare(s, RuleEval.of(owner)), tracker().protocol(to.uuid())));
+    }
+
+    /**
+     * Sends a packet within the payload limits of the receiver: protocol 3 gets a large one in parts, older clients a
+     * shortened copy and an English note (they lack the newer translation keys)
+     */
+    static void deliver(PlayerHandle to, Packets.Packet p) {
+        int proto = tracker().protocol(to.uuid());
+        Packets.Packet f = Packets.fitFor(p, proto);
+        if (f != null) for (Packets.Packet x : Packets.wire(f, proto)) to.send(x);
+        int left = Packets.items(p) - (f == null ? 0 : Packets.items(f));
+        if (f == null || left > 0) {
+            String what = p instanceof Packets.Recap ? "older records" : "entries";
+            String why = proto >= 3 ? "more than " + (Packets.InfoPart.MAX_TOTAL >> 20) + " MiB" : "too large for What Hit Me? " + (proto >= 2 ? "1.2" : "1.1") + " on your client; 1.3 gets all";
+            String text = f == null ? "What Hit Me?: reply left out (" + why + ")." : "What Hit Me?: " + left + " " + what + " left out (" + why + ").";
+            Platform.log.warn("What Hit Me? " + to.name() + ": " + text, null);
+            to.send(new Packets.Message(true, text));
+        }
     }
 
     /** Search / dump entries the player may see: entries whose rule hides the damage id (or the attacker of a mob) are left out */
@@ -868,13 +886,13 @@ public final class ServerCore {
             }
             case Packets.Request.EFFECTS: {
                 List<Entry> e = p.effects();
-                p.send(new Packets.Entries(Packets.Entries.EFFECTS, "", e.size(), e));
+                deliver(p, new Packets.Entries(Packets.Entries.EFFECTS, "", e.size(), e));
                 break;
             }
             case Packets.Request.SEARCH: {
                 List<Entry> all = visibleEntries(SearchEngine.search(r.arg, tracker().catalog, srv.registries()), RuleEval.of(p));
                 List<Entry> part = all.size() > 40 ? new ArrayList<>(all.subList(0, 40)) : all;
-                p.send(new Packets.Entries(Packets.Entries.SEARCH, r.arg, all.size(), part));
+                deliver(p, new Packets.Entries(Packets.Entries.SEARCH, r.arg, all.size(), part));
                 break;
             }
             case Packets.Request.DUMP: {
@@ -885,7 +903,9 @@ public final class ServerCore {
                 List<Entry> all = visibleEntries(SearchEngine.all(tracker().catalog, srv.registries()), RuleEval.of(p));
                 List<Entry> damage = new ArrayList<>();
                 for (Entry e : all) if (e.type == Entry.DAMAGE) damage.add(e);
-                p.send(new Packets.Entries(Packets.Entries.DUMP, "", damage.size(), damage.size() > 4000 ? new ArrayList<>(damage.subList(0, 4000)) : damage));
+                // protocol 3 gets the whole list in parts; read limit 100000
+                int cap = tracker().protocol(p.uuid()) >= 3 ? 100000 : 4000;
+                deliver(p, new Packets.Entries(Packets.Entries.DUMP, "", damage.size(), damage.size() > cap ? new ArrayList<>(damage.subList(0, cap)) : damage));
                 break;
             }
             case Packets.Request.COMMAND: {
@@ -919,8 +939,8 @@ public final class ServerCore {
                 // clients before 1.3 do not know the newer keys: they get the English text instead
                 java.util.function.BiConsumer<Boolean, String[]> say = (err, ka) -> {
                     String[] args = java.util.Arrays.copyOfRange(ka, 1, ka.length);
-                    if (old && !ka[0].equals("whathitme.reload.server") && !ka[0].equals("whathitme.reload.pack")) to.send(new Packets.Message(err, Msg.ENGLISH.text(ka[0], (Object[]) args)));
-                    else to.send(new Packets.Message(err, ka[0], args));
+                    if (old && !ka[0].equals("whathitme.reload.server") && !ka[0].equals("whathitme.reload.pack")) deliver(to, new Packets.Message(err, Msg.ENGLISH.text(ka[0], (Object[]) args)));
+                    else deliver(to, new Packets.Message(err, ka[0], args));
                 };
                 say.accept(false, new String[] {"whathitme.reload.server"});
                 say.accept(false, new String[] {"whathitme.reload.pack", String.valueOf(WhmConfig.pack.files.size()), String.valueOf(WhmConfig.pack.errors.size())});

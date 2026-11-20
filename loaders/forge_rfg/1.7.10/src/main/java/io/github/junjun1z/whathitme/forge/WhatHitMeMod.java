@@ -73,8 +73,6 @@ public class WhatHitMeMod {
         Platform.serverLang = McText.LANG;
         Platform.configDir = event.getModConfigurationDirectory();
         WhmConfig.init(event.getModConfigurationDirectory(), proxy.isClient(), ForgeCfgBackend::new);
-        // S3F writes the payload length as an unsigned short on 1.7.10
-        io.github.junjun1z.whathitme.core.net.Packets.ServerInfo.oldMaxBytes = 60000;
         WhmNetwork.init();
         proxy.preInit(event);
     }

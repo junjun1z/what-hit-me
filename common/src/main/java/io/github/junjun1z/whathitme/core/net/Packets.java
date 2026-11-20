@@ -83,6 +83,105 @@ public final class Packets {
         return type == HELLO || type == REQUEST;
     }
 
+    // ================================================================== payload limits
+
+    /** Server packets (type byte + body) larger than this go to protocol 3 clients as {@link InfoPart}s */
+    public static final int SPLIT_AT = InfoPart.BYTES;
+    /** Room kept for the loader's framing (channel name, discriminator, lengths) */
+    private static final int FRAMING = 64;
+
+    /**
+     * {@code p} shortened to what a client of this protocol accepts: protocol 3 up to {@link InfoPart#MAX_TOTAL} (sent in
+     * parts), older clients one packet of {@link ServerInfo#oldMaxBytes}. Server payload limits: 1 MiB on 1.13+ / Fabric /
+     * NeoForge, 2097050 bytes on Forge 1.7.10 (a bigger one disconnects the player).
+     * Recaps lose their oldest records (never the killing blow), entry lists their last entries, messages the end of
+     * long texts. Returns {@code p} itself when it fits, null when nothing useful fits.
+     */
+    public static Packet fitFor(Packet p, int protocol) {
+        if (p instanceof InfoPart || p instanceof ServerInfo) return p;
+        int max = (protocol >= 3 ? InfoPart.MAX_TOTAL : ServerInfo.oldMaxBytes) - FRAMING;
+        if (encode(p).length <= max) return p;
+        if (p instanceof Recap) return fitRecap((Recap) p, max);
+        if (p instanceof Entries) return fitEntries((Entries) p, max);
+        if (p instanceof Message) return fitMessage((Message) p, max);
+        return null;
+    }
+
+    /** The packets that carry {@code p} (already fitted) to a client of this protocol */
+    public static List<Packet> wire(Packet p, int protocol) {
+        List<Packet> one = new ArrayList<>(1);
+        one.add(p);
+        if (protocol < 3 || p instanceof InfoPart || p instanceof ServerInfo) return one;
+        byte[] b = encode(p);
+        return b.length <= SPLIT_AT ? one : InfoPart.cut(b, true);
+    }
+
+    /** Records of a recap / entries of a list (what {@link #fitFor} may leave out) */
+    public static int items(Packet p) {
+        if (p instanceof Recap) return ((Recap) p).snapshot == null ? 0 : ((Recap) p).snapshot.records.size();
+        if (p instanceof Entries) return ((Entries) p).entries.size();
+        return 0;
+    }
+
+    private static Recap recapWithout(Recap r, int drop) {
+        Snapshot s = r.snapshot;
+        List<io.github.junjun1z.whathitme.core.data.DamageRecord> list = new ArrayList<>(s.records.size());
+        int key = -1;
+        int skipped = 0;
+        for (int i = 0; i < s.records.size(); i++) {
+            if (i != s.keyIndex && skipped < drop) {
+                skipped++;
+                continue;
+            }
+            if (i == s.keyIndex) key = list.size();
+            list.add(s.records.get(i));
+        }
+        return new Recap(r.kind, r.who, r.index, r.count, new Snapshot(s.kind, s.time, list, key, s.deathMessage, s.gear), r.protocol);
+    }
+
+    private static Recap fitRecap(Recap r, int max) {
+        if (r.snapshot == null) return null;
+        Snapshot s = r.snapshot;
+        int lo = 1;
+        int hi = s.records.size() - (s.keyIndex >= 0 && s.keyIndex < s.records.size() ? 1 : 0);
+        if (encode(recapWithout(r, hi)).length > max) return null;
+        // smallest number of oldest records to drop
+        while (lo < hi) {
+            int mid = (lo + hi) >>> 1;
+            if (encode(recapWithout(r, mid)).length <= max) hi = mid;
+            else lo = mid + 1;
+        }
+        return recapWithout(r, hi);
+    }
+
+    private static Entries fitEntries(Entries e, int max) {
+        int lo = 0;
+        int hi = e.entries.size() - 1;
+        while (lo < hi) {
+            int mid = (lo + hi + 1) >>> 1;
+            if (encode(new Entries(e.kind, e.query, e.total, e.entries.subList(0, mid))).length <= max) lo = mid;
+            else hi = mid - 1;
+        }
+        Entries out = new Entries(e.kind, e.query, e.total, new ArrayList<>(e.entries.subList(0, Math.max(0, lo))));
+        return encode(out).length <= max ? out : null;
+    }
+
+    private static Message fitMessage(Message m, int max) {
+        // UTF-8 takes at most 3 bytes per char (a surrogate pair: 4 bytes for 2 chars)
+        int each = (max - 16 - m.key.length() * 3) / Math.max(1, m.args.length) / 3 - 8;
+        if (each < 1) return null;
+        String[] a = new String[m.args.length];
+        for (int i = 0; i < a.length; i++) {
+            String x = m.args[i] == null ? "" : m.args[i];
+            if (x.length() > each) {
+                int end = Character.isHighSurrogate(x.charAt(each - 1)) ? each - 1 : each;
+                x = x.substring(0, end) + "...";
+            }
+            a[i] = x;
+        }
+        return new Message(m.error, m.key, a);
+    }
+
     // ================================================================== client -> server
 
     /** Once per connection: "this client has What Hit Me?" */
@@ -186,8 +285,8 @@ public final class Packets {
         /** Entries per list in the single packet format (clients before 1.3) */
         public static final int OLD_LIST_LIMIT = 1000;
         /**
-         * Largest single packet body: below the 1 MiB custom payload limit; the 1.7.10 loader lowers it (its S3F length is an
-         * unsigned short). Entries that do not fit are left out.
+         * Largest single packet body for clients before 1.3: below the 1 MiB custom payload limit (Forge 1.7.10: 2097050
+         * bytes). Entries that do not fit are left out.
          */
         public static int oldMaxBytes = 1000000;
 
@@ -239,15 +338,7 @@ public final class Packets {
 
         /** Protocol 3: the whole info as {@link InfoPart} packets, no list limit */
         public List<Packet> parts() {
-            byte[] b = full();
-            int n = Math.max(1, (b.length + InfoPart.BYTES - 1) / InfoPart.BYTES);
-            int seq = InfoPart.nextSeq();
-            List<Packet> out = new ArrayList<>(n);
-            for (int k = 0; k < n; k++) {
-                int from = k * InfoPart.BYTES;
-                out.add(new InfoPart(seq, k, n, java.util.Arrays.copyOfRange(b, from, Math.min(b.length, from + InfoPart.BYTES))));
-            }
-            return out;
+            return InfoPart.cut(full(), false);
         }
 
         /** Body of the protocol 3 parts: int list sizes, every entry */
@@ -286,7 +377,7 @@ public final class Packets {
 
         static Packet readAny(WireIn in) {
             int mask = in.readInt();
-            if (mask == InfoPart.MARK) return InfoPart.readRest(in);
+            if (mask == InfoPart.MARK || mask == InfoPart.WHOLE) return InfoPart.readRest(in, mask == InfoPart.WHOLE);
             return read(in, mask);
         }
 
@@ -315,14 +406,17 @@ public final class Packets {
     }
 
     /**
-     * Protocol 3: one part of a {@link ServerInfo} (same packet type; the first int is {@link #MARK}, never a real mask).
-     * The client applies the info once all parts of one sequence number have arrived ({@link InfoAssembler}).
+     * Protocol 3: one part of a {@link ServerInfo} or of any other server packet (same packet type; the first int is
+     * {@link #MARK} or {@link #WHOLE}, never a real mask). The client uses the data once all parts of one sequence number
+     * have arrived ({@link InfoAssembler}).
      */
     public static final class InfoPart implements Packet {
         static final int MARK = 0x8057484D;
-        /** Body bytes per part: far below the smallest payload limit (1.7.10 S3F length is an unsigned short) */
+        /** A part of a whole packet (type byte + body), see {@link Packets#forPeer} */
+        static final int WHOLE = 0x8057484E;
+        /** Body bytes per part: far below every payload limit */
         public static final int BYTES = 24000;
-        /** Largest assembled info */
+        /** Largest assembled info or packet */
         public static final int MAX_TOTAL = 32 * 1024 * 1024;
 
         private static int lastSeq;
@@ -336,12 +430,19 @@ public final class Packets {
         public final int index;
         public final int count;
         public final byte[] data;
+        /** Part of a whole packet, not of a server info */
+        public final boolean whole;
 
         public InfoPart(int seq, int index, int count, byte[] data) {
+            this(seq, index, count, data, false);
+        }
+
+        public InfoPart(int seq, int index, int count, byte[] data, boolean whole) {
             this.seq = seq;
             this.index = index;
             this.count = count;
             this.data = data;
+            this.whole = whole;
         }
 
         @Override
@@ -351,7 +452,7 @@ public final class Packets {
 
         @Override
         public void write(WireOut o) {
-            o.writeInt(MARK);
+            o.writeInt(whole ? WHOLE : MARK);
             o.writeInt(seq);
             o.writeInt(index);
             o.writeInt(count);
@@ -359,7 +460,7 @@ public final class Packets {
             o.writeBytes(data);
         }
 
-        static InfoPart readRest(WireIn in) {
+        static InfoPart readRest(WireIn in, boolean whole) {
             int seq = in.readInt();
             int index = in.readInt();
             int count = in.readInt();
@@ -367,11 +468,26 @@ public final class Packets {
             if (n < 0 || n > BYTES || n > in.remaining()) throw new IllegalStateException("bad info part");
             byte[] b = new byte[n];
             for (int k = 0; k < n; k++) b[k] = (byte) in.readByte();
-            return new InfoPart(seq, index, count, b);
+            return new InfoPart(seq, index, count, b, whole);
+        }
+
+        /** Cuts bytes into parts of one new sequence */
+        static List<Packet> cut(byte[] b, boolean whole) {
+            int n = Math.max(1, (b.length + BYTES - 1) / BYTES);
+            int seq = nextSeq();
+            List<Packet> out = new ArrayList<>(n);
+            for (int k = 0; k < n; k++) {
+                int from = k * BYTES;
+                out.add(new InfoPart(seq, k, n, java.util.Arrays.copyOfRange(b, from, Math.min(b.length, from + BYTES)), whole));
+            }
+            return out;
         }
     }
 
-    /** Collects {@link InfoPart}s (client thread); only a complete set of the newest sequence is returned */
+    /**
+     * Collects {@link InfoPart}s (client thread); only a complete set of the newest sequence is returned. Use one
+     * assembler for info parts and another for whole packet parts.
+     */
     public static final class InfoAssembler {
         private int seq = -1;
         private byte[][] parts;
@@ -385,6 +501,20 @@ public final class Packets {
 
         /** @return the info when its last part arrived, else null; parts of an older sequence are dropped */
         public ServerInfo add(InfoPart p) {
+            byte[] all = collect(p);
+            return all == null ? null : ServerInfo.readFull(all);
+        }
+
+        /** @return the packet when its last part arrived, else null */
+        public Packet addPacket(InfoPart p) {
+            byte[] all = collect(p);
+            if (all == null) return null;
+            Packet out = decode(all);
+            if (out instanceof InfoPart) throw new IllegalStateException("nested part");
+            return out;
+        }
+
+        private byte[] collect(InfoPart p) {
             if (p.count < 1 || p.count > InfoPart.MAX_TOTAL / InfoPart.BYTES + 1 || p.index < 0 || p.index >= p.count) throw new IllegalStateException("bad info part");
             if (seq >= 0 && p.seq < seq) return null;
             if (p.seq != seq) {
@@ -415,7 +545,7 @@ public final class Packets {
                 at += b.length;
             }
             parts = null;
-            return ServerInfo.readFull(all);
+            return all;
         }
     }
 
