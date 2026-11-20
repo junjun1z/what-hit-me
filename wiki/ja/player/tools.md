@@ -6,7 +6,7 @@
 
 `/whm`（または `/whm history`）は、生きていても死んでいても、最近受けたダメージを一覧にします。行にマウスを乗せると詳細が出て、各行の最後に `[Copy ID]` と `[Mute]` があります。
 
-![/whm の履歴と詳細表示](/images/history.png)
+![/whm の履歴と詳細表示](/images/ja/history.webp)
 
 - 3 秒以内の同じ原因の連続ダメージは 1 行にまとめます（`x4 hits`）。
 - 最後の行は `Last 10s Total` です。
@@ -24,6 +24,8 @@
 
 合計の死亡回数、受けた合計ダメージ（実際に減った体力）、死因の上位 5 件を表示します。死因はプレイヤーごとに最大 100 種類まで数えます。死亡時・ログアウト時・ワールド保存時に `config/whathitme/.cache/stats_<uuid>.json` に保存します。
 
+![/whm stats](/images/ja/stats.webp)
+
 ## 効果：`/whm effects`
 
 今かかっているポーション効果を、レベル、残り時間、mod、牛乳で消せるか（`[Milk ✔]` / `[Milk ✖]`）と一緒に表示します。効果にマウスを乗せると ID と治す手段が出ます。
@@ -34,7 +36,7 @@
 
 pack にあるダメージの種類、mob、効果を探します。スペースで区切ると条件を組み合わせられます。
 
-![/whm search fire](/images/search.png)
+![/whm search creeper](/images/ja/search.webp)
 
 | 検索語 | 見つかるもの |
 |---|---|

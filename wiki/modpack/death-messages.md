@@ -29,7 +29,7 @@ Useful variables: `{player}`, `{name}`, `{attacker_name}`, `{weapon}`, `{damage_
 
 ## Support matrix
 
-<!-- TODO media: screenshot: a custom death message in chat and on the death screen (one Fabric, one Forge) -->
+![A custom death message on the death screen and in the chat (Fabric 1.21.1)](/images/death-message.webp)
 
 | Server | Players with the mod | Players without the mod | Death screen | Server log |
 |---|---|---|---|---|

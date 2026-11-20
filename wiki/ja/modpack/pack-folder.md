@@ -103,3 +103,5 @@ config/whathitme/pack/
 ::: warning クライアントだけに入れた場合
 サーバーに mod がない場合、各クライアントは**自分の** `config/whathitme/pack/` を使います。進行度ルールと死亡トリガーはサーバーの mod が必要なので、この場合は動きません。
 :::
+
+![/whm reload：読んだファイル、エラーのあるファイル、警告](/images/ja/whm-reload.webp)

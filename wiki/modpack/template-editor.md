@@ -2,9 +2,9 @@
 
 An in-game screen to write [templates](/modpack/templates) with a **live preview**. It works on every supported version and loader and needs the mod on the client.
 
-<!-- TODO media: retake: current shot shows test strings ("WHMT"); also a short GIF of typing with the live preview updating -->
+![Template editor](/images/template-editor.webp)
 
-![Template editor](/images/template-editor.png)
+![Typing a summary template: the preview updates on every keystroke, variables are inserted by clicking](/images/template-editor.gif)
 
 ## Opening it
 
@@ -42,11 +42,9 @@ The line under the text fields tells you where the shown template comes from: *Y
 
 If the pack locks an output (`lockedFeatures`: `templates` or `templates.<output>`), the editor shows the pack's template **read-only** with the note *Locked by the modpack (read-only)*. Save and Reset are disabled.
 
-<!-- TODO media: retake: locked output without test strings -->
+![A locked output in the template editor](/images/template-editor-locked.webp)
 
-![A locked output in the template editor](/images/template-editor-locked.png)
-
-The screenshot also shows the syntax: a fallback (`{attacker_owner|nobody}`), decimals (`{damage:2}`), the `mob_` alias (`{mob_name}`) and a `lang:` line.
+The screenshot also shows the syntax: fallbacks (`{mob_name|unknown}`, `{attacker_owner|nobody}`), decimals (`{damage:2}`) and the `mob_` alias (`{mob_name}`).
 
 ## Death messages tab
 

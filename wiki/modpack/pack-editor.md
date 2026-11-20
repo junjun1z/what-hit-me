@@ -12,9 +12,11 @@
 | Versions | The screen exists on every supported version and loader: Forge 1.7.10 - 26.3, Fabric 1.14 - 26.3, NeoForge 1.20.1 - 26.3. Clients of 1.7.10 / 1.8.9 are not told their operator level, so `/whm pack` asks the server first (a non-operator gets the "only operators" message, the settings button opens the own lists). The server needs What Hit Me? 1.3 or newer: with an older one `/whm pack` says so and the settings button opens your own lists. |
 
 
+![Deleting a tip and getting it back with Undo](/images/pack-editor-undo.gif)
+
 ## Layout
 
-<!-- TODO media: screenshot of the whole pack editor (tabs, category tree, entry list, rule form) in a clean test world -->
+![The pack editor: tabs, category tree, the rules of a category and the form of the selected rule](/images/pack-editor.webp)
 
 - **Tabs** at the top: Renames, Hints, Rules, Death msgs, Templates, Triggers, Ignored, Locked, Server settings. A tab shows only the entries of that type.
 - **Categories** (left): every JSON file of the pack folder is a category, sub-folders are groups. A category without entries of the current tab is still listed (grey), so you can add entries to it. `#n` is the position in the load order; the checkbox switches a category on or off; `✎` marks a memo; red `!` marks a file with a syntax error (shown, not editable). Entries registered by scripts appear under **Scripts (read-only)**.
@@ -38,6 +40,8 @@ The buttons under the category tree:
 
 Pack makers can work either way: one file per topic holding every section (the default for new categories), one folder per type (`pack/rules/<name>.json`), or one folder per mod.
 
+![The memo of a category (M); a ✎ in the tree marks categories with a memo](/images/pack-editor-memo.webp)
+
 ### What the editor stores in the files
 
 | Key | Where | Meaning |
@@ -52,6 +56,8 @@ Keys the editor does not know are kept. `order`, `enabled` and the category memo
 
 ## Entries
 
+![Adding a rule: + Add, match key from the builder, an unless condition from the picker, the name ???, no tip, Done](/images/pack-editor-add-rule.gif)
+
 - **Renames / Hints / Death msgs**: match key and text. The **Pick...** button opens the match key builder.
 - **Rules**: match key, `if` / `any` / `unless` conditions, name, tip (or "no tip at all"), hidden fields, enforce (automatic = on when something is hidden), commands, once per player, cooldown.
 - **Templates**: the output and its lines; **Edit in the template editor...** opens the [template editor](/modpack/template-editor) for these lines, **Done** there saves the entry.
@@ -61,14 +67,16 @@ Keys the editor does not know are kept. `order`, `enabled` and the category memo
 
 ### Match key builder
 
-<!-- TODO media: screenshot or GIF of the match key builder (search a mob, click it, add a wildcard) -->
+![The match key builder with the mob list filtered by "wither"](/images/pack-editor-keybuilder.webp)
 
 Searchable lists of the damage ids and mobs the server knows (registries, the damage id scanner and recorded deaths) with their mod names. Clicking a row fills the damage id or the attacker; `*`, `mod:*` and `mob:mod:*` insert wildcards; item (`@item:`) and dimension (`@dim:`) are separate fields. See [match keys](/modpack/match-keys).
 
 
 ### Condition picker
 
-<!-- TODO media: screenshot of the condition picker with a quest list (FTB Quests or Better Questing) -->
+![The condition picker: prefixes on the left, the advancements of the server on the right](/images/pack-editor-condition.webp)
+
+![With FTB Quests installed: its chapters and quests with their titles](/images/pack-editor-condition-ftbquests.webp)
 
 The condition prefixes with the values the server can list: advancements, scoreboard objectives, tags of online players, script conditions, and for quest mods what their API offers (FTB Quests chapters and quests with their titles, Game Stages known stages, Better Questing quests with their names, also the GTNH version, Heracles quests with their titles). Advancements exist from 1.12, tags from 1.9. Greyed prefixes are not available on this server (mod missing / version). **not (!)** negates; for `score:` choose the comparison and the number. Any value can also be typed. See [conditions](/modpack/conditions).
 
@@ -79,7 +87,7 @@ Under the fields: unknown condition prefixes and wrong `score:` syntax (refused)
 
 ### Preview
 
-<!-- TODO media: screenshot of the preview pane with "As" and an assumed condition -->
+![The preview pane: As Steve, assuming the fortress advancement](/images/pack-editor-preview.webp)
 
 **Preview** (bottom bar) shows a test pane under the form: **As** chooses an online player whose progress is used, the field next to it lists conditions to assume, **Test** runs exactly what `/whm test <damage_id> ... --as <player> --assume <condition>` prints, for the saved state of the entry's match key. It runs again after every save.
 
@@ -87,6 +95,8 @@ Under the fields: unknown condition prefixes and wrong `score:` syntax (refused)
 ## Server settings
 
 Every key of `whathitme-common.cfg`, grouped like the settings screen: switches toggle at once, numbers and lists are changed with **Apply** (or Enter) and checked against their range. Operators may change keys the pack locked for players.
+
+![The Server settings tab with requireClientMod selected](/images/pack-editor-settings.webp)
 
 ## Two editors at once
 
@@ -98,7 +108,7 @@ Everything is checked on the server: permission (operator / single player owner)
 
 ## Personal mode
 
-<!-- TODO media: screenshot of the personal mode (own renames list) -->
+![Personal mode: your own renames](/images/pack-editor-personal.webp)
 
 The same editor without permission: `/whm pack personal`, or **Pack editor...** in the settings screen when you are not an operator. It edits **your own** `renameMap`, `hintMap` and `ignoredDamageIds` in `whathitme-client.cfg` with the same lists, search, match key builder and preview, instead of one-line comma lists. Server-only tabs, conditions and memos are not shown there; Undo works the same way. Operators switch between **Pack** and **Personal** with the tabs at the top left.
 

@@ -90,3 +90,5 @@ Examples:
 ::: tip Test before you ship
 After every change to your pack files: `/whm reload`, read the warnings, then `/whm test` the keys you changed. With rules, test both "before" and "after" with `--assume`.
 :::
+
+![/whm test for a wither skeleton --as Steve: the matching rule, what it hides and the chat preview](/images/whm-test.webp)

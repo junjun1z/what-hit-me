@@ -6,7 +6,8 @@
 
 ## 最初のルール
 
-<!-- TODO media: screenshot pair: the same death as "???" without a tip before the quest, and the full record after it -->
+![進捗の前：攻撃者は ??? で隠れ、ヒントもない](/images/ja/rules-before.webp)
+![進捗の後：同じ死亡で、攻撃者・パックの名前・ヒントが表示される](/images/ja/rules-after.webp)
 
 `config/whathitme/pack/rules/bosses.json`：
 
@@ -56,9 +57,9 @@
 | `cooldownSeconds` | 数値 | `0` | `commands` のプレイヤーごとのクールダウン |
 | `memo` | 文字列 | | 自分用のメモ。プレイヤーには表示されません（[パックエディター](/ja/modpack/pack-editor)が書き込みます） |
 
-条件の詳細は[条件とクエスト mod](/ja/modpack/conditions)にあります。
+条件の詳細は[条件](/ja/modpack/conditions)（バニラ）と[クエスト mod](/ja/modpack/quest-mods)にあります。
 
-## ルールの選ばれ方
+## ルールの選ばれ方 {#how-rules-are-chosen}
 
 1. ルールは [pack ファイルの順](/ja/modpack/pack-folder#how-files-are-read)に、ファイルの中では上から順に読まれます。
 2. 各記録について、`match` が合い、**かつ**条件を満たす**最初の**ルールが使われます。それより後のルールは見ません。

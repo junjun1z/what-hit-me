@@ -166,7 +166,9 @@ pack ファイルでは、出力ごとに行のリスト（または `\n` を含
 
 ## 出力ごとの例
 
-<!-- TODO media: screenshot: a custom summary template in chat next to the built-in one, and a custom panel line -->
+![死亡画面のパネルで、カスタムの line テンプレート](/images/ja/templates-panel.webp)
+
+![チャットの組み込みの要約（上）と、2 行のカスタム summary テンプレート（下）](/images/ja/templates-chat.webp)
 
 ### `hover`
 

@@ -166,7 +166,9 @@ These need a whole death or snapshot, so they are filled in `summary`, `alert` a
 
 ## Examples per output
 
-<!-- TODO media: screenshot: a custom summary template in chat next to the built-in one, and a custom panel line -->
+![A custom line template in the death screen panel](/images/templates-panel.webp)
+
+![The built-in summary (top) and a two-line custom summary template (bottom) in the chat](/images/templates-chat.webp)
 
 ### `hover`
 

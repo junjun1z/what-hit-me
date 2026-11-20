@@ -103,3 +103,5 @@ Both forms are the same:
 ::: warning Client-only installs
 When the server does not have the mod, each client uses its **own** `config/whathitme/pack/`. Progression rules and death triggers need the mod on the server and do nothing there.
 :::
+
+![/whm reload: files read, files with errors and warnings](/images/whm-reload.webp)

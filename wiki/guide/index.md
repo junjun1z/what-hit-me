@@ -11,7 +11,7 @@ What Hit Me? records the damage a player takes and explains a death in plain wor
 
 It adds no blocks or items and creates no world data. It runs on the client, on the server, or on both.
 
-![Death screen panel](/images/death-screen.png)
+![Death screen panel](/images/death-screen.webp)
 
 ## Feature overview
 

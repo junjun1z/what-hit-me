@@ -6,7 +6,7 @@ All of these work for every player. The full list of commands is in the [command
 
 `/whm` (or `/whm history`) lists the damage you took recently, alive or dead. Hover a line for details; `[Copy ID]` and `[Mute]` are at the end of each line.
 
-![/whm history with hover details](/images/history.png)
+![/whm history with hover details](/images/history.webp)
 
 - Repeated damage from the same source within 3 seconds is merged into one line (`x4 hits`).
 - The last line shows the `Last 10s Total`.
@@ -24,6 +24,8 @@ Saved totem, prevented-death and heavy-hit moments. `1` is the newest. See [aler
 
 Your total deaths, total damage taken (health actually lost) and your top 5 causes of death. Up to 100 causes per player are counted. They are saved to `config/whathitme/.cache/stats_<uuid>.json` on death, logout and world save.
 
+![/whm stats](/images/stats.webp)
+
 ## Effects: `/whm effects`
 
 Your active potion effects with level, time left, mod and whether milk cures them: `[Milk ✔]` or `[Milk ✖]`. Hover an effect for its id and its curative items.
@@ -34,7 +36,7 @@ Your active potion effects with level, time left, mod and whether milk cures the
 
 Finds damage types, mobs and effects in your pack. Combine terms with spaces.
 
-![/whm search fire](/images/search.png)
+![/whm search creeper](/images/search.webp)
 
 | Query | Finds |
 |---|---|

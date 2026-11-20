@@ -27,6 +27,17 @@ public final class DevEntry {
             });
             return;
         }
+        if (mode.equals("media")) {
+            // scripted scenes for the wiki screenshots and GIFs
+            MediaScene121 m = new MediaScene121(t);
+            m.plan();
+            ScreenEvents.AFTER_INIT.register((client, screen, w, h) -> ScreenEvents.afterRender(screen).register((s, gg, mx, my, d) -> m.drawCursor(gg)));
+            ClientTickEvents.END_CLIENT_TICK.register(mc -> {
+                t.tick();
+                m.tick();
+            });
+            return;
+        }
         if (!t.planCommon()) t.ok("unknown self-test mode " + mode, false, null);
         ClientTickEvents.END_CLIENT_TICK.register(mc -> t.tick());
     }

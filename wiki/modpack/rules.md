@@ -6,7 +6,8 @@ The server decides. It evaluates the rules for each player whenever it builds an
 
 ## A first rule
 
-<!-- TODO media: screenshot pair: the same death as "???" without a tip before the quest, and the full record after it -->
+![Before the advancement: the attacker is hidden as ???, no tip](/images/rules-before.webp)
+![After the advancement: the same death with the attacker, its name from the pack and the tip](/images/rules-after.webp)
 
 `config/whathitme/pack/rules/bosses.json`:
 
@@ -56,7 +57,7 @@ Check it: `/whm reload`, then
 | `cooldownSeconds` | number | `0` | Cooldown of `commands` per player |
 | `memo` | string | | Your note, never shown to players (the [pack editor](/modpack/pack-editor) writes it) |
 
-Conditions are explained on [Conditions & quest mods](/modpack/conditions).
+Conditions are explained on [Conditions](/modpack/conditions) (vanilla) and [Quest mods](/modpack/quest-mods).
 
 ## How rules are chosen
 

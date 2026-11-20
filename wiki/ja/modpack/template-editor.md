@@ -2,9 +2,9 @@
 
 [テンプレート](/ja/modpack/templates)を**プレビューを見ながら**書けるゲーム内の画面です。対応しているすべてのバージョンとローダーで動き、クライアントに mod が必要です。
 
-<!-- TODO media: retake: current shot shows test strings ("WHMT"); also a short GIF of typing with the live preview updating -->
+![テンプレートエディター](/images/ja/template-editor.webp)
 
-![テンプレートエディター](/images/template-editor.png)
+![summary テンプレートを入力しているところ。プレビューは 1 文字ごとに更新され、変数はクリックで入る](/images/ja/template-editor.gif)
 
 ## 開き方
 
@@ -42,11 +42,9 @@
 
 pack が出力をロックしている場合（`lockedFeatures` に `templates` または `templates.<出力名>`）、エディターは pack のテンプレートを**読み取り専用**で表示し、*Locked by the modpack (read-only)* と出ます。Save と Reset は使えません。
 
-<!-- TODO media: retake: locked output without test strings -->
+![テンプレートエディターでロックされた出力](/images/ja/template-editor-locked.webp)
 
-![テンプレートエディターでロックされた出力](/images/template-editor-locked.png)
-
-このスクリーンショットでは書式の例も見られます：代わりの文字（`{attacker_owner|nobody}`）、小数の桁数（`{damage:2}`）、`mob_` の別名（`{mob_name}`）、`lang:` の行。
+このスクリーンショットでは書式の例も見られます：代わりの文字（`{mob_name|不明}`、`{attacker_owner|なし}`）、小数の桁数（`{damage:2}`）、`mob_` の別名（`{mob_name}`）。
 
 ## Death msgs タブ {#death-messages-tab}
 

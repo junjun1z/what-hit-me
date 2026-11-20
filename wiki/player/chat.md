@@ -4,7 +4,9 @@
 
 After you respawn, a short summary appears in **your own chat only** (other players do not see it):
 
-![Respawn chat summary](/images/respawn-chat.png)
+![Respawn chat summary](/images/respawn-chat.webp)
+
+![Hovering a line of the summary in the chat screen](/images/chat-hover.webp)
 
 ```
 ========== [ What Hit Me? ] ==========

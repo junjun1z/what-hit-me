@@ -29,7 +29,7 @@
 
 ## 対応表 {#support-matrix}
 
-<!-- TODO media: screenshot: a custom death message in chat and on the death screen (one Fabric, one Forge) -->
+![カスタム死亡メッセージ。死亡画面とチャットの両方に出る（Fabric 1.21.1）](/images/ja/death-message.webp)
 
 | サーバー | mod ありのプレイヤー | mod なしのプレイヤー | 死亡画面 | サーバーのログ |
 |---|---|---|---|---|

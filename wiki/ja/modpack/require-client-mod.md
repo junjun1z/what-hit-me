@@ -11,7 +11,7 @@ B:requireClientMod=true
 
 ## プレイヤーに見えるもの
 
-<!-- TODO media: screenshot: the disconnect screen with the requireClientMod message -->
+![mod のないプレイヤーに表示される画面（メッセージは常に英語）](/images/ja/require-client-mod.webp)
 
 mod なしのプレイヤーは、次のメッセージで切断されます。
 

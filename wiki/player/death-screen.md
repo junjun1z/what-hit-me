@@ -2,7 +2,9 @@
 
 When you die, a panel appears next to the vanilla death screen. It needs the mod on your **client** (with or without the mod on the server).
 
-![Death screen panel](/images/death-screen.png)
+![Death screen panel](/images/death-screen.webp)
+
+![From the fight to the chat summary: hits, death screen panel, hover details, respawn](/images/death-recap.gif)
 
 ## What the panel shows
 
@@ -43,7 +45,7 @@ The panel shrinks to fit at large GUI scales or in small windows, so it never co
 
 Hover any line of the panel, of `/whm` or of the chat summary to see everything that is known about the hit:
 
-![Hover details in /whm history](/images/history.png)
+![Hover details in /whm history](/images/death-hover.webp)
 
 | Line | Meaning | Switch |
 |---|---|---|

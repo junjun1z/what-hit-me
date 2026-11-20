@@ -11,7 +11,7 @@ Or in game (op): `/whm config requireClientMod true` (from a modded client: `/wh
 
 ## What players see
 
-<!-- TODO media: screenshot: the disconnect screen with the requireClientMod message -->
+![What a player without the mod sees (the message is always English)](/images/require-client-mod.webp)
 
 A player without the mod is disconnected with:
 
