@@ -47,6 +47,7 @@ Documentation with examples for everything below: the [wiki](https://github.com/
 - An open pack editor shows hand edits at once after `/whm reload` (found in pre-release testing).
 - Pack editor: undoing a rename that only changed the letter case (`Boss.json` -> `boss.json`) deleted the category on Windows (found in pre-release testing).
 - Death screen panel: the "Last Xs total" line wraps instead of running past the panel in long translations (German).
+- Players with the mod got at most 1000 entries of each list from the server (renames, tips, ignored ids, templates, death messages and the others), so later renames and tips were missing on their screen. 1.3 clients now get every entry (sent in parts); 1.2 clients still get the first 1000 of each list, and `/whm reload` and the server log warn about longer lists and suggest wildcard keys. On 1.7.10 servers the single packet for 1.2 clients now stays below the 64 KiB payload limit of that version, and pack editor replies with long non-English text are split smaller (both could disconnect the player).
 
 ## [1.2.0]
 

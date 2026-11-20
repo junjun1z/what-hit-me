@@ -96,3 +96,23 @@ The server cannot read your resource pack, so players without the mod (English c
 ::: tip Start from a full list
 `/whm dump` writes `config/whathitme/hint_template.cfg` with every known damage id and every mob, each with an empty value. Paste the blocks into `whathitme-common.cfg` and fill in only what you need; empty values are ignored. See [Scanner, dump & /whm test](/modpack/scanner).
 :::
+
+## Large packs
+
+What Hit Me? 1.3 servers send every entry to 1.3 clients, however long the lists are. **What Hit Me? 1.2 clients** only get the first 1000 entries of each list (`renameMap` and `hintMap` of the config file, `renameMap` and `hintMap` of the pack folder, ignored ids, locked features); on a 1.7.10 server they may get fewer when the texts are very long. Later entries show the default name and no tip for them. Players without the mod and everything the server decides (rules, death messages, chat from the server) are not affected. `/whm reload` and the server log warn when a list has more than 1000 entries.
+
+::: tip Merge keys with wildcards
+One [wildcard key](/modpack/match-keys#wildcards) can replace hundreds of single ids, and the pack stays easier to maintain:
+
+```json
+{
+  "hintMap": {
+    "*@twilightforest:lich": "Hide behind pillars and hit the shield bolts back.",
+    "@twilightforest:*": "Twilight Forest mob: check the Twilight Forest guide.",
+    "*acid*": "Acid: wear full armor or drink Fire Resistance."
+  }
+}
+```
+
+The most specific key still wins, so you can keep a few special entries next to the general ones.
+:::

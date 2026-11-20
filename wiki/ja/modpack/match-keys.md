@@ -60,6 +60,10 @@ minecraft:arrow@twilightforest:skeleton_druid その mob の矢
 | `minecraft:arrow @twilightforest:skeleton_druid` | その mob の矢だけ |
 | `*` | すべて（優先度が最も低い受け皿） |
 
+::: tip 大きな pack
+ワイルドカードを使うと長いリストを短くできます。ボスの攻撃ごと、mod のダメージ ID ごとに 1 つずつキーを書く代わりに、`*@twilightforest:lich`（リッチからのすべての攻撃）、`@twilightforest:*`（Twilight Forest のすべての攻撃者）、`*acid*`（「acid」を含むすべてのダメージ ID）と書けます。1.3 のサーバーから What Hit Me? 1.2 のクライアントに届くのは各リストの最初の 1000 項目だけです（1.3 のクライアントにはすべて届きます）。[大きな pack](/ja/modpack/names-and-tips#large-packs) を参照。
+:::
+
 ## どのキーが使われる？
 
 `renameMap`、`hintMap`、`deathMessages` で同じダメージに複数のキーが当てはまるときは、**最も具体的な**キーが使われます。

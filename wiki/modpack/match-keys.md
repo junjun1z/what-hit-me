@@ -60,6 +60,10 @@ Every condition may use `*` (any text) and `?` (one character). Matching is case
 | `minecraft:arrow @twilightforest:skeleton_druid` | Only that mob's arrows |
 | `*` | Everything (lowest priority catch-all) |
 
+::: tip Large packs
+Wildcards keep long lists short. Instead of one key per attack of a boss or per damage id of a mod, write `*@twilightforest:lich` (every hit by the Lich), `@twilightforest:*` (every Twilight Forest attacker) or `*acid*` (every damage id containing "acid"). What Hit Me? 1.2 clients only get the first 1000 entries of each list from a 1.3 server; 1.3 clients get all of them. See [Large packs](/modpack/names-and-tips#large-packs).
+:::
+
 ## Which key wins?
 
 For `renameMap`, `hintMap` and `deathMessages`, when several keys match the same hit, the **most specific** one wins:
