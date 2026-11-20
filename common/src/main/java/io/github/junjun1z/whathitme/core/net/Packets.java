@@ -66,7 +66,7 @@ public final class Packets {
             case REQUEST:
                 return Request.read(in);
             case SERVER_INFO:
-                return ServerInfo.read(in);
+                return ServerInfo.readAny(in);
             case RECAP:
                 return Recap.read(in);
             case ENTRIES:
@@ -183,10 +183,32 @@ public final class Packets {
             return SERVER_INFO;
         }
 
-        private static void writeList(WireOut o, List<String> l) {
-            int n = Math.min(l.size(), 1000);
-            o.writeShort(n);
-            for (int i = 0; i < n; i++) o.writeString(l.get(i));
+        /** Entries per list in the single packet format (clients before 1.3) */
+        public static final int OLD_LIST_LIMIT = 1000;
+        /**
+         * Largest single packet body: below the 1 MiB custom payload limit; the 1.7.10 loader lowers it (its S3F length is an
+         * unsigned short). Entries that do not fit are left out.
+         */
+        public static int oldMaxBytes = 1000000;
+
+        /** Lists still to write in {@link #write}: each gets an equal share of the room left */
+        private int listsLeft;
+
+        private void writeList(WireOut o, List<String> l) {
+            int n = Math.min(l.size(), OLD_LIST_LIMIT);
+            List<byte[]> keep = new ArrayList<>(n);
+            int room = (oldMaxBytes - 64 - o.size()) / Math.max(1, listsLeft--) - 2;
+            for (int i = 0; i < n; i++) {
+                byte[] b = l.get(i).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                room -= b.length + 5;
+                if (room < 0) break;
+                keep.add(b);
+            }
+            o.writeShort(keep.size());
+            for (byte[] b : keep) {
+                o.writeVarInt(b.length);
+                o.writeBytes(b);
+            }
         }
 
         private static List<String> readList(WireIn in) {
@@ -198,6 +220,7 @@ public final class Packets {
 
         @Override
         public void write(WireOut o) {
+            listsLeft = !extended ? 3 : !v3 ? 6 : 9;
             o.writeInt(mask);
             o.writeInt(summarySeconds);
             writeList(o, ignored);
@@ -214,9 +237,62 @@ public final class Packets {
             writeList(o, scriptVars);
         }
 
-        static ServerInfo read(WireIn in) {
+        /** Protocol 3: the whole info as {@link InfoPart} packets, no list limit */
+        public List<Packet> parts() {
+            byte[] b = full();
+            int n = Math.max(1, (b.length + InfoPart.BYTES - 1) / InfoPart.BYTES);
+            int seq = InfoPart.nextSeq();
+            List<Packet> out = new ArrayList<>(n);
+            for (int k = 0; k < n; k++) {
+                int from = k * InfoPart.BYTES;
+                out.add(new InfoPart(seq, k, n, java.util.Arrays.copyOfRange(b, from, Math.min(b.length, from + InfoPart.BYTES))));
+            }
+            return out;
+        }
+
+        /** Body of the protocol 3 parts: int list sizes, every entry */
+        public byte[] full() {
+            WireOut o = new WireOut();
+            o.writeInt(mask);
+            o.writeInt(summarySeconds);
+            o.writeInt(PROTOCOL);
+            for (List<String> l : lists(this)) {
+                o.writeInt(l.size());
+                for (String x : l) o.writeString(x);
+            }
+            return o.toByteArray();
+        }
+
+        private static List<List<String>> lists(ServerInfo i) {
+            return java.util.Arrays.asList(i.ignored, i.renames, i.hints, i.locked, i.packRenames, i.packHints, i.templates, i.deathMessages, i.scriptVars);
+        }
+
+        public static ServerInfo readFull(byte[] b) {
+            WireIn in = new WireIn(b);
             ServerInfo i = new ServerInfo();
             i.mask = in.readInt();
+            i.summarySeconds = in.readInt();
+            i.protocol = in.readInt();
+            i.extended = true;
+            i.v3 = true;
+            for (List<String> l : lists(i)) {
+                int n = in.readInt();
+                // every entry takes at least one byte
+                if (n < 0 || n > in.remaining()) throw new IllegalStateException("bad list size");
+                for (int k = 0; k < n; k++) l.add(in.readString());
+            }
+            return i;
+        }
+
+        static Packet readAny(WireIn in) {
+            int mask = in.readInt();
+            if (mask == InfoPart.MARK) return InfoPart.readRest(in);
+            return read(in, mask);
+        }
+
+        static ServerInfo read(WireIn in, int mask) {
+            ServerInfo i = new ServerInfo();
+            i.mask = mask;
             i.summarySeconds = in.readInt();
             i.ignored = readList(in);
             i.renames = readList(in);
@@ -235,6 +311,111 @@ public final class Packets {
                 }
             }
             return i;
+        }
+    }
+
+    /**
+     * Protocol 3: one part of a {@link ServerInfo} (same packet type; the first int is {@link #MARK}, never a real mask).
+     * The client applies the info once all parts of one sequence number have arrived ({@link InfoAssembler}).
+     */
+    public static final class InfoPart implements Packet {
+        static final int MARK = 0x8057484D;
+        /** Body bytes per part: far below the smallest payload limit (1.7.10 S3F length is an unsigned short) */
+        public static final int BYTES = 24000;
+        /** Largest assembled info */
+        public static final int MAX_TOTAL = 32 * 1024 * 1024;
+
+        private static int lastSeq;
+
+        static synchronized int nextSeq() {
+            lastSeq = (lastSeq + 1) & 0x3FFFFFFF;
+            return lastSeq;
+        }
+
+        public final int seq;
+        public final int index;
+        public final int count;
+        public final byte[] data;
+
+        public InfoPart(int seq, int index, int count, byte[] data) {
+            this.seq = seq;
+            this.index = index;
+            this.count = count;
+            this.data = data;
+        }
+
+        @Override
+        public int type() {
+            return SERVER_INFO;
+        }
+
+        @Override
+        public void write(WireOut o) {
+            o.writeInt(MARK);
+            o.writeInt(seq);
+            o.writeInt(index);
+            o.writeInt(count);
+            o.writeVarInt(data.length);
+            o.writeBytes(data);
+        }
+
+        static InfoPart readRest(WireIn in) {
+            int seq = in.readInt();
+            int index = in.readInt();
+            int count = in.readInt();
+            int n = in.readVarInt();
+            if (n < 0 || n > BYTES || n > in.remaining()) throw new IllegalStateException("bad info part");
+            byte[] b = new byte[n];
+            for (int k = 0; k < n; k++) b[k] = (byte) in.readByte();
+            return new InfoPart(seq, index, count, b);
+        }
+    }
+
+    /** Collects {@link InfoPart}s (client thread); only a complete set of the newest sequence is returned */
+    public static final class InfoAssembler {
+        private int seq = -1;
+        private byte[][] parts;
+        private int have;
+        private int size;
+
+        public void reset() {
+            seq = -1;
+            parts = null;
+        }
+
+        /** @return the info when its last part arrived, else null; parts of an older sequence are dropped */
+        public ServerInfo add(InfoPart p) {
+            if (p.count < 1 || p.count > InfoPart.MAX_TOTAL / InfoPart.BYTES + 1 || p.index < 0 || p.index >= p.count) throw new IllegalStateException("bad info part");
+            if (seq >= 0 && p.seq < seq) return null;
+            if (p.seq != seq) {
+                seq = p.seq;
+                parts = new byte[p.count][];
+                have = 0;
+                size = 0;
+            }
+            if (parts == null) return null; // this sequence is done or was refused
+            if (parts.length != p.count) {
+                parts = null;
+                throw new IllegalStateException("bad info part count");
+            }
+            if (parts[p.index] == null) {
+                parts[p.index] = p.data;
+                have++;
+                size += p.data.length;
+                if (size > InfoPart.MAX_TOTAL) {
+                    parts = null;
+                    throw new IllegalStateException("server info too large");
+                }
+            }
+            if (have < parts.length) return null;
+            byte[] all = new byte[size];
+            int at = 0;
+            for (byte[] b : parts) {
+                System.arraycopy(b, 0, all, at, b.length);
+                at += b.length;
+            }
+            parts = null;
+            return ServerInfo.readFull(all);
         }
     }
 

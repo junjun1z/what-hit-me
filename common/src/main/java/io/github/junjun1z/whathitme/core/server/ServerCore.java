@@ -602,6 +602,7 @@ public final class ServerCore {
     public static List<String> ruleWarnings(ServerPort srv) {
         List<String> out = Conditions.warnings(WhmConfig.pack, srv);
         out.addAll(ScriptRegistry.failures());
+        out.addAll(listWarnings());
         if (WhmConfig.common.requireClientMod && srv != null && !srv.canRequireClientMod()) {
             String n = srv.platformName();
             out.add("requireClientMod is not supported " + (n.isEmpty() ? "on this version" : "on " + n) + " (players without What Hit Me? can still join)");
@@ -739,7 +740,7 @@ public final class ServerCore {
             if (pkt instanceof Packets.Hello) {
                 int proto = ((Packets.Hello) pkt).protocol;
                 tracker().setModded(p.uuid(), proto);
-                p.send(info(proto));
+                sendInfo(p, proto);
             } else if (pkt instanceof Packets.Request) {
                 handle(p, (Packets.Request) pkt);
             }
@@ -800,8 +801,35 @@ public final class ServerCore {
         if (srv == null) return;
         for (UUID id : tracker().modded()) {
             PlayerHandle p = srv.player(id);
-            if (p != null) Safe.run("server info", () -> p.send(info(tracker().protocol(id))));
+            if (p != null) Safe.run("server info", () -> sendInfo(p, tracker().protocol(id)));
         }
+    }
+
+    /** Protocol 3+ gets every list entry in parts; older clients one packet with the first 1000 entries per list */
+    static void sendInfo(PlayerHandle p, int protocol) {
+        Packets.ServerInfo i = info(protocol);
+        if (protocol < 3) {
+            p.send(i);
+            return;
+        }
+        for (Packets.Packet part : i.parts()) p.send(part);
+    }
+
+    /** Lists over the limit of clients before 1.3, and an info too large to send (English, for /whm reload and the log) */
+    public static List<String> listWarnings() {
+        List<String> out = new ArrayList<>();
+        Packets.ServerInfo i = info(2);
+        int limit = Packets.ServerInfo.OLD_LIST_LIMIT;
+        String[] names = {"ignoredDamageIds + pack ignored", "renameMap (config)", "hintMap (config)", "lockedFeatures", "pack renameMap", "pack hintMap"};
+        int[] sizes = {i.ignored.size(), WhmConfig.common.renameMap.size(), WhmConfig.common.hintMap.size(), i.locked.size(), WhmConfig.pack.renameMap.size(), WhmConfig.pack.hintMap.size()};
+        for (int k = 0; k < names.length; k++) {
+            if (sizes[k] > limit) out.add(names[k] + " has " + sizes[k] + " entries: What Hit Me? 1.2 and older clients only get the first " + limit
+                + " (1.3 clients get all). Wildcards can merge keys, e.g. *@twilightforest:lich, @twilightforest:*, *acid*");
+        }
+        int bytes = info(3).full().length;
+        if (bytes > Packets.InfoPart.MAX_TOTAL) out.add("the names, tips and templates take " + (bytes / 1024 / 1024) + " MiB, more than clients accept ("
+            + (Packets.InfoPart.MAX_TOTAL / 1024 / 1024) + " MiB): modded clients keep the previous lists");
+        return out;
     }
 
     private static void handle(PlayerHandle p, Packets.Request r) {

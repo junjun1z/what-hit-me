@@ -16,9 +16,12 @@ public final class PackProto {
 
     /** Message key of a server reply chunk (never printed) */
     public static final String KEY = "whathitme.pack.wire";
-    /** Characters per chunk: client packets are limited to 32767 bytes, UTF-8 needs up to 3 bytes per character */
+    /**
+     * Characters per chunk; UTF-8 needs up to 3 bytes per character. Client packets are limited to 32767 bytes, server
+     * packets on 1.7.10 to 65535 (unsigned short length)
+     */
     public static final int UP_CHUNK = 8000;
-    public static final int DOWN_CHUNK = 30000;
+    public static final int DOWN_CHUNK = 20000;
     /** Largest client message (characters) */
     public static final int MAX_UP = 320000;
     /** Largest server message (characters) */
@@ -33,27 +36,32 @@ public final class PackProto {
         return seq;
     }
 
+    /** Splits into chunks of at most {@code size} characters, never between the two halves of a surrogate pair */
+    static List<String> chunks(String data, int size) {
+        List<String> out = new ArrayList<>();
+        int at = 0;
+        do {
+            int end = Math.min(data.length(), at + size);
+            if (end < data.length() && end > at + 1 && Character.isHighSurrogate(data.charAt(end - 1))) end--;
+            out.add(data.substring(at, end));
+            at = end;
+        } while (at < data.length());
+        return out;
+    }
+
     public static List<Packets.Packet> up(Map<String, Object> msg) {
-        String data = Json.write(msg);
-        int n = Math.max(1, (data.length() + UP_CHUNK - 1) / UP_CHUNK);
+        List<String> parts = chunks(Json.write(msg), UP_CHUNK);
         int s = nextSeq();
         List<Packets.Packet> out = new ArrayList<>();
-        for (int i = 0; i < n; i++) {
-            String part = data.substring(i * UP_CHUNK, Math.min(data.length(), (i + 1) * UP_CHUNK));
-            out.add(new Packets.Request(Packets.Request.PACK, s + "|" + i + "|" + n + "|" + part));
-        }
+        for (int i = 0; i < parts.size(); i++) out.add(new Packets.Request(Packets.Request.PACK, s + "|" + i + "|" + parts.size() + "|" + parts.get(i)));
         return out;
     }
 
     public static List<Packets.Packet> down(Map<String, Object> msg) {
-        String data = Json.write(msg);
-        int n = Math.max(1, (data.length() + DOWN_CHUNK - 1) / DOWN_CHUNK);
+        List<String> parts = chunks(Json.write(msg), DOWN_CHUNK);
         int s = nextSeq();
         List<Packets.Packet> out = new ArrayList<>();
-        for (int i = 0; i < n; i++) {
-            String part = data.substring(i * DOWN_CHUNK, Math.min(data.length(), (i + 1) * DOWN_CHUNK));
-            out.add(new Packets.Message(false, KEY, s + "|" + i + "|" + n, part));
-        }
+        for (int i = 0; i < parts.size(); i++) out.add(new Packets.Message(false, KEY, s + "|" + i + "|" + parts.size(), parts.get(i)));
         return out;
     }
 
