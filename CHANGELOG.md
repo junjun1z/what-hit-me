@@ -32,20 +32,13 @@ Documentation with examples for everything below: the [wiki](https://github.com/
 ### Fixed
 
 - Forge 1.7.10 - 1.12.1: a heal in the same tick as a hit (food regeneration, Regeneration, any heal) was subtracted from that hit, so hits were recorded too low and a 1 ❤ hit such as a burning tick could be lost (merged lines showed x2 instead of x3).
-- Custom death messages with `lang:` keys on Fabric 1.19.4+: sent as a translation with the server's English text as fallback, so resource packs translate them for every client and a missing translation never shows the raw key (found in pre-release testing).
-- Pack editor dialogs no longer let the text below them show through on 1.20 - 1.21.5 (found in pre-release testing).
-- Forge 1.19 / 1.19.1 / 1.20.6 / 1.21.10+: custom death messages also replace the chat line where Forge posts no chat event for system messages, or the message arrives after the chat line (found in pre-release testing).
-- Pack folder: one file with extremely deep nesting no longer stops the whole pack folder from loading (that file is skipped with an error). Sections of the wrong type (for example `"hintMap": 5`) and files more than 8 sub-folders deep are reported instead of being ignored silently (found in pre-release testing).
+- Pack folder: one file with extremely deep nesting no longer stops the whole pack folder from loading (that file is skipped with an error). Sections of the wrong type (for example `"hintMap": 5`) and files more than 8 sub-folders deep are reported instead of being ignored silently.
 - Config files saved in another encoding than UTF-8 (for example by Notepad as ANSI with a non-English rename) were reset to the defaults and overwritten (1.13+). They are now read with the system encoding, and a file that cannot be read is never overwritten.
 - Decimal settings no longer accept `NaN`.
 - `/whm reload` on a client with the mod now shows how many pack files were read and which files have errors, as documented (it showed only the warnings).
-- `/whm pack` against a server with an older What Hit Me? says that the server needs 1.3 instead of loading forever; the settings button opens your own lists there (found in pre-release testing).
-- Players with What Hit Me? 1.2 on a 1.3 server saw raw translation keys in `/whm test` and `/whm reload` output; they get English text now (found in pre-release testing).
 - `/kill` and other infinite hits showed `(2147483647% Max HP)`; now `(∞% Max HP)`.
 - Forge / NeoForge 1.13+ with First Aid: a big hit that First Aid spread over the body parts was announced as "Lethal damage was prevented"; it is a heavy hit now. A cancelled death and a used totem are still reported.
-- Single player: pack files and `whathitme-common.cfg` are read again when a world is opened, so edits made while the game runs apply to the next world (found in pre-release testing).
-- An open pack editor shows hand edits at once after `/whm reload` (found in pre-release testing).
-- Pack editor: undoing a rename that only changed the letter case (`Boss.json` -> `boss.json`) deleted the category on Windows (found in pre-release testing).
+- Single player: pack files and `whathitme-common.cfg` are read again when a world is opened, so edits made while the game runs apply to the next world.
 - Death screen panel: the "Last Xs total" line wraps instead of running past the panel in long translations (German).
 - Players with the mod got at most 1000 entries of each list from the server (renames, tips, ignored ids, templates, death messages and the others), so later renames and tips were missing on their screen. 1.3 clients now get every entry (sent in parts); 1.2 clients still get the first 1000 of each list, and `/whm reload` and the server log warn about longer lists and suggest wildcard keys.
 - A very large reply disconnected the player (packet limit 1 MiB, 2 MiB on Forge 1.7.10): a long `/whm` history or death recap whose records carry long tips or script values (for example `historySize` 200 with 7000-character tips), or `/whm dump` with a huge damage id list. 1.3 clients now get large replies in parts on every version, and `/whm dump` lists every damage id (it stopped at 4000). 1.2 clients get the newest records or first entries that fit in one packet, with a note on how many were left out.
