@@ -6,7 +6,19 @@ See exactly what killed you. **Works in any modpack, with any combination of mod
 
 What Hit Me? records the damage a player takes and explains a death in plain words: the killing blow, the attacker and its mod, how much armor helped, whether the damage ignored armor, and what to do about it next time. It runs on the client, on the server, or both, and adds no blocks or items. Minecraft 1.7.10 - 26.3 on Forge, Fabric and NeoForge: 63 builds, each one started and tested in game.
 
-**New in 1.3.0 for modpack makers:** templates for every text the mod shows, custom death messages, progression rules that keep bosses secret until a quest is done (FTB Quests, Better Questing, Heracles, Game Stages, advancements, scores), KubeJS / CraftTweaker / MineTweaker scripts, and an in-game editor for the whole pack setup. Full documentation with examples: [wiki](https://github.com/junjun1z/what-hit-me/tree/main/wiki).
+**New in 1.3.0 for modpack makers:**
+
+- **Your names and tips** for any damage, mob, weapon or dimension, and **custom death messages**.
+- **Secrets until players get there:** a boss shows as `???` with no tip until its quest is done (FTB Quests, Better Questing incl. GTNH, Heracles, Game Stages, advancements, scoreboard).
+- **In-game pack editor** `/whm pack`: no JSON needed, with backups and undo.
+- **Templates** for every text the mod shows, with a live-preview editor.
+- **Scripts:** KubeJS, CraftTweaker and MineTweaker can add conditions, variables and listeners.
+
+| Before the quest | After the quest |
+|---|---|
+| ![Boss hidden as ???](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/wiki/public/images/rules-before-ftb.webp) | ![Name and tip shown](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/wiki/public/images/rules-after-ftb.webp) |
+
+Full documentation with screenshots and examples, in English and Japanese: [wiki](https://github.com/junjun1z/what-hit-me/blob/main/wiki/index.md).
 
 ![Death screen panel](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/docs/screenshots/death-screen.png)
 
@@ -161,14 +173,9 @@ Rewrite what the mod shows, line by line, with `{variables}`. Nothing changes un
 - Variables follow the display switches: a variable that is turned off on the server or by the player is empty. Templates never reveal what the server disabled.
 - Where they come from: a player's personal `whathitme-client-templates.json` > the pack's `templates` > built-in. Lock outputs with `lockedFeatures` (`templates` or `templates.<output>`). Players without the mod get the pack templates in the server's English chat.
 
-| Group | Variables |
-|---|---|
-| Damage | `{damage}` (hearts), `{damage_hp}`, `{raw_damage}` (before armor), `{mitigation}` (%), `{absorbed}`, `{health_after}`, `{max_health}`, `{max_hp_percent}`, `{hits}` |
-| Damage type | `{name}`, `{damage_name}`, `{damage_id}`, `{damage_mod}`, `{properties}`, `{death_message}` |
-| Attacker | `{attacker_name}`, `{attacker_id}`, `{attacker_mod}`, `{attacker_distance}`, `{attacker_owner}`, `{direct}`, `{weapon}`, `{weapon_id}`, `{weapon_enchants}` (`{mob_...}` = `{attacker_...}`) |
-| Context | `{environment}`, `{dimension}`, `{x}` `{y}` `{z}`, `{time_ago}`, `{time}` |
-| Other | `{badges}`, `{killing}`, `{tip}`, `{player}`, `{script:<name>}` |
-| Summary / alert / copy | `{killing_blow}`, `{total}`, `{total_hits}`, `{total_seconds}`, `{recap_link}`, `{toggle_notice}`, `{alert_kind}`, `{details_link}`, `{timeline}`, `{equipment}`, `{effects}`, `{recap}` |
+40+ variables for damage, damage type, attacker, weapon, position, time, badges, tips and totals: [full list](https://github.com/junjun1z/what-hit-me/blob/main/wiki/modpack/templates.md).
+
+![Template editor with live preview](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/wiki/public/images/template-editor.gif)
 
 **Template editor:** `/whm template` or **Templates...** in the settings screen, on every version and loader. Each line is a text field; click a variable to insert it; unknown variables turn red. The live preview is drawn by the same code as the real output (tooltip, panel line, chat lines or copy text), with your latest death or a sample death. **Save** keeps it for you; **Save to pack** (single player with cheats) writes `pack/templates/<output>.json` for your pack. Outputs locked by the pack are shown read-only.
 
@@ -225,7 +232,7 @@ Forge and NeoForge have no event to change the death message, so players without
 | `heracles:<id>` | Heracles / Odyssey Quests: 1.20 / 1.20.1, 1.21 / 1.21.1 |
 | `script:<name>` | A condition registered by a script |
 
-Quest mods are never required; their conditions load only when the mod is installed. Each quest mod was tested in game on every Minecraft version and loader it exists for. `/whm reload` reports unknown conditions and missing mods; `/whm test ... --as <player> --assume <condition>` shows the result for a player.
+Quest mods are never required; their conditions load only when the mod is installed. Ids, examples and the version matrix per quest mod: [quest mods](https://github.com/junjun1z/what-hit-me/blob/main/wiki/modpack/quest-mods.md). Each quest mod was tested in game on every Minecraft version and loader it exists for. `/whm reload` reports unknown conditions and missing mods; `/whm test ... --as <player> --assume <condition>` shows the result for a player.
 
 ### requireClientMod
 
@@ -243,7 +250,7 @@ WhatHitMeEvents.register(event => {
 })
 ```
 
-Everything is rebuilt on `/whm reload` and the script mod's reload. A failing script function is logged once and never breaks a recap. Other mods can use the same Java API (`io.github.junjun1z.whathitme.api.WhatHitMeApi`).
+Everything is rebuilt on `/whm reload` and the script mod's reload. A failing script function is logged once and never breaks a recap. Other mods can use the same Java API (`io.github.junjun1z.whathitme.api.WhatHitMeApi`). Examples for every script mod and generation: [script integration](https://github.com/junjun1z/what-hit-me/blob/main/wiki/modpack/scripts.md).
 
 ### In-game pack editor
 
@@ -254,6 +261,10 @@ Everything is rebuilt on `/whm reload` and the script mod's reload. A failing sc
 - Match key builder with searchable damage id and mob lists, condition picker with the advancements, scores, tags, quests, stages and script conditions the server knows, a preview "as player / assuming conditions", inline errors, and a notice when another operator saves.
 - Backups in `config/whathitme/.backup/` and 30 undo steps.
 - Players without permission get the personal mode (`/whm pack personal`): their own renames, tips and ignored ids as searchable lists.
+
+![Adding a rule in the pack editor](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/wiki/public/images/pack-editor-add-rule.gif)
+
+Step-by-step guide: [pack editor](https://github.com/junjun1z/what-hit-me/blob/main/wiki/modpack/pack-editor.md).
 
 ### Every damage id, before anyone takes it
 
