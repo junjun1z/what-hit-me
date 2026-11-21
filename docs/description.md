@@ -18,7 +18,7 @@ What Hit Me? records the damage a player takes and explains a death in plain wor
 |---|---|
 | ![Boss hidden as ???](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/wiki/public/images/rules-before-ftb.webp) | ![Name and tip shown](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/wiki/public/images/rules-after-ftb.webp) |
 
-Full documentation with screenshots and examples, in English and Japanese: [wiki](https://github.com/junjun1z/what-hit-me/blob/main/wiki/index.md).
+Full documentation with screenshots and examples, in English and Japanese: [wiki](https://what-hit-me-wiki.vercel.app/).
 
 ![Death screen panel](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/docs/screenshots/death-screen.png)
 
@@ -173,7 +173,7 @@ Rewrite what the mod shows, line by line, with `{variables}`. Nothing changes un
 - Variables follow the display switches: a variable that is turned off on the server or by the player is empty. Templates never reveal what the server disabled.
 - Where they come from: a player's personal `whathitme-client-templates.json` > the pack's `templates` > built-in. Lock outputs with `lockedFeatures` (`templates` or `templates.<output>`). Players without the mod get the pack templates in the server's English chat.
 
-40+ variables for damage, damage type, attacker, weapon, position, time, badges, tips and totals: [full list](https://github.com/junjun1z/what-hit-me/blob/main/wiki/modpack/templates.md).
+40+ variables for damage, damage type, attacker, weapon, position, time, badges, tips and totals: [full list](https://what-hit-me-wiki.vercel.app/modpack/templates).
 
 ![Template editor with live preview](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/wiki/public/images/template-editor.gif)
 
@@ -232,7 +232,7 @@ Forge and NeoForge have no event to change the death message, so players without
 | `heracles:<id>` | Heracles / Odyssey Quests: 1.20 / 1.20.1, 1.21 / 1.21.1 |
 | `script:<name>` | A condition registered by a script |
 
-Quest mods are never required; their conditions load only when the mod is installed. Ids, examples and the version matrix per quest mod: [quest mods](https://github.com/junjun1z/what-hit-me/blob/main/wiki/modpack/quest-mods.md). Each quest mod was tested in game on every Minecraft version and loader it exists for. `/whm reload` reports unknown conditions and missing mods; `/whm test ... --as <player> --assume <condition>` shows the result for a player.
+Quest mods are never required; their conditions load only when the mod is installed. Ids, examples and the version matrix per quest mod: [quest mods](https://what-hit-me-wiki.vercel.app/modpack/quest-mods). Each quest mod was tested in game on every Minecraft version and loader it exists for. `/whm reload` reports unknown conditions and missing mods; `/whm test ... --as <player> --assume <condition>` shows the result for a player.
 
 ### requireClientMod
 
@@ -250,7 +250,7 @@ WhatHitMeEvents.register(event => {
 })
 ```
 
-Everything is rebuilt on `/whm reload` and the script mod's reload. A failing script function is logged once and never breaks a recap. Other mods can use the same Java API (`io.github.junjun1z.whathitme.api.WhatHitMeApi`). Examples for every script mod and generation: [script integration](https://github.com/junjun1z/what-hit-me/blob/main/wiki/modpack/scripts.md).
+Everything is rebuilt on `/whm reload` and the script mod's reload. A failing script function is logged once and never breaks a recap. Other mods can use the same Java API (`io.github.junjun1z.whathitme.api.WhatHitMeApi`). Examples for every script mod and generation: [script integration](https://what-hit-me-wiki.vercel.app/modpack/scripts).
 
 ### In-game pack editor
 
@@ -264,7 +264,7 @@ Everything is rebuilt on `/whm reload` and the script mod's reload. A failing sc
 
 ![Adding a rule in the pack editor](https://raw.githubusercontent.com/junjun1z/what-hit-me/main/wiki/public/images/pack-editor-add-rule.gif)
 
-Step-by-step guide: [pack editor](https://github.com/junjun1z/what-hit-me/blob/main/wiki/modpack/pack-editor.md).
+Step-by-step guide: [pack editor](https://what-hit-me-wiki.vercel.app/modpack/pack-editor).
 
 ### Every damage id, before anyone takes it
 

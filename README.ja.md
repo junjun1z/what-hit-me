@@ -6,7 +6,7 @@
 
 [English README](README.md)
 
-ダウンロード: [Modrinth](https://modrinth.com/mod/what-hit-me) · [CurseForge](https://www.curseforge.com/minecraft/mc-mods/what-hit-me) · [GitHub Releases](https://github.com/junjun1z/what-hit-me/releases)。詳しい説明（英語・日本語）: [Wiki](wiki/)
+ダウンロード: [Modrinth](https://modrinth.com/mod/what-hit-me) · [CurseForge](https://www.curseforge.com/minecraft/mc-mods/what-hit-me) · [GitHub Releases](https://github.com/junjun1z/what-hit-me/releases)。詳しい説明（英語・日本語）: [Wiki](https://what-hit-me-wiki.vercel.app/ja/)
 
 ![死亡画面のパネル](docs/screenshots/death-screen.png)
 

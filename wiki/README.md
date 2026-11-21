@@ -47,3 +47,5 @@ Create a Vercel project from this repository with these settings:
 | Node.js version | 18 or newer |
 
 The site uses `cleanUrls`, so pages are served without `.html`. Vercel serves the generated `page.html` files for `/page` URLs automatically. No server-side code is needed; the search index is built into the static files.
+
+Live site: https://what-hit-me-wiki.vercel.app (Vercel project `what-hit-me-wiki`). The build settings are also in `vercel.json`, so `npx vercel deploy --prod` from this folder publishes the current pages.

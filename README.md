@@ -6,7 +6,7 @@ A Minecraft mod for Forge, Fabric and NeoForge (1.7.10 - 26.3) that shows exactl
 
 [日本語版 README](README.ja.md)
 
-Download: [Modrinth](https://modrinth.com/mod/what-hit-me) · [CurseForge](https://www.curseforge.com/minecraft/mc-mods/what-hit-me) · [GitHub Releases](https://github.com/junjun1z/what-hit-me/releases). Full documentation (English / Japanese): [wiki](wiki/).
+Download: [Modrinth](https://modrinth.com/mod/what-hit-me) · [CurseForge](https://www.curseforge.com/minecraft/mc-mods/what-hit-me) · [GitHub Releases](https://github.com/junjun1z/what-hit-me/releases). Full documentation (English / Japanese): [wiki](https://what-hit-me-wiki.vercel.app/).
 
 ![Death screen panel](docs/screenshots/death-screen.png)
 

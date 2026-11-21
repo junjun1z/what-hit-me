@@ -6,7 +6,7 @@ The release workflow publishes the section whose heading matches the pushed tag 
 
 A release for modpack makers: rewrite every text the mod shows, replace death messages, keep bosses secret until the player has progressed, drive everything from quests and scripts, and edit the whole pack setup in game. Same versions as 1.2.0: **Forge 1.7.10 - 26.3, Fabric 1.14 - 26.3, NeoForge 1.20.1 - 26.3** (63 files, each started and tested in game, also on dedicated servers with and without the mod on the client). Nothing changes until you use the new features: without templates, rules or death messages every output looks exactly like 1.2.0, and existing config and pack files keep working.
 
-Documentation with examples for everything below: the [wiki](https://github.com/junjun1z/what-hit-me/tree/main/wiki) (English and Japanese).
+Documentation with examples for everything below: the [wiki](https://what-hit-me-wiki.vercel.app/) (English and Japanese).
 
 ### Added
 
