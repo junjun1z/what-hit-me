@@ -5,6 +5,9 @@ import java.nio.charset.StandardCharsets;
 /** Reader for {@link WireOut} data. Throws IllegalStateException on truncated or malformed input. */
 public final class WireIn {
 
+    /** Longest string accepted (UTF-8 bytes) */
+    public static final int MAX_STRING = 262144;
+
     private final byte[] buf;
     private int pos;
     private final int end;
@@ -74,7 +77,7 @@ public final class WireIn {
 
     public String readString() {
         int n = readVarInt();
-        if (n > 262144) throw new IllegalStateException("String too long");
+        if (n > MAX_STRING) throw new IllegalStateException("String too long");
         need(n);
         String s = new String(buf, pos, n, StandardCharsets.UTF_8);
         pos += n;

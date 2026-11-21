@@ -298,7 +298,7 @@ public final class Packets {
             List<byte[]> keep = new ArrayList<>(n);
             int room = (oldMaxBytes - 64 - o.size()) / Math.max(1, listsLeft--) - 2;
             for (int i = 0; i < n; i++) {
-                byte[] b = l.get(i).getBytes(java.nio.charset.StandardCharsets.UTF_8);
+                byte[] b = WireOut.utf8(l.get(i));
                 room -= b.length + 5;
                 if (room < 0) break;
                 keep.add(b);
@@ -334,11 +334,6 @@ public final class Packets {
             writeList(o, templates);
             writeList(o, deathMessages);
             writeList(o, scriptVars);
-        }
-
-        /** Protocol 3: the whole info as {@link InfoPart} packets, no list limit */
-        public List<Packet> parts() {
-            return InfoPart.cut(full(), false);
         }
 
         /** Body of the protocol 3 parts: int list sizes, every entry */
@@ -472,7 +467,7 @@ public final class Packets {
         }
 
         /** Cuts bytes into parts of one new sequence */
-        static List<Packet> cut(byte[] b, boolean whole) {
+        public static List<Packet> cut(byte[] b, boolean whole) {
             int n = Math.max(1, (b.length + BYTES - 1) / BYTES);
             int seq = nextSeq();
             List<Packet> out = new ArrayList<>(n);

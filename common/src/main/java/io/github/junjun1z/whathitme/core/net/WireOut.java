@@ -60,9 +60,18 @@ public final class WireOut {
     }
 
     public WireOut writeString(String s) {
-        byte[] b = (s == null ? "" : s).getBytes(StandardCharsets.UTF_8);
+        byte[] b = utf8(s);
         writeVarInt(b.length);
         return writeBytes(b);
+    }
+
+    /** UTF-8 bytes, cut at a character boundary to what {@link WireIn#readString} accepts */
+    public static byte[] utf8(String s) {
+        byte[] b = (s == null ? "" : s).getBytes(StandardCharsets.UTF_8);
+        if (b.length <= WireIn.MAX_STRING) return b;
+        int n = WireIn.MAX_STRING;
+        while (n > 0 && (b[n] & 0xC0) == 0x80) n--;
+        return Arrays.copyOf(b, n);
     }
 
     public WireOut writeBytes(byte[] b) {

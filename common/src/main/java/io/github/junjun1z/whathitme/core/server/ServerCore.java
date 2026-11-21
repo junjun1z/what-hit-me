@@ -830,7 +830,10 @@ public final class ServerCore {
             p.send(i);
             return;
         }
-        for (Packets.Packet part : i.parts()) p.send(part);
+        byte[] all = i.full();
+        // too large: the client keeps its previous lists (listWarnings reports it)
+        if (all.length > Packets.InfoPart.MAX_TOTAL) return;
+        for (Packets.Packet part : Packets.InfoPart.cut(all, false)) p.send(part);
     }
 
     /** Lists over the limit of clients before 1.3, and an info too large to send (English, for /whm reload and the log) */
